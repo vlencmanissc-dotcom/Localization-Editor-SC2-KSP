@@ -1,0 +1,53 @@
+/* base (green) */
+.glowing-label-border {
+
+    /* было: 3 24 3 24 */
+    -fx-padding: 0.2em 1em 0.2em 1em;
+
+    -fx-background-color: rgba(20, 8, 5, 0.95);
+    -fx-background-insets: 0.3em;
+    -fx-background-radius: 0.4em;
+
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_over.png");
+    -fx-border-image-slice: 12 fill;
+
+    /* было 7px */
+    -fx-border-image-width: 0.7em;
+
+    -fx-border-image-repeat: stretch;
+
+    -fx-effect:
+        dropshadow(gaussian, rgba(0, 255, 170, 0.8), 1.6em, 0.7, 0, 0),
+        dropshadow(gaussian, rgba(0, 255, 120, 0.4), 3em, 0.5, 0, 0);
+
+    -fx-alignment: center-left;
+}
+
+/* selected (orange) */
+.glowing-label-border.glowing-label-border-selected {
+
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+
+    -fx-effect:
+        dropshadow(gaussian, rgba(255, 150, 85, 0.95), 0.8em, 0.7, 0, 0),
+        dropshadow(gaussian, rgba(255, 120, 60, 0.35), 2.4em, 0.5, 0, 0);
+}
+
+/* text */
+.label.glowing-label {
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+}
+
+/* Green */
+.label.glowing-label.glow-green {
+    -fx-text-fill: #dbfff1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 170, 0.65), 1.4em, 0.6, 0, 0);
+}
+
+/* Orange */
+.label.glowing-label.glow-orange {
+    -fx-text-fill: #fff1d9;
+    -fx-effect: dropshadow(gaussian, rgba(255, 140, 70, 0.75), 1.4em, 0.6, 0, 0);
+}

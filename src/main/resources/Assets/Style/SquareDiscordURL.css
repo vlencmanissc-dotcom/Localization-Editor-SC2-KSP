@@ -1,0 +1,62 @@
+.square-discord-url {
+
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+
+    /* немного увеличили */
+   /* -fx-pref-width: 7.2em;
+    -fx-pref-height: 7.2em;
+    -fx-min-width: 7.2em;
+    -fx-min-height: 7.2em;
+    -fx-max-width: 7.2em;
+    -fx-max-height: 7.2em;
+
+    -fx-background-size: 7.2em;*/
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+
+    -fx-background-image: url("../Textures/ui_glues_greenbuttons_largeiconbuttonup.png");
+}
+
+.square-discord-url:hover {
+    -fx-background-image: url("../Textures/ui_glues_greenbuttons_largeiconbuttonover.png");
+}
+.square-discord-url:pressed {
+    -fx-background-image: url("../Textures/ui_glues_greenbuttons_largeiconbuttonpressed.png");
+}
+.square-discord-url:disabled {
+    -fx-background-image: url("../Textures/ui_glues_greenbuttons_largeiconbuttondisabled.png");
+}
+
+/* Discord icon */
+.square-discord-url .discord-icon {
+
+    -fx-background-image: url("../Textures/Discord.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+
+    /* чуть увеличили иконку */
+    /*-fx-background-size: 3.2em 3.2em;
+
+    -fx-min-width: 3.2em;
+    -fx-min-height: 3.2em;
+    -fx-max-width: 3.2em;
+    -fx-max-height: 3.2em;*/
+}
+/* inner frame like SC2 FlashContainer (offset 11) */
+.square-discord-url .wipe-layer {
+    -fx-background-image: url("/Assets/Textures/buttonswipesmall.png");
+    -fx-background-repeat: no-repeat;
+
+   /* -fx-background-size: 100% 9.4em;*/
+
+   /* -fx-min-height: 6.2em;
+    -fx-pref-height: 6.2em;
+    -fx-max-height: 6.2em;*/
+
+}

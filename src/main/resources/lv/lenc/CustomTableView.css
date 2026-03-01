@@ -1,0 +1,10 @@
+# CustomTableView.css
+
+.table-view .column-header .arrow {
+    -fx-shape: "";
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-opacity: 0; /* можно оставить */
+    color: red;
+}
+

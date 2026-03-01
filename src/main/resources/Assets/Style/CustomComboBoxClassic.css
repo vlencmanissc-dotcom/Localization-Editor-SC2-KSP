@@ -1,0 +1,239 @@
+/* =========================================================
+   Classic ComboBox (Nova UI) — FullHD Pixel Layout
+   Matches the old inline-style geometry:
+   paddingTop = -4, paddingLeft = 25, arrowRight ≈ 20
+   cellHeight ≈ 20, radius ≈ 8, cellRadius ≈ 3
+   ========================================================= */
+
+/* ----------------------------
+   Closed ComboBox
+   ---------------------------- */
+.classic-combo {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: -4 0 0 25;      /* same as old paddingTop/paddingLeft */
+    -fx-font-family: "Arial Black";
+    -fx-alignment: center;
+}
+
+/* Selected item cell (closed state) */
+.classic-combo > .list-cell {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+
+    /* reserve space on the RIGHT so text never collides with arrow */
+    -fx-padding: 0 46 0 0;       /* ~ arrowRight(20) + extra(26) */
+    -fx-alignment: center;
+    -fx-text-fill: #F7E7A6;
+}
+
+/* Gradient for selected text (closed state) */
+.classic-combo > .list-cell .text {
+    -fx-fill: linear-gradient(from 0% 0% to 100% 100%, #FFFBE7, #F0C040);
+}
+
+/* Hide native arrow visuals (we draw arrow as background layer) */
+.classic-combo .arrow-button,
+.classic-combo .arrow {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-opacity: 0;
+}
+
+/* ----------------------------
+   Themes: background images
+   ---------------------------- */
+
+/* Yellow theme */
+.classic-combo.theme-yellow {
+    -fx-background-image:
+        url("/Assets/Textures/ui_glue_dropdownbutton_Yellow_normal_terran.png"),
+        url("/Assets/Textures/ui_glue_dropdownarrow_Yellow_normal_terran.png");
+    -fx-background-repeat: no-repeat, no-repeat;
+    -fx-background-size: 100% 100%, 16px 16px;
+    -fx-background-position: center center, right 20px center; /* old arrowRight */
+}
+
+.classic-combo.theme-yellow:hover {
+    -fx-background-image:
+        url("/Assets/Textures/ui_glue_dropdownbutton_Yellow_over_terran.png"),
+        url("/Assets/Textures/ui_glue_dropdownarrow_Yellow_normal_terran.png");
+}
+
+.classic-combo.theme-yellow:pressed {
+    -fx-background-image:
+        url("/Assets/Textures/ui_glue_dropdownbutton_Yellow_Pressed_terran.png"),
+        url("/Assets/Textures/ui_glue_dropdownarrow_Yellow_normal_terran.png");
+}
+
+.classic-combo.theme-yellow:disabled {
+    -fx-background-image:
+        url("/Assets/Textures/ui_glue_dropdownbutton_Yellow_disabled_terran.png"),
+        url("/Assets/Textures/ui_glue_dropdownarrow_normal_terran.png");
+    -fx-opacity: 0.85;
+}
+
+/* Green theme */
+.classic-combo.theme-green {
+    -fx-background-image:
+        url("/Assets/Textures/ui_glue_dropdownbutton_normal_terran.png"),
+        url("/Assets/Textures/ui_glue_dropdownarrow_normal_terran.png");
+    -fx-background-repeat: no-repeat, no-repeat;
+    -fx-background-size: 100% 100%, 16px 16px;
+    -fx-background-position: center center, right 20px center;
+}
+
+.classic-combo.theme-green:hover {
+    -fx-background-image:
+        url("/Assets/Textures/ui_glue_dropdownbutton_over_terran.png"),
+        url("/Assets/Textures/ui_glue_dropdownarrow_over_terran.png");
+}
+
+.classic-combo.theme-green:pressed {
+    -fx-background-image:
+        url("/Assets/Textures/ui_glue_dropdownbutton_Pressed_terran.png"),
+        url("/Assets/Textures/ui_glue_dropdownarrow_pressed_terran.png");
+}
+
+.classic-combo.theme-green:disabled {
+    -fx-background-image:
+        url("/Assets/Textures/ui_glue_dropdownbutton_disabled_terran.png"),
+        url("/Assets/Textures/ui_glue_dropdownarrow_normal_terran.png");
+    -fx-opacity: 0.85;
+}
+
+/* ---------------------------------------------------------
+   Popup (dropdown) — +30% scale (padding, radius, border)
+   --------------------------------------------------------- */
+.combo-box-popup > .list-view {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+
+    /* was: padding 1 */
+    -fx-padding: 2;
+
+    -fx-border-width: 0;
+}
+
+.combo-box-popup > .list-view > .virtual-flow {
+    -fx-background-color: #001000;
+    -fx-background-insets: 0;
+
+    /* was: border 2 */
+    -fx-border-width: 3;
+    -fx-border-color: rgba(255, 220, 120, 0.65);
+
+    /* was: radius 8 */
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+
+    /* extra inner air */
+    -fx-padding: 2;
+}
+
+/* ---------------------------------------------------------
+   Cells (items) — +30% height + padding + font
+   --------------------------------------------------------- */
+.combo-box-popup .list-cell {
+    -fx-background-color: #001000;
+
+    /* keep the inset frame, but slightly larger */
+    -fx-background-insets: 0 3 0 3;
+    -fx-border-insets: 0 3 0 3;
+
+    /* was: 20px */
+    -fx-pref-height: 26px;
+    -fx-min-height: 26px;
+    -fx-max-height: 26px;
+
+    /* add breathing room (was 0) */
+    -fx-padding: 2 10 2 10;
+
+    -fx-alignment: center;
+    -fx-font-family: "Arial Black";
+
+    /* was: 13px */
+    -fx-font-size: 17px;
+
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, #FFFBE7, #F0C040);
+
+    /* was: radius 3 */
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+}
+
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: rgba(160,110,30,0.35);
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, #FFFFFF, #FFE066);
+}
+
+.combo-box-popup .list-cell:selected {
+    -fx-background-color: rgba(120,90,20,0.65);
+  /*  -fx-border-color: #d6b100;*/
+
+    /* a bit thicker to match the bigger look */
+    -fx-border-width: 2;
+
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, #FFFDEB, #FFE27A);
+}
+/* =========================================================
+   Popup "side frame" killer:
+   removes hidden layers (sheet/clipped-container/focus ring)
+   that may draw a stray border/stripe on the side.
+   ========================================================= */
+
+/* Kill focus ring on the popup list */
+.combo-box-popup > .list-view:focused,
+.combo-box-popup .list-cell:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+/* Remove any leftover borders/backgrounds from internal layers */
+.combo-box-popup > .list-view,
+.combo-box-popup > .list-view > .virtual-flow,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet,
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-effect: null;
+}
+
+/* Sometimes the stripe is the "corner" region (scrollbar corner) */
+.combo-box-popup .corner,
+.combo-box-popup .scroll-bar,
+.combo-box-popup .scroll-bar:vertical,
+.combo-box-popup .scroll-bar:horizontal,
+.combo-box-popup .scroll-bar .track,
+.combo-box-popup .scroll-bar .thumb {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-opacity: 0;
+    -fx-padding: 0;
+}
+/* Убрать зарезервированное место под скроллбар в popup ComboBox */
+.combo-box-popup > .list-view > .virtual-flow > .scroll-bar:vertical {
+    -fx-pref-width: 0;
+    -fx-min-width: 0;
+    -fx-max-width: 0;
+    -fx-padding: 0;
+}
+
+.combo-box-popup > .list-view > .virtual-flow > .scroll-bar:horizontal {
+    -fx-pref-height: 0;
+    -fx-min-height: 0;
+    -fx-max-height: 0;
+    -fx-padding: 0;
+}
+
+/* На всякий — если “полоска” это corner между скроллами */
+.combo-box-popup .corner {
+    -fx-pref-width: 0;
+    -fx-min-width: 0;
+    -fx-max-width: 0;
+    -fx-pref-height: 0;
+    -fx-min-height: 0;
+    -fx-max-height: 0;
+}

@@ -1,0 +1,32 @@
+.custom-checkbox .box {
+    -fx-background-image: url("../Textures/ui_glue_checkbox_normalpressed_terran.png");
+    -fx-background-size: 100% 200%;
+    -fx-background-position: 0% 0%;
+    -fx-pref-width: 2.2em;       /* 26px ≈ 1.35em (при базовом 16–20px font-size) */
+    -fx-pref-height: 2.2em;
+    -fx-background-color: transparent;
+}
+
+.custom-checkbox .box:hover {
+    -fx-background-position: 0% 200%;
+    -fx-background-image: url("../Textures/ui_glue_checkbox_normaloverpressedover_terran.png");
+}
+
+.custom-checkbox .box:pressed {
+    -fx-background-position: 0% 100%;
+    -fx-background-image: url("../Textures/ui_glue_checkbox_normaloverpressedover_terran.png");
+}
+
+.custom-checkbox .mark {
+    -fx-shape: "";
+    -fx-background-color: transparent;
+    -fx-background-image: url("../Textures/ui_glue_checkboxmark_terran.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 100% 100%;
+    -fx-background-position: center;
+    -fx-opacity: 0;
+}
+
+.custom-checkbox:selected .mark {
+    -fx-opacity: 1;
+}

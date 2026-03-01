@@ -1,0 +1,42 @@
+/* =========================================================
+   Yellow slider (CustomSlider)
+   ========================================================= */
+
+.slider.custom-slider {
+    -fx-background-color: transparent;
+
+    /* Same as your inline style */
+    -fx-control-inner-background: #1d1309;
+    -fx-base: #d8a74f;
+    -fx-focus-color: #e0b764;
+    -fx-faint-focus-color: transparent;
+
+    /* Padding (replace UiScaleHelper with fixed values) */
+    -fx-padding: 2 0 2 0;
+}
+
+/* Track styling (optional, but usually looks better) */
+.slider.custom-slider .track {
+    -fx-background-color: #1d1309;
+    -fx-background-insets: 0;
+    -fx-background-radius: 4;
+}
+
+/* Thumb styling (optional) */
+.slider.custom-slider .thumb {
+    -fx-background-color: #d8a74f;
+    -fx-background-insets: 0;
+    -fx-background-radius: 999;
+}
+/* Track (background bar) */
+.slider.custom-slider .track {
+    -fx-background-color: #1d1309;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+
+    /* Missing border / outline */
+    -fx-border-color: #d8a74f;      /* warm gold */
+    -fx-border-width: 1;
+    -fx-border-insets: 0;
+    -fx-border-radius: 6;
+}

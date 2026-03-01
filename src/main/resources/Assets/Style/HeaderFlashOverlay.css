@@ -1,0 +1,16 @@
+/* css/header-flash-overlay.css */
+
+.header-flash-overlay {
+    -fx-background-color: transparent;
+}
+
+.header-flash-border {
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 12 fill;
+    -fx-border-image-repeat: stretch;
+    -fx-border-image-insets: 0;
+
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+}

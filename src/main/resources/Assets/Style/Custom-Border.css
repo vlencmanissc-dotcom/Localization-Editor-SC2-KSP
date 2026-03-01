@@ -1,0 +1,21 @@
+.background-frame {
+    -fx-border-image-slice: 12;
+    -fx-border-image-width: 5;
+    -fx-border-image-repeat: stretch;
+    -fx-border-image-insets: 0;
+}
+
+.background-frame-highlight {
+    -fx-border-image-slice: 12;
+    -fx-border-image-width: 4;
+    -fx-border-image-repeat: stretch;
+    -fx-border-image-insets: 0;
+}
+.custom-border {
+    -fx-background-color: rgba(15, 15, 15, 0.7);
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-border-width: 1.2;
+    -fx-border-color: rgba(0, 255, 255, 0.35);
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 255, 0.20), 18, 0.35, 0, 0);
+}

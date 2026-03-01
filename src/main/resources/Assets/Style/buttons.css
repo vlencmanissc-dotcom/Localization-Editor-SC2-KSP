@@ -1,0 +1,38 @@
+/* LONG BUTTON */
+.long-button {
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 100% 100%;
+    -fx-font-family: "Arial Black";
+    -fx-padding: 4 10 4 10; /* если надо — потом масштабируешь кодом через setPadding */
+}
+
+/* GREEN */
+.long-button:green {
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, #e0ffe0, #55aa55);
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largeup_ONE_UPSCALE_APS.png");
+}
+.long-button:green:hover {
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largeover_ONE_UPSCALE_APS.png");
+}
+.long-button:green:pressed {
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largedown_ONE_UPSCALE_APS.png");
+}
+.long-button:green:disabled {
+    -fx-text-fill: gray;
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largedisabled_ONE_UPSCALE_APS.png");
+}
+.long-button:green:selected {
+    -fx-text-fill: white;
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largeselected_ONE_UPSCALE_APS.png");
+}
+
+/* RED (аналогично) */
+.long-button:red {
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, #ffe0e0, #aa5555);
+    -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largeup_ONE_UPSCALE_APS.png");
+}
+.long-button:red:hover    { -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largeover_ONE_UPSCALE_APS.png"); }
+.long-button:red:pressed  { -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largedown_ONE_UPSCALE_APS.png"); }
+.long-button:red:disabled { -fx-text-fill: gray; -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largedisabled_ONE_UPSCALE_APS.png"); }
+.long-button:red:selected { -fx-text-fill: white; -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largeselected_ONE_UPSCALE_APS.png"); }

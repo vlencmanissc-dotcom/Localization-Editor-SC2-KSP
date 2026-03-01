@@ -1,0 +1,27 @@
+/* =========================================================
+   GlowingLabel
+   ========================================================= */
+
+.label.glowing-label {
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+    /*-fx-font-size: 18px;*/
+
+    /* JavaFX Label alignment */
+    -fx-alignment: center;
+
+    /* Glow defaults (can be overridden by variants below) */
+    -fx-effect: dropshadow(gaussian, #167c59, 15, 0.7, 0, 0);
+}
+
+/* Green variant (default) */
+.label.glowing-label.glow-green {
+    -fx-text-fill: #dbfff1;
+    -fx-effect: dropshadow(gaussian, #167c59, 15, 0.7, 0, 0);
+}
+
+/* Orange variant */
+.label.glowing-label.glow-orange {
+    -fx-text-fill: #fffce0;
+    -fx-effect: dropshadow(gaussian, #7c6e16, 15, 0.7, 0, 0);
+}

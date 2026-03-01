@@ -1,0 +1,175 @@
+/*  Assets/Style/translation-progress.css
+    Nova settings-like window: ORANGE frame + BROWN inner panel
+    ProgressBar styled like your ScrollBar
+*/
+
+/* =========================
+   Scene / generic cleanup
+   ========================= */
+
+/* Если где-то случайно цеплялся старый root */
+.translation-progress-root {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-effect: null;
+}
+
+/* На всякий случай: не даём фокусу рисовать обводки */
+
+/* =========================
+   Frame + inner panel
+   ========================= */
+
+.nova-progress-frame {
+    -fx-background-color: transparent;
+
+    /* orange nova frame */
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_global_tooltip_orange.png");
+    -fx-border-image-slice: 6 6 6 6 fill;
+    -fx-border-image-width: 3;
+    -fx-border-image-repeat: stretch;
+    -fx-border-image-insets: 0;
+
+    -fx-padding: 0.9em;
+}
+/* Внутренняя зелёная рамка как SettingBox */
+.settingbox-inner-frame {
+    -fx-background-color: transparent;
+
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_normal_cropped_52_boosted.png"); /* <-- ТВОЯ КАРТИНКА */
+    -fx-border-image-repeat: stretch;
+
+    /* 9-slice: под эту “угловую” текстуру чаще всего подходит 8..12 */
+    -fx-border-image-slice: 10 fill;   /* попробуй 8, 10, 12 */
+    -fx-border-image-width: 0.45em;    /* толщина рамки, как в UI */
+    -fx-border-image-insets: 0;
+
+    /* чтобы контент не прилипал к рамке */
+    -fx-padding: 1.0em;
+}
+/* ВАЖНО: никакого border вообще, иначе может “вылезать” */
+.nova-progress-content {
+    -fx-alignment: center;
+    -fx-padding: 1.1em 1.4em 1.1em 1.4em;
+
+    -fx-background-color: rgba(35, 18, 12, 0.92);
+
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+}
+
+/* =========================
+   Text styles
+   ========================= */
+
+.nova-title {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 1.25em;
+    -fx-effect: dropshadow(gaussian, #cc5c28, 10, 0.15, 0, 0);
+}
+
+.nova-line1 {
+    -fx-text-fill: #80d2a2;
+    -fx-font-weight: bold;
+    -fx-font-size: 1.0em;
+}
+
+.nova-line2 {
+    /* batch */
+    -fx-text-fill: rgba(128, 210, 162, 0.95); /* зелёный */
+    -fx-font-size: 1.02em;                    /* ✅ больше */
+    -fx-font-weight: bold;
+    -fx-effect:
+        dropshadow(gaussian, rgba(0,0,0,0.90), 7, 0.35, 0, 1),
+        dropshadow(gaussian, rgba(0,255,168,0.30), 12, 0.18, 0, 0);
+}
+
+.nova-percent {
+    -fx-text-fill: rgba(128, 210, 162, 0.95);
+    -fx-font-size: 1.08em;
+    -fx-font-weight: bold;
+    -fx-effect:
+        dropshadow(gaussian, rgba(0,0,0,0.92), 8, 0.35, 0, 2),
+        dropshadow(gaussian, rgba(0,255,168,0.25), 12, 0.14, 0, 0);
+}
+/* =========================
+   ProgressBar = ScrollBar look
+   ========================= */
+
+.progress-bar.translation-progress-bar {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+
+    /* EXACT size like scroll-bar:horizontal */
+    -fx-min-height: 1.7em;
+    -fx-pref-height: 1.7em;
+    -fx-max-height: 1.7em;
+
+    /* убираем любые рамки от дефолтного skin */
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-border-insets: 0;
+}
+
+/* Track = scrollbar bg (no green outline) */
+.progress-bar.translation-progress-bar .track {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+
+    /* критично: у track иногда есть stroke/outline — гасим */
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-border-insets: 0;
+    -fx-effect: null;
+
+    -fx-border-image-source: url("../Textures/ui_nova_global_scrollbar_bg.png");
+    -fx-border-image-slice: 14 fill;
+    -fx-border-image-width: 5;
+    -fx-border-image-insets: 0;
+    -fx-border-image-repeat: stretch;
+
+    /* иногда зелёная линия появляется из-за background-radius/insets */
+    -fx-background-radius: 0;
+}
+
+/* Bar = thumb */
+/* Bar = thumb (тоньше внутри трека) */
+.progress-bar.translation-progress-bar .bar {
+    -fx-background-color: rgba(98, 202, 162, 1);
+    -fx-background-radius: 0px;
+
+    /* ✅ делаем заполнение меньше: отступ внутри трека */
+    -fx-background-insets: 0.38em 0.35em 0.38em 0.35em;
+
+    -fx-border-color: rgba(132, 222, 188, 1);
+    -fx-border-width: 0.1em;
+
+    /* ✅ бордер тоже “внутри”, чтобы не раздувал высоту */
+    -fx-border-insets: 0.38em 0.35em 0.38em 0.35em;
+
+    -fx-effect: dropshadow(gaussian, rgba(24, 100, 65, 1), 6, 0.6, 0, 0),
+                dropshadow(gaussian, rgba(14, 60, 39, 0.8), 12, 0.4, 0, 0),
+                dropshadow(gaussian, rgba(7, 30, 20, 0.6), 18, 0.2, 0, 0);
+}
+.progress-bar.translation-progress-bar:hover .bar {
+    -fx-background-color: rgba(156, 255, 210, 1);
+    -fx-border-color: rgba(173, 255, 221, 1);
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 168, 1), 9, 0.4, 0, 0);
+}
+
+/* =========================
+   Extra: safe reset for regions inside
+   ========================= */
+
+.nova-progress-frame > * {
+    -fx-border-color: transparent;
+}

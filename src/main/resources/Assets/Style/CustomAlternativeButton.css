@@ -1,0 +1,29 @@
+/* =========================================================
+   Alternative Button (Yellow Medium)
+   Pure visuals only — Java contains zero style strings.
+   ========================================================= */
+
+.alt-button {
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 100% 100%;
+    -fx-padding: 0;
+
+    -fx-background-image: url("/Assets/Textures/ui_nova_global_mediumbutton_yellow_normal.png");
+    -fx-text-fill: linear-gradient(from 0% 0% to 0% 100%, #fff8dc, #f4c542);
+}
+
+.alt-button:hover {
+    -fx-background-image: url("/Assets/Textures/ui_nova_global_mediumbutton_yellow_over.png");
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, #ffeaa7, #e6b800);
+}
+
+.alt-button:pressed {
+    -fx-background-image: url("/Assets/Textures/ui_nova_global_mediumbutton_yellow_down.png");
+    -fx-text-fill: linear-gradient(from 0% 0% to 0% 100%, #e6b800, #ffd700);
+}
+
+.alt-button:disabled {
+    -fx-background-image: url("/Assets/Textures/ui_nova_global_mediumbutton_yellow_disabled.png");
+    -fx-opacity: 0.85;
+}

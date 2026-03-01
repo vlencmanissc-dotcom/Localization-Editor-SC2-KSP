@@ -1,0 +1,29 @@
+/* =========================================================
+   Close Button (X)
+   Pure visuals — state-driven textures via pseudo-classes.
+   ========================================================= */
+
+.close-button {
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 100% 100%;
+    -fx-padding: 0;
+
+    -fx-border-color: transparent;
+
+    /* Normal state */
+    -fx-background-image: url("/Assets/Textures/button_normal_YELLOW.png");
+}
+
+.close-button:hover {
+    -fx-background-image: url("/Assets/Textures/button_over_YELLOW.png");
+}
+
+.close-button:pressed {
+    -fx-background-image: url("/Assets/Textures/button_overpressed_YELLOW.png");
+}
+
+/* Optional: make it slightly dim when disabled */
+.close-button:disabled {
+    -fx-opacity: 0.6;
+}

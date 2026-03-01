@@ -1,0 +1,121 @@
+/* =========================================================================
+   CustomLanguageButton.css
+   StarCraft-like language button skin (NORMAL / HOVER / PRESSED / DISABLED)
+
+   Goals:
+   - Text gradients EXACTLY like in the original Java code
+   - No "jumping" / no shrinking on hover/press (fixed insets + scale lock)
+   - Only textures + text gradient change per state
+   ========================================================================= */
+
+
+/* -------------------------------------------------------------------------
+   Base (NORMAL)
+   ------------------------------------------------------------------------- */
+.button.lang-btn {
+    /* Remove default JavaFX button look */
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+    -fx-background-size: 100% 100%;
+
+    /* HARD LOCK: prevent any layout/label shifting */
+    -fx-padding: 0;
+    -fx-label-padding: 0;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+
+    /* HARD LOCK: prevent any global hover scale rules */
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+    -fx-translate-x: 0;
+    -fx-translate-y: 0;
+
+    /* Center label */
+    -fx-alignment: center;
+    -fx-content-display: center;
+    -fx-text-alignment: center;
+
+    /* Text like in Java (NORMAL) */
+    -fx-font-family: "Arial Black";
+    -fx-text-fill: linear-gradient(from 0% 0% to 0% 100%, #fff8dc, #f4c542);
+
+    /* Glow approximation (constant base glow) */
+    -fx-effect: dropshadow(gaussian, rgba(255, 245, 180, 0.35), 10, 0.2, 0, 0);
+
+    /* Texture (NORMAL) */
+    -fx-background-image: url("/Assets/Textures/ui_glues_yellowbuttons_squarebackbuttonnormal.png");
+
+    /* Disable focus ring */
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+
+/* -------------------------------------------------------------------------
+   HOVER
+   - Text gradient EXACTLY like in your Java code:
+     linear-gradient(..., #ffeaa7, #e6b800)
+   ------------------------------------------------------------------------- */
+.button.lang-btn:hover {
+    -fx-background-image: url("/Assets/Textures/ui_glues_yellowbuttons_squarebackbuttonover.png");
+
+    /* Java hover text gradient */
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, #ffeaa7, #e6b800);
+
+    /* Stronger glow on hover (like Glow level 0.25) */
+    -fx-effect: dropshadow(gaussian, rgba(255, 245, 180, 0.55), 14, 0.25, 0, 0);
+
+    /* Keep geometry locked */
+    -fx-padding: 0;
+    -fx-label-padding: 0;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+}
+
+
+/* -------------------------------------------------------------------------
+   PRESSED
+   - Text gradient EXACTLY like in your Java code:
+     linear-gradient(..., #e6b800, #ffd700)
+   ------------------------------------------------------------------------- */
+.button.lang-btn:pressed {
+    -fx-background-image: url("/Assets/Textures/ui_glues_yellowbuttons_squarebackbuttondown.png");
+
+    /* Java pressed text gradient */
+    -fx-text-fill: linear-gradient(from 0% 0% to 0% 100%, #e6b800, #ffd700);
+
+    /* Slightly reduced glow (optional, can be same as normal if you want) */
+    -fx-effect: dropshadow(gaussian, rgba(255, 245, 180, 0.30), 9, 0.18, 0, 0);
+
+    /* Keep geometry locked */
+    -fx-padding: 0;
+    -fx-label-padding: 0;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+}
+
+
+/* -------------------------------------------------------------------------
+   DISABLED
+   - In your Java: Glow level = 0, opacity = 1, disabled texture
+   ------------------------------------------------------------------------- */
+.button.lang-btn:disabled {
+    -fx-opacity: 1;
+    -fx-background-image: url("/Assets/Textures/ui_glues_yellowbuttons_squarebackbuttondisabled.png");
+
+    /* No glow */
+    -fx-effect: none;
+
+    /* Keep geometry locked */
+    -fx-padding: 0;
+    -fx-label-padding: 0;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+}

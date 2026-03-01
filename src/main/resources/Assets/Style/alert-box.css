@@ -1,0 +1,23 @@
+/* =========================================================
+   Alert dialog root container
+   ========================================================= */
+.alert-root {
+    /* Global dialog styles can go here */
+}
+
+/* =========================================================
+   Main description label
+   White bold text + blue glow (KEEP)
+   ========================================================= */
+.alert-description {
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-alignment: center;
+
+    /* Blue glow around the text */
+    -fx-effect: dropshadow(gaussian,
+                           rgba(0, 160, 255, 0.95),
+                           28,
+                           0.65,
+                           0, 0);
+}

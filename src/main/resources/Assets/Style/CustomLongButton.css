@@ -1,0 +1,74 @@
+/* =========================================================
+   Base long button style
+   ---------------------------------------------------------
+   Shared layout and rendering settings.
+   Textures are applied in color-specific sections below.
+   ========================================================= */
+
+.button.long-btn {
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 100% 100%;
+}
+
+
+/* =========================================================
+   GREEN BUTTON VARIANT
+   ========================================================= */
+
+.button.long-btn.green {
+    /* Default (UP) state */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largeup_ONE_UPSCALE_APS.png");
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, #e0ffe0, #55aa55);
+}
+
+.button.long-btn.green:hover {
+    /* Mouse hover state */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largeover_ONE_UPSCALE_APS.png");
+}
+
+.button.long-btn.green:pressed {
+    /* Mouse pressed state */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largedown_ONE_UPSCALE_APS.png");
+}
+
+.button.long-btn.green:selected {
+    /* Custom selected state (pseudo-class controlled from Java) */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largeselected_ONE_UPSCALE_APS.png");
+}
+
+.button.long-btn.green:disabled {
+    /* Disabled state */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largedisabled_ONE_UPSCALE_APS.png");
+}
+
+
+/* =========================================================
+   RED BUTTON VARIANT
+   ========================================================= */
+
+.button.long-btn.red {
+    /* Default (UP) state */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largeup_ONE_UPSCALE_APS.png");
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, #ffe0e0, #aa5555);
+}
+
+.button.long-btn.red:hover {
+    /* Mouse hover state */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largeover_ONE_UPSCALE_APS.png");
+}
+
+.button.long-btn.red:pressed {
+    /* Mouse pressed state */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largedown_ONE_UPSCALE_APS.png");
+}
+
+.button.long-btn.red:selected {
+    /* Custom selected state (pseudo-class controlled from Java) */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largeselected_ONE_UPSCALE_APS.png");
+}
+
+.button.long-btn.red:disabled {
+    /* Disabled state */
+    -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largedisabled_ONE_UPSCALE_APS.png");
+}
