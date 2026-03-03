@@ -41,7 +41,7 @@ On Windows, make sure to check **"Add Python to PATH"** during installation.
 
 ---
 
-#### Windows Additional Requirement
+### Windows Additional Requirement
 
 LibreTranslate requires Microsoft Visual C++ Redistributable (x64).
 
@@ -50,7 +50,7 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe
 
 ---
 
-#### Install LibreTranslate
+### Install LibreTranslate
 
 ```bash
 python -m pip install --upgrade pip
@@ -59,20 +59,54 @@ python -m pip install libretranslate
 
 ---
 
-#### Start LibreTranslate server
+### Install OnnxRuntime (Required)
 
-Install OnnxRuntime (Required)
-
-LibreTranslate requires ONNX Runtime to execute translation models.
+LibreTranslate requires **ONNX Runtime** to execute translation models.
 
 On Windows, install the recommended version:
 
+```bash
 python -m pip install onnxruntime==1.16.3
+```
 
 If you need to reinstall:
 
+```bash
 python -m pip uninstall onnxruntime -y
 python -m pip install onnxruntime==1.16.3
+```
+
+⚠ If you see a warning that the `Scripts` directory is not on `PATH`
+(for example `Python311\Scripts`), either add it to `PATH`
+or run `libretranslate.exe` directly from that folder.
+
+---
+
+### Start LibreTranslate server
+
+⚠ Do **NOT** use:
+
+```bash
+python -m libretranslate --host 127.0.0.1 --port 5000
+```
+
+It may produce:
+
+```
+No module named libretranslate.__main__; 'libretranslate' is a package and cannot be directly executed
+```
+
+✅ Correct way to start the server:
+
+```bash
+libretranslate --host 127.0.0.1 --port 5000
+```
+
+After starting, you should see:
+
+```
+Running on http://127.0.0.1:5000
+```
 
 The application expects LibreTranslate running at:
 
