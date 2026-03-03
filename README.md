@@ -44,7 +44,7 @@ mvn -v
 
 Required only if you want to use LibreTranslate.
 
-Recommended Python versions: **3.10–3.12**  
+Recommended Python versions: **3.11.9**  
 Very new Python versions (for example 3.14+) may not be supported yet.
 
 Download Python from:  
