@@ -67,7 +67,13 @@ https://aka.ms/vs/17/release/vc_redist.x64.exe
 
 ```bash
 python -m pip install --upgrade pip
+
+python -m pip install --upgrade pip
+
+python -m pip install "wheel==0.45.1"
+
 python -m pip install libretranslate
+
 ```
 
 ---
@@ -103,7 +109,7 @@ or run `libretranslate.exe` directly from that folder.
 Start the LibreTranslate server using the following command:
 
 ```bash
-libretranslate --host 127.0.0.1 --port 5000
+libretranslate --host 127.0.0.1 --port 5000 --load-only en,ru,de,es,fr,it,pl,pb,ko,zh,zt
 ```
 
 After starting, you should see:
