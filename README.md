@@ -106,8 +106,8 @@ python -m pip install libretranslate
 Start the LibreTranslate server using the following command:
 
 ```bash
-libretranslate --update-models```
-```
+libretranslate --update-models
+
 libretranslate --host 127.0.0.1 --port 5000 --load-only en,ru,de,es,fr,it,pl,pb,ko,zh,zt
 ```
 
