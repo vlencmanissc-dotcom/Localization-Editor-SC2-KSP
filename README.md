@@ -105,6 +105,7 @@ Install the compatible version:
 
 ```bash
 python -m pip install requests==2.31.0
+```
 ---
 
 ### Start LibreTranslate server
