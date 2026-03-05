@@ -77,7 +77,7 @@ If you need to reinstall:
 
 ```bash
 python -m pip uninstall onnxruntime -y
-python -m pip install onnxruntime==1.16.3
+python -m pip install onnxruntime==1.24.1
 ```
 
 ⚠ If you see a warning that the `Scripts` directory is not on `PATH`
