@@ -1,7 +1,7 @@
 # Localization-Editor-SC2-KSP
 
 A localization editor for StarCraft II maps and mods.  
-Opens `GameStrings.txt` files, translates them into selected languages, and automatically saves them into the correct `.SC2Data/LocalizedData` directory structure.
+Opens `GameStrings.txt`,`ObjectStrings.txt`,`TriggerStrings.txt` files, translates them into selected languages, and automatically saves them into the correct `.SC2Data/LocalizedData` directory structure.
 
 ---
 
@@ -112,9 +112,9 @@ Later starts:
 libretranslate --load-only en,ru,de,es,fr,it,pl,pt,ko,zh,zt
 ```
 If everything is correct, you should see:
-```
+``
 Running on http://127.0.0.1:5000
-```
+``
 
 The application expects LibreTranslate running at:
 
