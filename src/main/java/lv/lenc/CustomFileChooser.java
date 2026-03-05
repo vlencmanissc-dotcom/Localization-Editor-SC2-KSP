@@ -1,5 +1,6 @@
 package lv.lenc;
 
+import javafx.application.Platform;
 import javafx.scene.control.Button;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
@@ -57,12 +58,14 @@ public class CustomFileChooser extends StackPane implements Disabable {
 
         button.setOnAction(e -> {
             Stage stage = (Stage) getScene().getWindow();
-            File file = openFile(stage);
-            if (file != null) {
-                selectedFile = file;
-                readFile();
-                fileSelectable.onSelect(file);
-            }
+            Platform.runLater(() -> {
+                File file = openFile(stage);
+                if (file != null) {
+                    selectedFile = file;
+                    readFile();
+                    fileSelectable.onSelect(file);
+                }
+            });
         });
 
         getChildren().add(button);

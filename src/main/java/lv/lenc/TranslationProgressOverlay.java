@@ -1,46 +1,34 @@
 package lv.lenc;
 
-import com.almasb.fxgl.ui.UIFactoryService;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import javafx.stage.Window;
 
-public final class TranslationProgressWindow {
+public final class TranslationProgressOverlay extends StackPane {
 
-    private final Stage stage;
     private final LocalizationManager localization;
 
-    private final Label title;
-    private final Label line1;
-    private final Label line2;
-    private final Label percent;
-    private final ProgressBar bar;
+    private final Label title = new Label();
+    private final Label line1 = new Label();
+    private final Label line2 = new Label();
+    private final Label percent = new Label("0%");
+    private final ProgressBar bar = new ProgressBar(0);
 
-    public TranslationProgressWindow(Stage owner, LocalizationManager localization) {
+    public TranslationProgressOverlay(LocalizationManager localization) {
         this.localization = localization;
 
-        stage = new Stage(StageStyle.TRANSPARENT);
-        stage.initOwner(owner);
-        stage.initModality(Modality.NONE);
-        stage.setResizable(false);
-        stage.setAlwaysOnTop(false);
-        stage.setOnCloseRequest(e -> e.consume());
+        setPickOnBounds(false);
+        setMouseTransparent(true);
+        setVisible(false);
+        setManaged(false);
 
-        title = new Label();
-        line1 = new Label();
-        line2 = new Label();
-        percent = new Label("0%");
-        bar = new ProgressBar(0);
+        addEventFilter(MouseEvent.ANY, e -> e.consume());
 
-            // content
         VBox content = new VBox(8, title, line1, line2, percent, bar);
         content.setAlignment(Pos.CENTER);
 
@@ -48,32 +36,29 @@ public final class TranslationProgressWindow {
         inner.setAlignment(Pos.CENTER);
         inner.getStyleClass().add("settingbox-inner-frame");
 
-
         VBox frame = new VBox(inner);
         frame.getStyleClass().add("nova-progress-frame");
 
-        Scene scene = new Scene(frame);
-        scene.getStylesheets().add(
-                TranslationProgressWindow.class
-                        .getResource("/Assets/Style/translation-progress.css")
-                        .toExternalForm()
-        );
-        stage.setScene(scene);
+        frame.setMinWidth(UiScaleHelper.scaleX(520));
+        frame.setPrefWidth(UiScaleHelper.scaleX(520));
+        frame.setMaxWidth(UiScaleHelper.scaleX(520));
 
-        // CSS classes for controls
+        frame.setMinHeight(UiScaleHelper.scaleY(190));
+        frame.setPrefHeight(UiScaleHelper.scaleY(190));
+        frame.setMaxHeight(UiScaleHelper.scaleY(190));
+
+        StackPane.setAlignment(frame, Pos.TOP_CENTER);
+        StackPane.setMargin(frame, new Insets(80, 0, 0, 0));
+
+        getChildren().add(frame);
+
         title.getStyleClass().add("nova-title");
         line1.getStyleClass().add("nova-line1");
         line2.getStyleClass().add("nova-line2");
         percent.getStyleClass().add("nova-percent");
         bar.getStyleClass().add("translation-progress-bar");
-
-    // widths match the main panel
-        frame.setMinWidth(520);
-        frame.setPrefWidth(520);
-
-        bar.setPrefWidth(420);
-        bar.setMaxWidth(420);
-        scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+        bar.setMaxWidth(Double.MAX_VALUE);
+        bar.prefWidthProperty().bind(frame.widthProperty().multiply(0.90));
     }
 
     public void showReset() {
@@ -88,19 +73,9 @@ public final class TranslationProgressWindow {
             percent.setText("0%");
             bar.setProgress(0);
 
-            if (!stage.isShowing()) stage.show();
-            stage.sizeToScene();
-
-            // top-centered relative to the main window
-            Window owner = stage.getOwner();
-            if (owner != null) {
-                double x = owner.getX() + (owner.getWidth() - stage.getWidth()) / 2.0;
-                double y = owner.getY() + 80;
-                stage.setX(Math.max(0, x));
-                stage.setY(Math.max(0, y));
-            }
-
-            stage.toFront();
+            setManaged(true);
+            setVisible(true);
+            toFront();
         });
     }
 
@@ -114,7 +89,6 @@ public final class TranslationProgressWindow {
         });
     }
 
-    // accepts string in format "line1||line2"
     public void updateFromProgress(double value01, String packedText) {
         String l1 = "";
         String l2 = "";
@@ -126,13 +100,15 @@ public final class TranslationProgressWindow {
         update(value01, l1, l2);
     }
 
-    // use hide instead of close — allows reopening multiple times
     public void close() {
         if (Platform.isFxApplicationThread()) {
-            stage.hide();
+            setVisible(false);
+            setManaged(false);
         } else {
-            Platform.runLater(stage::hide);
+            Platform.runLater(() -> {
+                setVisible(false);
+                setManaged(false);
+            });
         }
     }
-
 }

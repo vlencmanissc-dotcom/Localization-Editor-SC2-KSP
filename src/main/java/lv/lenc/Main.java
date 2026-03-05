@@ -5,7 +5,6 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.layout.*;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -49,6 +48,8 @@ public class Main extends Application {
 
     private boolean translateToAll = false;
     private Process libreProcess;
+    private TranslationProgressOverlay progressOverlay;
+    private StackPane root;
     public static void main(String[] args) {
         launch(args);
     }
@@ -59,7 +60,7 @@ public class Main extends Application {
 
         initLocalization();
         ensureLibreTranslate();
-
+        progressOverlay = new TranslationProgressOverlay(localization);
         CustomTableView tableView = createTableView();
         createControls(primaryStage, tableView);
         wireEvents(primaryStage, tableView);
@@ -241,7 +242,7 @@ public class Main extends Application {
     // ---------------------------
 
     private void wireEvents(Stage primaryStage, CustomTableView tableView) {
-        final TranslationProgressWindow progressWin = new TranslationProgressWindow(primaryStage, localization);
+        final TranslationProgressOverlay progressWin = this.progressOverlay;
 
         translateChooseAll.setOnAction(e -> {
             translateToAll = !translateToAll;
@@ -264,10 +265,11 @@ public class Main extends Application {
         });
 
         quitButton.setOnAction(e -> {
-            boolean exitConfirmed = AlertBox.display(primaryStage, BoxAlertDescription, localization);// show exit confirmation dialog NO TEXT
-            if (exitConfirmed) {
-                Platform.exit();
-            }
+            ExitConfirmDialog.showConfirm(root, BoxAlertDescription, localization, exitConfirmed -> {
+                if (exitConfirmed) {
+                    Platform.exit();
+                }
+            });
         });
 
         translate.setTranslateStarter(() ->
@@ -295,14 +297,10 @@ public class Main extends Application {
             });
         });
 
-        settingButton.setOnAction(e -> {
-            if (settingButton.isSelected()) return;
-            settingButton.select();
-                // backgroundLayer/borderTable/tableView available after buildScene => show is called there
-        });
+
     }
 
-    private void runTranslate(CustomTableView tableView, TranslationProgressWindow progressWin) {
+    private void runTranslate(CustomTableView tableView, TranslationProgressOverlay progressWin) {
         languageDropdown.disable(true);
         translateChooseAll.disable(true);
 
@@ -332,8 +330,8 @@ public class Main extends Application {
 
                 progressWin.update(1.0, srcUi + " -> " + targetUi, localization.get("translating.done"));
             }
-        } finally {
-            progressWin.close();
+        }finally {
+            if (progressWin != null) progressWin.close();
             Platform.runLater(() -> {
                 translateChooseAll.disable(false);
                 applyTranslateModeUI();
@@ -363,7 +361,6 @@ public class Main extends Application {
                 fileManager,
                 settingButton
         );
-
         layoutMain.setMaxHeight(Screen.getPrimary().getBounds().getHeight());
         VBox.setVgrow(layoutMain, Priority.ALWAYS);
 
@@ -400,17 +397,23 @@ public class Main extends Application {
         Object[] ui = SettingsManager.loadUiSettings();
         SettingsManager.applyUiSettings(ui, backgroundLayer, borderTable);
 
-        // now we can safely wire setting button show
+
         settingButton.setOnAction(e -> {
             if (settingButton.isSelected()) return;
             settingButton.select();
-            SettingBox.show(localization, backgroundLayer, settingButton, this, borderTable, tableView);
+            SettingBox.show(root, localization, backgroundLayer, settingButton, this, borderTable, tableView);
         });
 
-        mainScene = new Scene(
-                layout,
-                UiScaleHelper.SCREEN_WIDTH,
-                UiScaleHelper.SCREEN_HEIGHT
+
+        root = new StackPane();
+        root.getChildren().addAll(layout, this.progressOverlay);
+
+        mainScene = new Scene(root, UiScaleHelper.SCREEN_WIDTH, UiScaleHelper.SCREEN_HEIGHT);
+
+        mainScene.getStylesheets().add(
+                TranslationProgressOverlay.class
+                        .getResource("/Assets/Style/translation-progress.css")
+                        .toExternalForm()
         );
 
         mainScene.getStylesheets().addAll(
@@ -450,6 +453,23 @@ public class Main extends Application {
             primaryStage.setOpacity(1.0);
             primaryStage.toFront();
             primaryStage.requestFocus();
+
+
+            Platform.runLater(() -> {
+                root.applyCss();
+                root.layout();
+
+
+                Platform.runLater(() -> {
+                    root.applyCss();
+                    root.layout();
+
+
+                    SettingBox.prewarm(root, localization, backgroundLayer, settingButton, this, borderTable, tableView);
+                    ExitConfirmDialog.prewarm(root, BoxAlertDescription, localization);
+
+                });
+            });
         });
     }
 
