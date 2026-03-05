@@ -115,8 +115,9 @@ First start (downloads translation models):
 
 ```bash
 libretranslate --load-only en,ru,de,es,fr,it,pl,pt,ko,zh,zt --update-models
-
+```
 Later starts:
+
 ```bash
 libretranslate --load-only en,ru,de,es,fr,it,pl,pt,ko,zh,zt
 ```
