@@ -137,9 +137,7 @@ If LibreTranslate is not running, auto-translation will not work.
 Test LibreTranslate (Optional)
 You can test the translation server with:
 ```bash
-curl -X POST http://127.0.0.1:5000/translate \
-  -H "Content-Type: application/json" \
-  -d "{\"q\":\"Hello world\",\"source\":\"en\",\"target\":\"de\"}"
+curl -X POST http://127.0.0.1:5000/translate \-H "Content-Type: application/json" \-d "{\"q\":\"Hello world\",\"source\":\"en\",\"target\":\"de\"}"
 ```
   Expected output example:
   ```bash
