@@ -1,12 +1,12 @@
 package lv.lenc;
 
 import javafx.animation.*;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
-import javafx.application.Platform;
 
 public class CustomBorder extends StackPane {
     ImageView bg;
@@ -45,19 +45,19 @@ public class CustomBorder extends StackPane {
 
         bgH.setClip(bgF);
 
-        this.setAlignment(lT, Pos.TOP_RIGHT);
+        setAlignment(lT, Pos.TOP_RIGHT);
         lT.setTranslateX(-UiScaleHelper.scaleX(348));
         lT.setTranslateY(-UiScaleHelper.scaleY(10));
 
-        this.setAlignment(lB, Pos.BOTTOM_CENTER);
+        setAlignment(lB, Pos.BOTTOM_CENTER);
         lB.setTranslateX(-UiScaleHelper.scaleX(165));
         lB.setTranslateY(UiScaleHelper.scaleY(5));
 
-        this.setAlignment(lS, Pos.CENTER_LEFT);
+        setAlignment(lS, Pos.CENTER_LEFT);
         lS.setTranslateY(-UiScaleHelper.scaleY(85));
         lS.setTranslateX(UiScaleHelper.scaleX(142));
 
-        this.setAlignment(lSR, Pos.BOTTOM_RIGHT);
+        setAlignment(lSR, Pos.BOTTOM_RIGHT);
         lSR.setTranslateY(-UiScaleHelper.scaleY(46));
         lSR.setTranslateX(-UiScaleHelper.scaleX(140));
 
@@ -66,7 +66,7 @@ public class CustomBorder extends StackPane {
                 new double[]{0, 2.35, 2.95, 3.85, 5.25, 13.5},
                 new double[]{0, 0, 0.25, 0.25, 0, 0, 0}
         );
-        this.setAlignment(scan1, Pos.TOP_LEFT);
+        setAlignment(scan1, Pos.TOP_LEFT);
         scan1.setTranslateX(-UiScaleHelper.scaleX(10));
         scan1.setTranslateY(-UiScaleHelper.scaleY(40));
 
@@ -75,7 +75,7 @@ public class CustomBorder extends StackPane {
                 new double[]{0, 2, 3.4, 4.6, 9.0},
                 new double[]{0, 0, 0.25, 0, 0}
         );
-        this.setAlignment(scan2, Pos.BOTTOM_RIGHT);
+        setAlignment(scan2, Pos.BOTTOM_RIGHT);
         scan2.setTranslateX(UiScaleHelper.scaleX(15));
         scan2.setTranslateY(UiScaleHelper.scaleY(10));
 
@@ -84,7 +84,7 @@ public class CustomBorder extends StackPane {
                 new double[]{0, 0.65, 2.55, 3.85, 8.0},
                 new double[]{0, 0, 0.25, 0, 0}
         );
-        this.setAlignment(scan3, Pos.TOP_RIGHT);
+        setAlignment(scan3, Pos.TOP_RIGHT);
         scan3.setTranslateX(-UiScaleHelper.scaleX(40));
         scan3.setTranslateY(-UiScaleHelper.scaleY(79));
 

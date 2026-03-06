@@ -1,15 +1,16 @@
 package lv.lenc;
+
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Pos;
 import javafx.scene.layout.StackPane;
-import lv.lenc.LocalizationManager;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -18,7 +19,7 @@ public final class TranslateCancelSaveButton extends StackPane {
     public enum State { TRANSLATE, CANCEL, SAVE }
 
     private final LocalizationManager localization;
-    private final MyButton button; // your styled button instance
+    private final MyButton button;
 
     private final ObjectProperty<State> state = new SimpleObjectProperty<>(State.TRANSLATE);
     private final AtomicBoolean cancelRequested = new AtomicBoolean(false);
@@ -28,7 +29,13 @@ public final class TranslateCancelSaveButton extends StackPane {
     private Runnable saveAction = () -> {};
     private Runnable cancelHook = () -> {};
     private Consumer<Throwable> errorHandler = Throwable::printStackTrace;
+
     private volatile Thread runningThread;
+
+    // защита от старых completion
+    private final AtomicLong runIdGen = new AtomicLong(0);
+    private volatile long activeRunId = 0;
+
     public TranslateCancelSaveButton(LocalizationManager localization,
                                      String texturePath,
                                      boolean isGreen,
@@ -45,12 +52,12 @@ public final class TranslateCancelSaveButton extends StackPane {
                 strengthGlowMAX
         );
 
-        // bind disableProperty so external setDisable(true) disables the internal button
         button.disableProperty().bind(disableProperty());
 
         getChildren().add(button);
         StackPane.setAlignment(button, Pos.CENTER_RIGHT);
         setMaxWidth(Double.MAX_VALUE);
+
         state.addListener((obs, oldS, newS) -> applyText(newS));
         applyText(State.TRANSLATE);
         state.set(State.TRANSLATE);
@@ -58,14 +65,13 @@ public final class TranslateCancelSaveButton extends StackPane {
         button.setOnAction(e -> handleClick());
     }
 
+    public static CompletableFuture<Void> runAsync(Runnable work, Consumer<Thread> onThread) {
+        return CompletableFuture.runAsync(() -> {
+            Thread t = Thread.currentThread();
+            onThread.accept(t);
+            work.run();
+        });
 
-
-    private void applyText(State s) {
-        switch (s) {
-            case TRANSLATE -> button.setText(localization.get("button.translate"));
-            case CANCEL    -> button.setText(localization.get("button.translate.cancel"));
-            case SAVE      -> button.setText(localization.get("button.translate.save"));
-        }
     }
 
     public void refreshText() {
@@ -96,11 +102,23 @@ public final class TranslateCancelSaveButton extends StackPane {
         return state;
     }
 
+    private void applyText(State s) {
+        switch (s) {
+            case TRANSLATE -> button.setText(localization.get("button.translate"));
+            case CANCEL -> button.setText(localization.get("button.translate.cancel"));
+            case SAVE -> button.setText(localization.get("button.translate.save"));
+        }
+    }
+
+    public void setRunningThread(Thread thread) {
+        this.runningThread = thread;
+    }
+
     private void handleClick() {
         switch (state.get()) {
             case TRANSLATE -> startTranslate();
-            case CANCEL    -> cancel();
-            case SAVE      -> save();
+            case CANCEL -> cancel();
+            case SAVE -> save();
         }
     }
 
@@ -111,39 +129,69 @@ public final class TranslateCancelSaveButton extends StackPane {
         }
 
         cancelRequested.set(false);
+        long runId = runIdGen.incrementAndGet();
+        activeRunId = runId;
         state.set(State.CANCEL);
-      //  button.setDisable(false); // button.setDisable(false); // just in case
 
         try {
             running = translateStarter.get();
             if (running == null) {
-                state.set(State.TRANSLATE);
+                if (activeRunId == runId) {
+                    state.set(State.TRANSLATE);
+                }
                 errorHandler.accept(new IllegalStateException("Translate starter returned null future"));
                 return;
             }
 
             running.whenComplete((ok, ex) -> Platform.runLater(() -> {
+                if (activeRunId != runId) {
+                    return; // старый completion игнорируем
+                }
+
                 if (cancelRequested.get()) {
                     state.set(State.TRANSLATE);
                     return;
                 }
+
                 if (ex != null) {
                     state.set(State.TRANSLATE);
                     errorHandler.accept(ex);
                     return;
                 }
+
                 state.set(State.SAVE);
             }));
 
         } catch (Throwable t) {
-            state.set(State.TRANSLATE);
+            if (activeRunId == runId) {
+                state.set(State.TRANSLATE);
+            }
             errorHandler.accept(t);
+        }
+    }
+
+    public void requestCancel() {
+        Platform.runLater(this::cancel);
+    }
+
+    private void save() {
+        try {
+            saveAction.run();
+        } catch (Throwable t) {
+            errorHandler.accept(t);
+        } finally {
+            state.set(State.TRANSLATE);
         }
     }
 
     private void cancel() {
         cancelRequested.set(true);
-        try { cancelHook.run(); } catch (Throwable ignored) {}
+        activeRunId = runIdGen.incrementAndGet();
+
+        try {
+            cancelHook.run();
+        } catch (Throwable ignored) {
+        }
 
         if (runningThread != null) {
             runningThread.interrupt();
@@ -156,23 +204,5 @@ public final class TranslateCancelSaveButton extends StackPane {
         }
 
         state.set(State.TRANSLATE);
-    }
-    public void requestCancel() {
-        Platform.runLater(this::cancel);
-    }
-
-
-    private void save() {
-        try {
-            saveAction.run();
-        } catch (Throwable t) {
-            errorHandler.accept(t);
-        } finally {
-            state.set(State.TRANSLATE);
-        }
-    }
-
-    public static CompletableFuture<Void> runAsync(Runnable work) {
-        return CompletableFuture.runAsync(work);
     }
 }

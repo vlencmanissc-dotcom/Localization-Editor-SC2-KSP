@@ -1,10 +1,11 @@
 // TranslationService.java
 package lv.lenc;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.GsonBuilder;
 import okhttp3.Dispatcher;
 import okhttp3.OkHttpClient;
+import org.jsoup.Jsoup;
 import org.jsoup.parser.Parser;
 import retrofit2.Call;
 import retrofit2.Retrofit;
@@ -15,16 +16,8 @@ import java.io.IOException;
 import java.text.Normalizer;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Node;
-import org.jsoup.nodes.TextNode;
-import org.jsoup.select.NodeTraversor;
-import org.jsoup.select.NodeVisitor;
 
 public final class TranslationService {
 
@@ -118,7 +111,7 @@ public final class TranslationService {
     }
 
     // example usage inside translatePreservingTags/translate...
-    private static <T> T executeTracked(Call<T> call) throws Exception {
+    private static <T> T executeTracked(Call<T> call) throws IOException {
         inFlight.set(call);
         try {
             return call.execute().body();
@@ -301,7 +294,7 @@ public final class TranslationService {
             List<String> targetsIso,
             java.util.function.BooleanSupplier stop,
             ProgressListener progress
-    ) throws Exception {
+    ) throws IOException {
 
         if (texts == null) texts = java.util.Collections.emptyList();
         if (targetsIso == null || targetsIso.isEmpty())
@@ -333,22 +326,25 @@ public final class TranslationService {
             int langNo = i + 1;
 
             //
-            List<String> uniqOut = translatePreservingTagsBatched(
-                    api, unique, sourceIso, targetIso, stop,
-                    (partFraction, msg) -> {
-                        if (progress == null) return;
+            List<String> uniqOut;
+            try {
+                uniqOut = translatePreservingTagsBatched(
+                        api, unique, sourceIso, targetIso, stop,
+                        (partFraction, msg) -> {
+                            if (progress == null) return;
 
-                        double all = ((langNo - 1) + partFraction) / (double) totalLangs;
+                            double all = ((langNo - 1) + partFraction) / (double) totalLangs;
 
+                            String line1 = sourceIso + " -> " + targetIso + " (" + langNo + "/" + totalLangs + ")";
+                            String line2 = (msg == null ? "" : msg);
 
-                        String line1 = sourceIso + " -> " + targetIso + " (" + langNo + "/" + totalLangs + ")";
-                        String line2 = (msg == null ? "" : msg);
-
-
-                        progress.onProgress(all, line1 + "||" + line2);
-
-                    }
-            );
+                            progress.onProgress(all, line1 + "||" + line2);
+                        }
+                );
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Translation interrupted", e);
+            }
 
             if (stop != null && stop.getAsBoolean()) return out;
 
@@ -455,7 +451,7 @@ public final class TranslationService {
         body.put("target", target);
         body.put("format", "text"); // 
 
-        var resp = api.translateAny(body).execute();
+        var resp = executeTrackedResponse(api.translateAny(body));
         int code = (resp != null ? resp.code() : -1);
         if (!resp.isSuccessful() || resp.body() == null) {
             String err = resp.errorBody() != null ? resp.errorBody().string() : "null";
@@ -477,10 +473,20 @@ public final class TranslationService {
         return out;
     }
 
+    private static <T> retrofit2.Response<T> executeTrackedResponse(Call<T> call) throws IOException {
+        inFlight.set(call);
+        try {
+            return call.execute();
+        } finally {
+            inFlight.compareAndSet(call, null);
+        }
+    }
+
     public static List<String> translatePreservingTagsBatched(
             LibreTranslateApi api,
             List<String> texts,
             String source,
+            java.util.function.BooleanSupplier stop,
             String target
     ) throws IOException, InterruptedException {
 
@@ -517,10 +523,22 @@ public final class TranslationService {
                 } catch (IOException e) {
                     last = e;
                     long sleep = Math.min(700L * (1L << (attempt - 1)), 5_000L);
+
+                    if (stop != null && stop.getAsBoolean()) {
+                        return out;
+                    }
+
                     System.out.println("[LT] preserveTags.batch " + batchNo +
                             " failed (" + e.getClass().getSimpleName() + "): " + e.getMessage() +
                             " -> retry in " + sleep + "ms");
-                    Thread.sleep(sleep);
+
+                    try {
+                        Thread.sleep(sleep);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return out;
+                    }
+
                     if (attempt == 3) throw last;
                 }
             }
@@ -625,15 +643,7 @@ public final class TranslationService {
         return batches;
     }
 
-    // ===== example usage instead of translateBatch(...) =====
-    public static List<String> translateOnceEnRuPreservingTags(List<String> texts)
-            throws IOException, InterruptedException {
-        long t0 = System.nanoTime();
-        List<String> out = translatePreservingTagsBatched(TranslationService.api, texts, "en", "ru");
-        long ms = (System.nanoTime() - t0) / 1_000_000L;
-        System.out.println("EN->RU (preserve tags): batch=" + texts.size() + " took " + ms + " ms");
-        return out;
-    }
+
     // ===== startup and health check =====
     public static boolean isLtAlive() {
         try (java.net.Socket s = new java.net.Socket()) {
@@ -652,7 +662,7 @@ public final class TranslationService {
         throw new RuntimeException("LibreTranslate did not start on 127.0.0.1:5000");
     }
 
-    public static Process startLtProcess() throws Exception {
+    public static Process startLtProcess() throws IOException {
 
         // 1)
         if (isOnPath("docker")) {
@@ -725,7 +735,10 @@ public final class TranslationService {
         TranslateRequest translateRequest = new TranslateRequest(String.join(SEP, texts), source, target);
         Call<TranslateResponse> call = api.translate(translateRequest);
         //   call.timeout().timeout(600, java.util.concurrent.TimeUnit.SECONDS);
-        TranslateResponse resp = call.execute().body();
+        TranslateResponse resp = executeTracked(call);
+        if (resp == null || resp.getTranslatedText() == null) {
+            throw new IOException("Empty translation response");
+        }
         System.out.println(translateRequest + "->" + resp);
 
 
@@ -780,7 +793,7 @@ public final class TranslationService {
             List<String> texts,
             String sourceIso,
             List<String> targetsIso
-    ) throws Exception {
+    ) throws IOException {
         return translateAll(texts, sourceIso, targetsIso, null, null);
     }
 

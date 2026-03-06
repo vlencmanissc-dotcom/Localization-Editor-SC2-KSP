@@ -323,8 +323,7 @@ public class CustomTableView extends TableView<LocalizationData> {
                 }
                 private String styleWithTexture(String rowBg, String textureUrl) {
                     // Layout metrics MUST be identical for normal/hover/selected/editing
-                    return ""
-                            + "-fx-background-color: " + rowBg + ";"
+                    return "-fx-background-color: " + rowBg + ";"
                             + "-fx-background-insets: 0;"
                             + "-fx-padding: 0.25em 0.4em;"
                             + "-fx-alignment: center;"

@@ -2,18 +2,15 @@ package lv.lenc;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.layout.Region;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 
 public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
 
     private final String texturePath;
-    private boolean isGreen;
+    private final boolean isGreen;
     private final double fontSize;
     private final double dropdownFontSize;
     private final double paddingTop;
@@ -63,9 +60,7 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
     }
 
     public void disable(Boolean bol) {
-        if ( bol == true){
-        this.setDisable(true);}
-        else { this.setDisable(false);}
+        this.setDisable(bol);
         updateStyle();
     }
 
@@ -73,7 +68,7 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
         String normalTexture = isGreen ? "ui_glue_dropdownbutton_normal_terran.png" : "ui_glue_dropdownbutton_Yellow_normal_terran.png";
         String disabledTexture = isGreen ? "ui_glue_dropdownbutton_disabled_terran.png" : "ui_glue_dropdownbutton_Yellow_disabled_terran.png";
         String arrowNormal = isGreen ? "ui_glue_dropdownarrow_normal_terran.png" : "ui_glue_dropdownarrow_Yellow_normal_terran.png";
-        String arrowDisabled = isGreen ? "ui_glue_dropdownarrow_normal_terran.png" : "ui_glue_dropdownarrow_normal_terran.png";
+        String arrowDisabled = "ui_glue_dropdownarrow_normal_terran.png";
         applyTextCells();
         boolean isDisabled = this.isDisabled();
 
@@ -143,7 +138,7 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
                     : "linear-gradient(from 0% 0% to 100% 100%, #FFF1A8, #E6B800)";
             String backgroundColor = "#001000";
             if (listView instanceof Region) {
-                ((Region) listView).setStyle(
+                listView.setStyle(
                         "-fx-background-color: " + backgroundColor + ";" +
                                 "-fx-border-color: " + borderColor + ";" +
                                 "-fx-font-size: " + dropdownFontSize + "px;" +
@@ -401,7 +396,7 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
         Node listView = this.lookup(".list-view");
         if (listView instanceof Region) {
             ((Region) listView).setPadding(new Insets(0));
-            ((Region) listView).setStyle(
+            listView.setStyle(
                     "-fx-background-color: transparent;" +
                             "-fx-border-width: 0;"
             );

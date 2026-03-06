@@ -16,15 +16,10 @@ public class CustomAlternativeButton extends Button implements Disabable {
 
     /**
      * Constructor exactly matching your call:
-     *
+     * <p>
      * new CustomAlternativeButton(text, glow1, glow2, 170, 54, 14);
      */
-    public CustomAlternativeButton(String text,
-                                   double strengthGlow,
-                                   double strengthGlowMAX,
-                                   double widthPxFullHD,
-                                   double heightPxFullHD,
-                                   double fontPxFullHD) {
+    public CustomAlternativeButton(String text, double strengthGlow, double strengthGlowMAX, double widthPxFullHD, double heightPxFullHD, double fontPxFullHD) {
 
         super(text);
 
@@ -51,10 +46,7 @@ public class CustomAlternativeButton extends Button implements Disabable {
         double h = UiScaleHelper.scaleY(heightPxFullHD);
 
         // uniform font scaling (no crooked text)
-        double fontScale = Math.min(
-                UiScaleHelper.scaleX(1.0),
-                UiScaleHelper.scaleY(1.0)
-        );
+        double fontScale = Math.min(UiScaleHelper.scaleX(1.0), UiScaleHelper.scaleY(1.0));
 
         double fontPx = fontPxFullHD * fontScale;
 

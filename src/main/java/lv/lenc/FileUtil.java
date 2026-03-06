@@ -21,7 +21,6 @@ public class FileUtil {
     private static final String LOCALIZED_DATA = "LocalizedData";
     public static List<File> listDirsByMask(File fileSelected) {
         if (fileSelected == null) return Collections.emptyList();
-        ;
         // ALE
         Pattern pattern = Pattern.compile("^[A-Za-z]{4}\\.SC2Data.*", Pattern.CASE_INSENSITIVE);
         try {

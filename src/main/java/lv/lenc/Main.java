@@ -273,9 +273,11 @@ public class Main extends Application {
         });
 
         translate.setTranslateStarter(() ->
-                TranslateCancelSaveButton.runAsync(() -> runTranslate(tableView, progressWin))
+                TranslateCancelSaveButton.runAsync(
+                        () -> runTranslate(tableView, progressWin),
+                        translate::setRunningThread
+                )
         );
-
         translate.setSaveAction(() -> {
             boolean ok;
             if (translateToAll) {
@@ -301,15 +303,19 @@ public class Main extends Application {
     }
 
     private void runTranslate(CustomTableView tableView, TranslationProgressOverlay progressWin) {
-        languageDropdown.disable(true);
-        translateChooseAll.disable(true);
+
+        Thread.interrupted(); // reset interrupt flag
+
+        Platform.runLater(() -> {
+            languageDropdown.disable(true);
+            translateChooseAll.disable(true);
+            progressWin.showReset();
+        });
 
         String targetUi = languageDropdown.getValue();
         String srcUi = (sourceUi != null) ? sourceUi : tableView.getMainSourceLang();
 
         try {
-            progressWin.showReset();
-
             if (translateToAll) {
                 tableView.translateFromColumnToOthers(
                         TranslationService.api,
@@ -318,7 +324,9 @@ public class Main extends Application {
                         progressWin::updateFromProgress
                 );
             } else {
-                progressWin.update(0.0, srcUi + " -> " + targetUi, "");
+                Platform.runLater(() ->
+                        progressWin.update(0.0, srcUi + " -> " + targetUi, "")
+                );
 
                 tableView.translateFromSourceToTarget(
                         TranslationService.api,
@@ -328,9 +336,11 @@ public class Main extends Application {
                         progressWin::updateFromProgress
                 );
 
-                progressWin.update(1.0, srcUi + " -> " + targetUi, localization.get("translating.done"));
+                Platform.runLater(() ->
+                        progressWin.update(1.0, srcUi + " -> " + targetUi, localization.get("translating.done"))
+                );
             }
-        }finally {
+        } finally {
             if (progressWin != null) progressWin.close();
             Platform.runLater(() -> {
                 translateChooseAll.disable(false);

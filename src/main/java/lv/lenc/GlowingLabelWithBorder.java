@@ -1,9 +1,7 @@
 package lv.lenc;
 
-import javafx.animation.FadeTransition;
 import javafx.geometry.Pos;
 import javafx.scene.layout.StackPane;
-import javafx.util.Duration;
 
 public class GlowingLabelWithBorder extends StackPane {
 
@@ -18,7 +16,7 @@ public class GlowingLabelWithBorder extends StackPane {
         setAlignment(Pos.CENTER);
 
         // === SIZE: design relative to 1920x1080 ===
-        double w = UiScaleHelper.SCREEN_WIDTH  * (widthFullHD / 1920.0);
+        double w = UiScaleHelper.SCREEN_WIDTH * (widthFullHD / 1920.0);
         double h = UiScaleHelper.SCREEN_HEIGHT * (heightFullHD / 1080.0);
 
         setPrefSize(w, h);
@@ -40,8 +38,13 @@ public class GlowingLabelWithBorder extends StackPane {
         this(text, 220, 70, 17); // 
     }
 
-    public void setText(String text) { label.setText(text); }
-    public GlowingLabel getLabel() { return label; }
+    public void setText(String text) {
+        label.setText(text);
+    }
+
+    public GlowingLabel getLabel() {
+        return label;
+    }
 
     public void setSelected(boolean selected) {
         if (selected) {

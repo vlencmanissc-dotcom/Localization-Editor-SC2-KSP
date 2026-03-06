@@ -32,12 +32,7 @@ import javafx.scene.text.Text;
 
 
         public void disable(Boolean bol) {
-            if( bol == true) {
-                this.setDisable(true);
-            }
-            else {
-                this.setDisable(false);
-            }
+            this.setDisable(bol);
             updateStyle();
         }
 
@@ -104,7 +99,7 @@ import javafx.scene.text.Text;
                     double borderWidth = UiScaleHelper.SCREEN_WIDTH * (2.0 / 1920.0);
                     ((Region) listView).setPrefHeight(UiScaleHelper.SCREEN_HEIGHT * (180.0 / 1080.0));
                     ((Region) listView).setMaxHeight(UiScaleHelper.SCREEN_HEIGHT * (180.0 / 1080.0));
-                    ((Region) listView).setStyle(
+                    listView.setStyle(
                             "-fx-background-color: #001000;" +
                                     "-fx-border-color: limegreen;" +
                                     "-fx-border-width: " + borderWidth + "px;" +

@@ -1,15 +1,10 @@
 package lv.lenc;
 
 import javafx.animation.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import javafx.scene.image.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.stage.Screen;
 import javafx.util.Duration;
-import javafx.scene.image.WritableImage;
-import javafx.scene.image.PixelReader;
-import javafx.scene.image.PixelWriter;
 
 import java.util.Arrays;
 
@@ -255,7 +250,7 @@ public class BackgroundGridLayer extends Pane {
 
     private void updateAlpha(Pane layer, double alpha) {
         layer.getChildren().forEach(node -> {
-            if (node instanceof ImageView) ((ImageView) node).setOpacity(clampAlpha(alpha));
+            if (node instanceof ImageView) node.setOpacity(clampAlpha(alpha));
         });
     }
     private double getAlpha(Pane layer) {

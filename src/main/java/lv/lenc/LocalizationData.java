@@ -1,7 +1,7 @@
 package lv.lenc;
 
 public class LocalizationData {
-    private String key;
+    private final String key;
     private String ruRu = "";
     private String deDE;   // <- 
     private String enUs = "";

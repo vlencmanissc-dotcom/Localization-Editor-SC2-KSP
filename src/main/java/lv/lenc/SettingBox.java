@@ -23,7 +23,7 @@ import java.util.Map;
 public class SettingBox {
 
     // --- UI refs for localization updates ---
-    private static GaussianBlur blurEffect = new GaussianBlur(0);
+    private static final GaussianBlur blurEffect = new GaussianBlur(0);
     private static Node blurredTarget; // что размываем (обычно appRoot)
     private static GlowingLabel languageLabel;
     private static GlowingLabel uiLabel;

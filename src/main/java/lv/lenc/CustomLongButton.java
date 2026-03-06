@@ -74,12 +74,14 @@ public class CustomLongButton extends MyButton {
         });
 
         setOnMousePressed(e -> {
-            if (isSelected()) return;
+            if (isSelected()) {
+            }
 
         });
 
         setOnMouseReleased(e -> {
-            if (isSelected()) return;
+            if (isSelected()) {
+            }
 
         });
 

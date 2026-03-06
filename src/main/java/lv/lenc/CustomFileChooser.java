@@ -30,18 +30,17 @@ public class CustomFileChooser extends StackPane implements Disabable {
         this.fileSelectable = fileSelectable;
 
         // Scale size relative to design resolution (1920x1080)
-      //  double width  = UiScaleHelper.SCREEN_WIDTH  * (widthFullHD  / 1920.0);
+        //  double width  = UiScaleHelper.SCREEN_WIDTH  * (widthFullHD  / 1920.0);
         //double height = UiScaleHelper.SCREEN_HEIGHT * (heightFullHD / 1080.0);
-        double width  = UiScaleHelper.scaleX(widthFullHD);
-        double height  = UiScaleHelper.scaleY(heightFullHD);
+        double width = UiScaleHelper.scaleX(widthFullHD);
+        double height = UiScaleHelper.scaleY(heightFullHD);
         // Root size
         this.setMinSize(width, height);
         this.setPrefSize(width, height);
         this.setMaxSize(width, height);
 
         fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters()
-                .add(new FileChooser.ExtensionFilter("LocalizedData", "*.txt"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("LocalizedData", "*.txt"));
 
         button = new Button();
         button.getStyleClass().add("file-chooser-btn");
@@ -73,6 +72,7 @@ public class CustomFileChooser extends StackPane implements Disabable {
         // (optional) center button inside StackPane
         StackPane.setAlignment(button, javafx.geometry.Pos.CENTER);
     }
+
     public File openFile(Stage stage) {
         return fileChooser.showOpenDialog(stage);
     }
