@@ -126,6 +126,27 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.7.3</version>
+                <configuration>
+                    <name>Localization Editor</name>
+                    <appVersion>1.0.0</appVersion>
+                    <vendor>Lenc</vendor>
+                    <destination>dist</destination>
+
+                    <input>target</input>
+                    <mainJar>Localization_Editor_SC2_KSP-1.0-SNAPSHOT.jar</mainJar>
+                    <mainClass>lv.lenc.AppLauncher</mainClass>
+
+                    <type>EXE</type>
+
+                    <winMenu>true</winMenu>
+                    <winShortcut>true</winShortcut>
+                    <winDirChooser>true</winDirChooser>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
 
                 <artifactId>maven-compiler-plugin</artifactId>

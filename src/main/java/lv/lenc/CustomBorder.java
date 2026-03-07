@@ -91,7 +91,7 @@ public class CustomBorder extends StackPane {
         this.getChildren().addAll(bg, table, scan1, scan2, scan3, bgH, lB, lS, lSR, lT);
         this.setMouseTransparent(true);
         this.getStylesheets().add(
-                getClass().getResource("/Assets/Style/custom-border.css").toExternalForm()
+                getClass().getResource("/Assets/Style/Custom-Border.css").toExternalForm()
         );
 
     }
