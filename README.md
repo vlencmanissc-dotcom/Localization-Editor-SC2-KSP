@@ -4,8 +4,105 @@ A localization editor for StarCraft II maps and mods.
 Opens `GameStrings.txt`,`ObjectStrings.txt`,`TriggerStrings.txt` files, translates them into selected languages, and automatically saves them into the correct `.SC2Data/LocalizedData` directory structure.
 
 ---
+Download the latest version from:
 
-## Requirements
+https://github.com/vlencmanissc-dotcom/Localization-Editor-SC2-KSP/releases
+## Simple Installation (Recommended)
+
+### 1. Install the editor
+
+Download the latest version from **GitHub Releases**:
+
+https://github.com/vlencmanissc-dotcom/Localization-Editor-SC2-KSP/releases
+
+Run the installer:
+
+```
+LocalizationEditor-Setup-1.0.0.exe
+```
+
+After installation, launch the editor normally.
+
+---
+
+### 2. Enable auto-translation with Docker (optional)
+
+Auto-translation requires **LibreTranslate**.
+
+Install **Docker Desktop for Windows**:
+
+https://www.docker.com/products/docker-desktop/
+
+Download the **Windows AMD64** version.
+
+During installation:
+
+* enable **Use WSL 2 instead of Hyper-V**
+* leave **Windows Containers** disabled
+
+After installation:
+
+1. Restart your computer
+2. Start **Docker Desktop**
+3. Wait until Docker shows that it is running
+
+---
+
+### 3. Start LibreTranslate
+
+Open the `docker` folder and run:
+
+```
+start-libretranslate.bat
+```
+
+This will start LibreTranslate at:
+
+```
+http://127.0.0.1:5000
+```
+
+---
+
+### 4. First start note
+
+On the first start Docker will download:
+
+* LibreTranslate container
+* translation models
+
+This may take a few minutes.
+
+Only these languages are loaded:
+
+```
+en, ru, de, es, fr, it, pl, pt, ko, zh, zt
+```
+
+---
+
+### 5. Check that the server works
+
+Open in your browser:
+
+```
+http://127.0.0.1:5000/languages
+```
+
+If you see JSON with languages, the translation server is running correctly.
+
+The application expects LibreTranslate at:
+
+```
+http://127.0.0.1:5000
+```
+
+If LibreTranslate is not running, auto-translation will not work.
+---
+## Manual Installation (Advanced)
+
+Use this method if you do not want to use Docker
+or if you want to run LibreTranslate manually.
 
 ### 1. Java (JDK 17+)
 
@@ -123,9 +220,9 @@ Later starts:
 libretranslate --load-only en,ru,de,es,fr,it,pl,pt,ko,zh,zt
 ```
 If everything is correct, you should see:
-``
+```
 Running on http://127.0.0.1:5000
-``
+```
 
 The application expects LibreTranslate running at:
 
