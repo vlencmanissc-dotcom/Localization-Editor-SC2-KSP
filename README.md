@@ -18,7 +18,7 @@ https://github.com/vlencmanissc-dotcom/Localization-Editor-SC2-KSP/releases
 Run the installer:
 
 ```
-LocalizationEditor-Setup-1.0.0.exe
+LocalizationEditor-Setup-1.0.1.exe
 ```
 
 After installation, launch the editor normally.
