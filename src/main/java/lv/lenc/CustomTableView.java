@@ -20,6 +20,7 @@ import javafx.util.converter.DefaultStringConverter;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -46,12 +47,18 @@ public class CustomTableView extends TableView<LocalizationData> {
     //private final LanguageDetectorService langService = new LanguageDetectorService();
     private LanguageDetectorService langService;
     private String currentSourceUi = null;
-    public CustomTableView(String texturePath, LocalizationManager localization, double width,double height) {
+    private final GlossaryService glossaryService;
+
+    public CustomTableView(String texturePath,
+                           LocalizationManager localization,
+                           double width,
+                           double height,
+                           GlossaryService glossaryService) {
 
         this.texturePath = texturePath;
         // Styling
         //  this.applyScrollBarStyle();
-
+        this.glossaryService = glossaryService;
         this.getStylesheets().add(
                 getClass().getResource("/Assets/Style/custom-tableview.css").toExternalForm()
         );
@@ -193,7 +200,7 @@ public class CustomTableView extends TableView<LocalizationData> {
         });
     }
     private void captureBaseColumnWidths() {
-        // 
+        //
         TableColumn<LocalizationData, ?> sampleLang = getColumns().stream()
                 .filter(c -> SUPPORTED_LANGS.contains(c.getText()))
                 .findFirst()
@@ -255,13 +262,13 @@ public class CustomTableView extends TableView<LocalizationData> {
             }
 
             if (SUPPORTED_LANGS.contains(name)) {
-                // 
+                //
                 if (col.isVisible() && singleMode) {
                     col.setMinWidth(baseLangMinW * mult);
                     col.setPrefWidth(baseLangPrefW * mult);
                     col.setMaxWidth(baseLangMaxW);
                 } else {
-                    // 
+                    //
                     col.setMinWidth(baseLangMinW);
                     col.setPrefWidth(baseLangPrefW);
                     col.setMaxWidth(baseLangMaxW);
@@ -288,7 +295,7 @@ public class CustomTableView extends TableView<LocalizationData> {
     }
 
 
-    // 
+    //
     private void applyCustomCellStyleToAllColumns() {
         String headerTextureNormal = "ui_nova_archives_listitem_normal.png";
         String headerTextureOver = "ui_nova_archives_listitem_over.png";
@@ -307,11 +314,11 @@ public class CustomTableView extends TableView<LocalizationData> {
             editableCol.setCellFactory(column -> new TextFieldTableCell<>(new DefaultStringConverter()) {
 
                 private boolean isHovered = false;
-              //  private boolean isSelected = false;
+                //  private boolean isSelected = false;
                 private boolean isEditing = false;
 
                 {
-                    // 
+                    //
                     this.setOnMouseEntered(event -> {
                         isHovered = true;
                         updateCellStyle();
@@ -325,11 +332,11 @@ public class CustomTableView extends TableView<LocalizationData> {
                     emptyProperty().addListener((obs, oldVal, newVal) -> updateCellStyle());
                 }
                 private String styleWithTexture(String rowBg, String textureUrl, boolean selected) {
-                    double padY = UiScaleHelper.scaleY(selected ? 8 : 5);
-                    double padX = UiScaleHelper.scaleX(selected ? 10 : 7);
-                    double borderSlice = UiScaleHelper.scaleY(selected ? 18 : 12);
-                    double borderWidth = UiScaleHelper.scaleY(selected ? 6 : 4);
-                    double fontSize = UiScaleHelper.scaleY(selected ? 17 : 14);
+                    double padY = UiScaleHelper.scaleY(5);
+                    double padX = UiScaleHelper.scaleX(7);
+                    double borderSlice = UiScaleHelper.scaleY(12);
+                    double borderWidth = UiScaleHelper.scaleY(4);
+                    double fontSize = UiScaleHelper.scaleY(14);
 
                     return "-fx-background-color: " + rowBg + ";"
                             + "-fx-background-insets: 0;"
@@ -408,7 +415,7 @@ public class CustomTableView extends TableView<LocalizationData> {
 
                         column.setOnEditStart(event -> {
                             isEditing = true;
-                        //    setStyle(styleBase.replace(fullTexturePathNormal, fullTexturePathSelected));
+                            //    setStyle(styleBase.replace(fullTexturePathNormal, fullTexturePathSelected));
                         });
 
                         column.setOnEditCommit(event -> {
@@ -427,7 +434,7 @@ public class CustomTableView extends TableView<LocalizationData> {
                         setOnMouseEntered(null);
                         setOnMouseExited(null);
                         setOnMouseClicked(null);
-                      //  isSelected = false;
+                        //  isSelected = false;
                         isEditing = false;
                     }
                 }
@@ -437,7 +444,7 @@ public class CustomTableView extends TableView<LocalizationData> {
                     super.startEdit();
                     isEditing = true;
 
-                    // 
+                    //
                     if (getGraphic() instanceof TextField textField) {
                         textField.getStyleClass().add("table-textfield-editing");
 
@@ -489,7 +496,7 @@ public class CustomTableView extends TableView<LocalizationData> {
         Platform.runLater(() -> {
             Parent header = (Parent) tableview.lookup("TableHeaderRow");
             if (header == null) {
-                //    System.out.println("TableHeaderRow 
+                //    System.out.println("TableHeaderRow
             } else {
                 //      System.out.println("
 
@@ -520,10 +527,11 @@ public class CustomTableView extends TableView<LocalizationData> {
     private static String normalizeUi(String raw) {
         if (raw == null) return "";
         String s = raw.trim().replace("-", "").replace("_", "");
-        if (s.length() == 4) {
-            return s.substring(0, 2).toLowerCase() + s.substring(2).toUpperCase(); // ptbr -> ptBR
-        }
-        return raw;
+        if (s.length() < 4) return raw.trim();
+
+        String lang = s.substring(0, 2).toLowerCase(Locale.ROOT);
+        String region = s.substring(2).toUpperCase(Locale.ROOT);
+        return lang + region;
     }
     public void loadLanguagesToTable(Map<String, File> langFiles) {
 
@@ -642,7 +650,7 @@ public class CustomTableView extends TableView<LocalizationData> {
             case "zhTW" -> setter = LocalizationData::setZhTw;
             default -> setter = (d, v) -> {};
         }
-       //  detectedLang = detectLanguage(values);
+        //  detectedLang = detectLanguage(values);
         loadedUiLanguages.add(detectedLang);
         currentSourceUi = detectedLang;
         for (Map.Entry<String, String> entry : keyValueMap.entrySet()) {
@@ -663,8 +671,8 @@ public class CustomTableView extends TableView<LocalizationData> {
                 .collect(Collectors.toMap(
                         parts -> parts[0],
                         parts -> parts[1],
-                        (a, b) -> a,                     // 
-                        LinkedHashMap::new              // 
+                        (a, b) -> a,                     //
+                        LinkedHashMap::new              //
                 ));
     }
 
@@ -677,11 +685,11 @@ public class CustomTableView extends TableView<LocalizationData> {
                         .orElse(null);
         if (col == null) return;
 
-        // 
+        //
         Platform.runLater(() -> {
             Node header = this.lookup(".column-header[data-column-index='" + this.getColumns().indexOf(col) + "']");
             if (header != null) {
-                header.setStyle("-fx-background-color: rgba(255,140,0,0.18);"); // 
+                header.setStyle("-fx-background-color: rgba(255,140,0,0.18);"); //
             }
         });
     }
@@ -882,125 +890,134 @@ public class CustomTableView extends TableView<LocalizationData> {
         final java.util.function.BooleanSupplier stop = () ->
                 cancelledFinal.getAsBoolean() || Thread.currentThread().isInterrupted();
 
-
         String sourceUi = (sourceLang != null && !sourceLang.isBlank())
                 ? sourceLang
                 : getMainSourceLang();
 
-
-        java.util.List<String> texts = getColumnValues(sourceUi);
-        boolean hasAny = texts.stream().anyMatch(s -> s != null && !s.isBlank());
-        if (!hasAny) {
-            System.err.println("[LT] nothing to translate in column " + sourceUi);
-            return;
-        }
-
         final java.util.List<String> targetsUi = java.util.List.of(
-                        "ruRU","deDE","enUS","esMX","esES","frFR","itIT","plPL","ptBR","koKR","zhCN","zhTW"
+                        "ruRU", "deDE", "enUS", "esMX", "esES", "frFR", "itIT", "plPL", "ptBR", "koKR", "zhCN", "zhTW"
                 ).stream()
                 .filter(ui -> !ui.equalsIgnoreCase(sourceUi))
                 .toList();
 
         final int totalUiTargets = targetsUi.size();
+        if (totalUiTargets == 0) return;
 
+        java.util.List<LocalizationData> allRows = getItems();
+        if (allRows == null || allRows.isEmpty()) return;
 
-        final java.util.Map<String, java.util.List<String>> isoToUis = new java.util.LinkedHashMap<>();
-        for (String ui : targetsUi) {
+        final String sourceUiFinal = sourceUi;
+        final String sourceIso = toApiLang(sourceUi);
+
+        for (int targetIndex = 0; targetIndex < targetsUi.size(); targetIndex++) {
             if (stop.getAsBoolean()) return;
 
-            String iso = toApiLang(ui);
-            if (iso == null || iso.isBlank() || "auto".equalsIgnoreCase(iso)) continue;
-
-            isoToUis.computeIfAbsent(iso, k -> new java.util.ArrayList<>()).add(ui);
-        }
-
-        final java.util.List<String> targetsIso = new java.util.ArrayList<>();
-        {
-            java.util.Set<String> added = new java.util.HashSet<>();
-            for (String ui : targetsUi) {
-                String iso = toApiLang(ui);
-                if (iso == null || iso.isBlank() || "auto".equalsIgnoreCase(iso)) continue;
-                if (added.add(iso)) targetsIso.add(iso);
+            String targetUi = targetsUi.get(targetIndex);
+            String targetIso = toApiLang(targetUi);
+            if (targetIso == null || targetIso.isBlank() || "auto".equalsIgnoreCase(targetIso)) {
+                continue;
             }
-        }
 
-        if (targetsIso.isEmpty()) {
-            System.err.println("[LT] no valid target languages");
-            return;
-        }
+            final String targetUiFinal = targetUi;
+            final int targetIndexFinal = targetIndex;
+            final int uiOrdinalFinal = targetIndex + 1;
 
+            java.util.List<LocalizationData> rowsToTranslate = new java.util.ArrayList<>();
+            java.util.List<String> textsToTranslate = new java.util.ArrayList<>();
+            java.util.List<GlossaryService.FrozenTerms> frozenForRows = new java.util.ArrayList<>();
 
-        String sourceIso = toApiLang(sourceUi);
-        if (sourceIso == null || sourceIso.isBlank() || "auto".equalsIgnoreCase(sourceIso)) {
-            sourceIso = "en";
-        }
-
-
-        final java.util.Map<String, String> isoToShowUi = new java.util.HashMap<>();
-        for (var e : isoToUis.entrySet()) {
-            if (!e.getValue().isEmpty()) isoToShowUi.put(e.getKey(), e.getValue().get(0));
-        }
-
-        try {
-            java.util.Map<String, java.util.List<String>> byIso =
-                    lv.lenc.TranslationService.translateAll(
-                            texts,
-                            sourceIso,
-                            targetsIso,
-                            stop,
-                            (all01, msg) -> {
-                                if (progress == null) return;
-
-                                //
-                                int isoCount = Math.max(1, targetsIso.size());
-                                int isoIndex = Math.min(isoCount - 1, (int) Math.floor(all01 * isoCount));
-                                String curIso = targetsIso.get(Math.max(0, isoIndex));
-
-                                //
-                                String tgtUiShow = isoToShowUi.getOrDefault(curIso, curIso);
-
-                                //
-                                int k = 1;
-                                for (int i = 0; i < targetsUi.size(); i++) {
-                                    if (targetsUi.get(i).equalsIgnoreCase(tgtUiShow)) {
-                                        k = i + 1;
-                                        break;
-                                    }
-                                }
-
-                                String line1 = sourceUi + " -> " + tgtUiShow + " (" + k + "/" + totalUiTargets + ")";
-                                String line2 = extractBatchLine(msg);
-
-                                progress.onProgress(all01, line1 + "||" + line2);
-                            }
-                    );
-
-            if (stop.getAsBoolean()) return;
-
-            //
-            for (var e : byIso.entrySet()) {
+            for (LocalizationData row : allRows) {
                 if (stop.getAsBoolean()) return;
+                if (row == null) continue;
 
-                String iso = e.getKey();
-                java.util.List<String> colValues = e.getValue();
+                String sourceText = row.getByLang(sourceUi);
+                if (sourceText == null || sourceText.isBlank()) continue;
 
-                java.util.List<String> uis = isoToUis.getOrDefault(iso, java.util.List.of());
-                for (String ui : uis) {
-                    if (stop.getAsBoolean()) return;
-                    setColumnValues(ui, colValues);
+                GlossaryService.Category category = GlossaryService.detectCategory(row.getKey());
+
+                // 1. exact/text glossary
+                String glossaryHit = glossaryService.findBestMatch(
+                        row.getKey(),
+                        sourceUi,
+                        sourceText,
+                        targetUi
+                );
+
+                if (glossaryHit != null && !glossaryHit.isBlank()) {
+                    setValueByLang(row, targetUi, glossaryHit);
+                    continue;
                 }
+
+                // 2. smart glossary search
+                String smartHit = glossaryService.findSmartMatch(
+                        category,
+                        row.getKey(),
+                        sourceUi,
+                        sourceText,
+                        targetUi
+                );
+
+                if (smartHit != null && !smartHit.isBlank()) {
+                    setValueByLang(row, targetUi, smartHit);
+                    continue;
+                }
+
+                // 3. term freeze before MT
+                GlossaryService.FrozenTerms frozen = glossaryService.freezeTerms(
+                        category,
+                        sourceUi,
+                        targetUi,
+                        sourceText
+                );
+
+                rowsToTranslate.add(row);
+                textsToTranslate.add(frozen.preparedText());
+                frozenForRows.add(frozen);
             }
 
-            if (stop.getAsBoolean()) return;
-            javafx.application.Platform.runLater(this::refresh);
+            if (textsToTranslate.isEmpty()) {
+                javafx.application.Platform.runLater(this::refresh);
+                continue;
+            }
 
-        } catch (Exception ex) {
-            if (stop.getAsBoolean()) return; //
-            System.err.println("[LT] translate failed: " + ex.getMessage());
-            ex.printStackTrace();
+            try {
+                java.util.List<String> out = lv.lenc.TranslationService.translatePreservingTagsBatched(
+                        api,
+                        textsToTranslate,
+                        sourceIso,
+                        targetIso,
+                        stop,
+                        (frac, msg) -> {
+                            if (progress == null) return;
+                            double totalFrac = ((double) targetIndexFinal + frac) / totalUiTargets;
+                            String line1 = sourceUiFinal + " -> " + targetUiFinal + " (" + uiOrdinalFinal + "/" + totalUiTargets + ")";
+                            String line2 = extractBatchLine(msg);
+                            progress.onProgress(totalFrac, line1 + "||" + line2);
+                        }
+                );
+
+                int count = Math.min(rowsToTranslate.size(), out.size());
+                for (int i = 0; i < count; i++) {
+                    String translated = out.get(i);
+                    if (translated == null || translated.isBlank()) continue;
+
+                    translated = glossaryService.unfreezeTerms(translated, frozenForRows.get(i));
+                    setValueByLang(rowsToTranslate.get(i), targetUi, translated);
+                }
+
+                javafx.application.Platform.runLater(this::refresh);
+
+            } catch (Exception ex) {
+                if (stop.getAsBoolean()) return;
+                System.err.println("[LT] translate failed for " + targetUi + ": " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        }
+
+        if (!stop.getAsBoolean() && progress != null) {
+            progress.onProgress(1.0, sourceUiFinal + " -> all||done");
         }
     }
-
     private static String extractBatchLine(String msg) {
         if (msg == null) return "";
         //
@@ -1034,50 +1051,147 @@ public class CustomTableView extends TableView<LocalizationData> {
             setValueForLang(items.get(i), uiLang, values.get(i));
         }
     }
-    public void translateFromSourceToTarget(LibreTranslateApi api,
-                                            String sourceUi,
-                                            String targetUi,
-                                            BooleanSupplier cancelled) {
-        final BooleanSupplier cancelledFinal = (cancelled != null) ? cancelled : () -> false;
-        final BooleanSupplier stop = () -> cancelledFinal.getAsBoolean() || Thread.currentThread().isInterrupted();
+    public void translateFromSourceToTarget(String sourceUi, String targetUi, AtomicBoolean cancelledFinal) {
+        final BooleanSupplier stop = () ->
+                (cancelledFinal != null && cancelledFinal.get()) || Thread.currentThread().isInterrupted();
 
         if (stop.getAsBoolean()) return;
+
+        sourceUi = normalizeUi(sourceUi);
+        targetUi = normalizeUi(targetUi);
 
         if (sourceUi == null || sourceUi.isBlank()) sourceUi = getMainSourceLang();
         if (targetUi == null || targetUi.isBlank()) return;
         if (targetUi.equalsIgnoreCase(sourceUi)) return;
 
-        List<String> texts = getColumnValues(sourceUi);
+        List<LocalizationData> allRows = getItems();
+        if (allRows == null || allRows.isEmpty()) return;
 
-        //
-        boolean hasAny = texts.stream().anyMatch(s -> s != null && !s.isBlank());
-        if (!hasAny) {
-            System.err.println("[LT] nothing to translate in column " + sourceUi);
+        List<LocalizationData> rowsToTranslate = new ArrayList<>();
+        List<String> textsToTranslate = new ArrayList<>();
+        List<GlossaryService.FrozenTerms> frozenForRows = new ArrayList<>();
+        List<String> actualSourceUis = new ArrayList<>();
+
+        for (LocalizationData row : allRows) {
+            if (stop.getAsBoolean()) return;
+            if (row == null) continue;
+
+            String actualSourceUi = sourceUi;
+            String sourceText = row.getByLang(sourceUi);
+
+            // Если переводим НЕ в enUS и enUS уже заполнен — берём enUS как источник
+            String enText = row.getByLang("enUS");
+            if (!"enUS".equalsIgnoreCase(targetUi) && enText != null && !enText.isBlank()) {
+                actualSourceUi = "enUS";
+                sourceText = enText;
+            }
+
+            if (sourceText == null || sourceText.isBlank()) continue;
+
+            GlossaryService.Category category = GlossaryService.detectCategory(row.getKey());
+
+            String glossaryHit = glossaryService.findBestMatch(
+                    row.getKey(),
+                    actualSourceUi,
+                    sourceText,
+                    targetUi
+            );
+
+            if (glossaryHit != null && !glossaryHit.isBlank()) {
+                setValueByLang(row, targetUi, glossaryHit);
+                continue;
+            }
+
+            String smartHit = glossaryService.findSmartMatch(
+                    category,
+                    row.getKey(),
+                    actualSourceUi,
+                    sourceText,
+                    targetUi
+            );
+
+            if (smartHit != null && !smartHit.isBlank()) {
+                setValueByLang(row, targetUi, smartHit);
+                continue;
+            }
+
+//            String templatedHit = glossaryService.tryTemplateCompose(
+//                    category,
+//                    actualSourceUi,
+//                    targetUi,
+//                    sourceText
+//            );
+//
+//            if (templatedHit != null && !templatedHit.isBlank()) {
+//                setValueByLang(row, targetUi, templatedHit);
+//                continue;
+//            }
+
+            GlossaryService.FrozenTerms frozen = glossaryService.freezeTerms(
+                    category,
+                    actualSourceUi,
+                    targetUi,
+                    sourceText
+            );
+
+            rowsToTranslate.add(row);
+            textsToTranslate.add(frozen.preparedText());
+            frozenForRows.add(frozen);
+            actualSourceUis.add(actualSourceUi);
+        }
+
+        if (textsToTranslate.isEmpty()) {
+            refresh();
             return;
         }
 
-        String sourceIso = toApiLang(sourceUi);
-        String targetIso = toApiLang(targetUi);
-        if ("auto".equalsIgnoreCase(sourceIso) || sourceIso == null) sourceIso = "en";
-        if ("auto".equalsIgnoreCase(targetIso) || targetIso == null) return;
-
         try {
-            //
-            Map<String, List<String>> byIso =
-                    TranslationService.translateAll(texts, sourceIso, List.of(targetIso));
-
-            if (stop.getAsBoolean()) return;
-
-            List<String> translated = byIso.get(targetIso);
-            if (translated != null) {
-                setColumnValues(targetUi, translated);
-                Platform.runLater(this::refresh);
+            // Разбиваем по фактическому source language
+            Map<String, List<Integer>> sourceIsoToIndexes = new LinkedHashMap<>();
+            for (int i = 0; i < actualSourceUis.size(); i++) {
+                String sourceIso = toApiLang(actualSourceUis.get(i));
+                if (sourceIso == null || sourceIso.isBlank() || "auto".equalsIgnoreCase(sourceIso)) {
+                    sourceIso = "en";
+                }
+                sourceIsoToIndexes.computeIfAbsent(sourceIso, k -> new ArrayList<>()).add(i);
             }
 
-        } catch (Exception ex) {
-            if (stop.getAsBoolean()) return; //
-            System.err.println("[LT] translate failed: " + ex.getMessage());
-            ex.printStackTrace();
+            String targetIso = toApiLang(targetUi);
+            if (targetIso == null || targetIso.isBlank() || "auto".equalsIgnoreCase(targetIso)) return;
+
+            for (Map.Entry<String, List<Integer>> entry : sourceIsoToIndexes.entrySet()) {
+                if (stop.getAsBoolean()) return;
+
+                String sourceIso = entry.getKey();
+                List<Integer> indexes = entry.getValue();
+
+                List<String> batchTexts = new ArrayList<>(indexes.size());
+                for (Integer idx : indexes) {
+                    batchTexts.add(textsToTranslate.get(idx));
+                }
+
+                Map<String, List<String>> byIso =
+                        TranslationService.translateAll(batchTexts, sourceIso, List.of(targetIso));
+
+                if (stop.getAsBoolean()) return;
+
+                List<String> translated = byIso.get(targetIso);
+                if (translated == null) continue;
+
+                int count = Math.min(indexes.size(), translated.size());
+                for (int j = 0; j < count; j++) {
+                    int originalIndex = indexes.get(j);
+                    String outText = translated.get(j);
+                    if (outText == null || outText.isBlank()) continue;
+
+                    outText = glossaryService.unfreezeTerms(outText, frozenForRows.get(originalIndex));
+                    setValueByLang(rowsToTranslate.get(originalIndex), targetUi, outText);
+                }
+            }
+
+            refresh();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
     public void translateFromSourceToTarget(
@@ -1090,40 +1204,148 @@ public class CustomTableView extends TableView<LocalizationData> {
         final java.util.function.BooleanSupplier stop =
                 (cancelled != null) ? cancelled : () -> false;
 
-        //
-        java.util.List<String> texts = getColumnValues(sourceUi);
-        boolean hasAny = texts.stream().anyMatch(s -> s != null && !s.isBlank());
-        if (!hasAny) {
-            if (progress != null) progress.onProgress(1.0, sourceUi + " -> " + targetUi + "||");
-            return;
-        }
+        sourceUi = normalizeUi(sourceUi);
+        targetUi = normalizeUi(targetUi);
 
-        // ui -> iso
-        String sourceIso = toApiLang(sourceUi);
-        if (sourceIso == null || sourceIso.isBlank() || "auto".equalsIgnoreCase(sourceIso)) sourceIso = "en";
+        if (sourceUi == null || sourceUi.isBlank()) sourceUi = getMainSourceLang();
+        if (targetUi == null || targetUi.isBlank()) return;
+        if (targetUi.equalsIgnoreCase(sourceUi)) return;
 
         String targetIso = toApiLang(targetUi);
         if (targetIso == null || targetIso.isBlank() || "auto".equalsIgnoreCase(targetIso)) return;
 
-        try {
-            //
-            java.util.List<String> out = lv.lenc.TranslationService.translatePreservingTagsBatched(
-                    TranslationService.api,
-                    texts,
-                    sourceIso,
-                    targetIso,
-                    stop,
-                    (frac, msg) -> {
-                        if (progress == null) return;
-                        String line1 = sourceUi + " -> " + targetUi;
-                        String line2 = (msg == null ? "" : msg);
-                        progress.onProgress(frac, line1 + "||" + line2);
-                    }
+        List<LocalizationData> allRows = getItems();
+        if (allRows == null || allRows.isEmpty()) return;
+
+        List<LocalizationData> rowsToTranslate = new ArrayList<>();
+        List<String> textsToTranslate = new ArrayList<>();
+        List<GlossaryService.FrozenTerms> frozenForRows = new ArrayList<>();
+        List<String> actualSourceUis = new ArrayList<>();
+
+        for (LocalizationData row : allRows) {
+            if (stop.getAsBoolean()) return;
+            if (row == null) continue;
+
+            String actualSourceUi = sourceUi;
+            String sourceText = row.getByLang(sourceUi);
+
+            String enText = row.getByLang("enUS");
+            if (!"enUS".equalsIgnoreCase(targetUi) && enText != null && !enText.isBlank()) {
+                actualSourceUi = "enUS";
+                sourceText = enText;
+            }
+
+            if (sourceText == null || sourceText.isBlank()) continue;
+
+            GlossaryService.Category category = GlossaryService.detectCategory(row.getKey());
+
+            String glossaryHit = glossaryService.findBestMatch(
+                    row.getKey(),
+                    actualSourceUi,
+                    sourceText,
+                    targetUi
             );
 
-            if (stop.getAsBoolean()) return;
+            if (glossaryHit != null && !glossaryHit.isBlank()) {
+                setValueByLang(row, targetUi, glossaryHit);
+                continue;
+            }
 
-            setColumnValues(targetUi, out);
+            String smartHit = glossaryService.findSmartMatch(
+                    category,
+                    row.getKey(),
+                    actualSourceUi,
+                    sourceText,
+                    targetUi
+            );
+
+            if (smartHit != null && !smartHit.isBlank()) {
+                setValueByLang(row, targetUi, smartHit);
+                continue;
+            }
+
+//            String templatedHit = glossaryService.tryTemplateCompose(
+//                    category,
+//                    actualSourceUi,
+//                    targetUi,
+//                    sourceText
+//            );
+//
+//            if (templatedHit != null && !templatedHit.isBlank()) {
+//                setValueByLang(row, targetUi, templatedHit);
+//                continue;
+//            }
+
+            GlossaryService.FrozenTerms frozen = glossaryService.freezeTerms(
+                    category,
+                    actualSourceUi,
+                    targetUi,
+                    sourceText
+            );
+
+            rowsToTranslate.add(row);
+            textsToTranslate.add(frozen.preparedText());
+            frozenForRows.add(frozen);
+            actualSourceUis.add(actualSourceUi);
+        }
+
+        if (textsToTranslate.isEmpty()) {
+            Platform.runLater(this::refresh);
+            if (progress != null) progress.onProgress(1.0, sourceUi + " -> " + targetUi + "||");
+            return;
+        }
+
+        try {
+            Map<String, List<Integer>> sourceIsoToIndexes = new LinkedHashMap<>();
+            for (int i = 0; i < actualSourceUis.size(); i++) {
+                String sourceIso = toApiLang(actualSourceUis.get(i));
+                if (sourceIso == null || sourceIso.isBlank() || "auto".equalsIgnoreCase(sourceIso)) {
+                    sourceIso = "en";
+                }
+                sourceIsoToIndexes.computeIfAbsent(sourceIso, k -> new ArrayList<>()).add(i);
+            }
+
+            final String sourceUiFinal = sourceUi;
+            final String targetUiFinal = targetUi;
+
+            for (Map.Entry<String, List<Integer>> entry : sourceIsoToIndexes.entrySet()) {
+                if (stop.getAsBoolean()) return;
+
+                String sourceIso = entry.getKey();
+                List<Integer> indexes = entry.getValue();
+
+                List<String> batchTexts = new ArrayList<>(indexes.size());
+                for (Integer idx : indexes) {
+                    batchTexts.add(textsToTranslate.get(idx));
+                }
+
+                List<String> out = lv.lenc.TranslationService.translatePreservingTagsBatched(
+                        api,
+                        batchTexts,
+                        sourceIso,
+                        targetIso,
+                        stop,
+                        (frac, msg) -> {
+                            if (progress == null) return;
+                            String line1 = sourceUiFinal + " -> " + targetUiFinal;
+                            String line2 = (msg == null ? "" : msg);
+                            progress.onProgress(frac, line1 + "||" + line2);
+                        }
+                );
+
+                if (stop.getAsBoolean()) return;
+
+                int count = Math.min(indexes.size(), out.size());
+                for (int j = 0; j < count; j++) {
+                    int originalIndex = indexes.get(j);
+                    String translated = out.get(j);
+                    if (translated == null || translated.isBlank()) continue;
+
+                    translated = glossaryService.unfreezeTerms(translated, frozenForRows.get(originalIndex));
+                    setValueByLang(rowsToTranslate.get(originalIndex), targetUi, translated);
+                }
+            }
+
             Platform.runLater(this::refresh);
 
         } catch (Exception ex) {
@@ -1218,5 +1440,22 @@ public class CustomTableView extends TableView<LocalizationData> {
         return best;
     }
 
+    private static void setValueByLang(LocalizationData data, String lang, String value) {
+        if (data == null || lang == null) return;
 
+        switch (lang.toLowerCase(Locale.ROOT)) {
+            case "ruru": data.setRuRu(value); break;
+            case "dede": data.setDeDe(value); break;
+            case "enus": data.setEnUs(value); break;
+            case "esmx": data.setEsMx(value); break;
+            case "eses": data.setEsEs(value); break;
+            case "frfr": data.setFrFr(value); break;
+            case "itit": data.setItIt(value); break;
+            case "plpl": data.setPlPl(value); break;
+            case "ptbr": data.setPtBr(value); break;
+            case "kokr": data.setKoKr(value); break;
+            case "zhcn": data.setZhCn(value); break;
+            case "zhtw": data.setZhTw(value); break;
+        }
+    }
 }

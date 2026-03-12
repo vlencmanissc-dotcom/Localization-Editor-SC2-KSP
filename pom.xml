@@ -180,7 +180,7 @@
                 </executions>
                 <configuration>
                     <name>Localization Editor SC2 KSP</name>
-                    <appVersion>1.0</appVersion>
+                    <appVersion>1.0.2</appVersion>
                     <vendor>Lenc</vendor>
 
                     <destination>dist</destination>

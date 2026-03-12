@@ -73,34 +73,47 @@ public final class TranslationService {
             String text,
             List<String> tokens,
             List<Integer> textPositions,
+            List<TagFreezer.Frozen> frozenParts,
             List<String> toTranslate
     ) {
         if (text == null || text.isEmpty()) {
             tokens.add("");
             return;
         }
+
         java.util.regex.Matcher gm = GEOM_RUN.matcher(text);
         int tp = 0;
+
         while (gm.find()) {
             if (gm.start() > tp) {
                 String t1 = text.substring(tp, gm.start());
-                String clean1 = sanitizeVisible(t1);
-                tokens.add(t1); // keep original; replace with translation during rebuild
+
+                TagFreezer.Frozen f1 = TagFreezer.freezeRich(t1);
+                String clean1 = sanitizeVisible(f1.protectedText);
+
+                tokens.add(t1);
                 if (!clean1.isEmpty()) {
                     textPositions.add(tokens.size() - 1);
+                    frozenParts.add(f1);
                     toTranslate.add(clean1);
                 }
             }
-            // geometric block sequence — do not translate, keep as separate token
+
+            // Geometric Unicode run stays untouched.
             tokens.add(gm.group());
             tp = gm.end();
         }
+
         if (tp < text.length()) {
             String t2 = text.substring(tp);
-            String clean2 = sanitizeVisible(t2);
+
+            TagFreezer.Frozen f2 = TagFreezer.freezeRich(t2);
+            String clean2 = sanitizeVisible(f2.protectedText);
+
             tokens.add(t2);
             if (!clean2.isEmpty()) {
                 textPositions.add(tokens.size() - 1);
+                frozenParts.add(f2);
                 toTranslate.add(clean2);
             }
         }
@@ -145,14 +158,31 @@ public final class TranslationService {
         return html;
     }
     // Simple case – not HTML
+// Simple case: plain text without HTML tags.
     private static class PlainPlan extends RebuildPlan {
+        private final TagFreezer.Frozen frozen;
         private String translated;
-        @Override public void consumeTranslated(ListIterator<String> it) {
-            String t = sanitizeVisible(it.next());
-            if (t != null) t = t.replace('\u00A0',' ').replaceAll("[\\r\\n]+", " ");
-            translated = (t == null ? "" : t);
+
+        PlainPlan(TagFreezer.Frozen frozen) {
+            this.frozen = frozen;
         }
-        @Override public String result() { return translated; }
+
+        @Override
+        public void consumeTranslated(ListIterator<String> it) {
+            String t = it.next();
+            if (t == null) t = "";
+
+            t = t.replace('\u00A0', ' ')
+                    .replaceAll("[\\r\\n]+", " ")
+                    .trim();
+
+            translated = TagFreezer.unfreezeRich(t, frozen);
+        }
+
+        @Override
+        public String result() {
+            return translated;
+        }
     }
 
 
@@ -211,28 +241,40 @@ public final class TranslationService {
     private static final Pattern TAG_TOKEN = Pattern.compile("(?s)<[^>]*?>");
 
     // Rebuild plan: tags + text, only text is translated
+// Rebuild plan for HTML-like strings:
+// tags stay untouched, only text fragments are translated and then restored.
     private static class TokenPlan extends RebuildPlan {
-        private final List<String> tokens;        //
-        private final List<Integer> textPositions; //
+        private final List<String> tokens;
+        private final List<Integer> textPositions;
+        private final List<TagFreezer.Frozen> frozenParts;
 
-        TokenPlan(List<String> tokens, List<Integer> textPositions) {
+        TokenPlan(List<String> tokens,
+                  List<Integer> textPositions,
+                  List<TagFreezer.Frozen> frozenParts) {
             this.tokens = tokens;
             this.textPositions = textPositions;
+            this.frozenParts = frozenParts;
         }
 
-        @Override public void consumeTranslated(ListIterator<String> it) {
-            for (int pos : textPositions) {
-                // get next translated fragment
+        @Override
+        public void consumeTranslated(ListIterator<String> it) {
+            for (int i = 0; i < textPositions.size(); i++) {
+                int pos = textPositions.get(i);
+
                 String t = it.next();
                 if (t == null) t = "";
-                // normalize spacing/line breaks (same policy as PlainPlan)
-                t = t.replace('\u00A0',' ').replaceAll("[\\r\\n]+", " ").trim();
+
+                t = t.replace('\u00A0', ' ')
+                        .replaceAll("[\\r\\n]+", " ")
+                        .trim();
+
+                t = TagFreezer.unfreezeRich(t, frozenParts.get(i));
                 tokens.set(pos, t);
             }
         }
 
-        @Override public String result() {
-            // simply concatenate without pretty-print formatting
+        @Override
+        public String result() {
             StringBuilder sb = new StringBuilder();
             for (String tk : tokens) sb.append(tk);
             return sb.toString();
@@ -251,34 +293,37 @@ public final class TranslationService {
             if (looksLikeHtml(s)) {
                 htmlCnt++;
 
-                // Tokenize by tags; inside text segments additionally split by GEOM_RUN.
                 List<String> tokens = new ArrayList<>();
                 List<Integer> textPositions = new ArrayList<>();
-                int pos = 0;
+                List<TagFreezer.Frozen> frozenParts = new ArrayList<>();
 
+                int pos = 0;
                 java.util.regex.Matcher m = TAG_TOKEN.matcher(s);
+
                 while (m.find()) {
                     if (m.start() > pos) {
                         String text = s.substring(pos, m.start());
-                        splitTextByGeomAndQueue(text, tokens, textPositions, toTranslate);
+                        splitTextByGeomAndQueue(text, tokens, textPositions, frozenParts, toTranslate);
                     }
-                    // tag itself — separate token, not sent for translation
+
+                    // Tag token itself is preserved and never translated.
                     tokens.add(s.substring(m.start(), m.end()));
                     pos = m.end();
                 }
-                // tail after last tag
+
                 if (pos < s.length()) {
                     String text = s.substring(pos);
-                    splitTextByGeomAndQueue(text, tokens, textPositions, toTranslate);
+                    splitTextByGeomAndQueue(text, tokens, textPositions, frozenParts, toTranslate);
                 }
 
-                // Rebuild plan: replace only marked text tokens
-                plans.add(new TokenPlan(tokens, textPositions));
+                plans.add(new TokenPlan(tokens, textPositions, frozenParts));
 
             } else {
                 plainCnt++;
-                plans.add(new PlainPlan());
-                toTranslate.add(s == null ? "" : sanitizeVisible(s));
+
+                TagFreezer.Frozen frozen = TagFreezer.freezeRich(s == null ? "" : s);
+                plans.add(new PlainPlan(frozen));
+                toTranslate.add(sanitizeVisible(frozen.protectedText));
             }
         }
 

@@ -2,6 +2,8 @@ package lv.lenc;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -11,7 +13,8 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.util.List;
-
+import java.nio.file.Paths;
+import java.util.List;
 import static lv.lenc.TranslationService.*;
 
 public class Main extends Application {
@@ -50,6 +53,9 @@ public class Main extends Application {
     private Process libreProcess;
     private TranslationProgressOverlay progressOverlay;
     private StackPane root;
+    private final GlossaryService glossaryService = new GlossaryService();
+    private final BooleanProperty fileOpened = new SimpleBooleanProperty(false);
+    private final BooleanProperty chooseAllMode = new SimpleBooleanProperty(false);
     public static void main(String[] args) {
         launch(args);
     }
@@ -66,8 +72,9 @@ public class Main extends Application {
         wireEvents(primaryStage, tableView);
         buildScene(primaryStage, tableView);
 
-        applyInitialDisabledState();
-       // primaryStage.show();
+        //    applyInitialDisabledState();
+        glossaryService.loadGlossariesAsyncFromResources();
+        // primaryStage.show();
     }
 
     // ---------------------------
@@ -102,7 +109,8 @@ public class Main extends Application {
                 getClass().getResource("/Assets/Textures/").toString(),
                 localization,
                 (UiScaleHelper.SCREEN_WIDTH * 0.786),
-                (UiScaleHelper.SCREEN_HEIGHT * 0.37)
+                (UiScaleHelper.SCREEN_HEIGHT * 0.37),
+                glossaryService
         );
 
         borderTable = new CustomBorder(tableView);
@@ -124,7 +132,7 @@ public class Main extends Application {
                 0.25,
                 0.3
         );
-        translate.setDisable(true);
+        //  translate.setDisable(true);
 
         translateChooseAll = UIElementFactory.createCustomLongAlternativeButton(
                 localization.get("button.chooseAll"),
@@ -155,7 +163,7 @@ public class Main extends Application {
                 165,
                 58
         );
-        languageDropdown.disable(true);
+        // languageDropdown.disable(true);
         languageDropdown.getItems().setAll(valueKey);
         languageDropdown.setValue(valueKey[2]);
 
@@ -190,6 +198,23 @@ public class Main extends Application {
         borderTable.setTranslateY(UiScaleHelper.scaleY(-3));
         tableWithBorder.getChildren().addAll(borderTable, tableView);
         layout.setCenter(tableWithBorder);
+
+        translate.disableProperty().bind(
+                fileOpened.not().or(glossaryService.glossaryLoadingProperty())
+        );
+        translate.setCustomText(localization.get("translating.loading"));
+        glossaryService.glossaryLoadingProperty().addListener((obs, oldVal, loading) -> {
+            if (loading) {
+                translate.setCustomText(localization.get("translating.loading"));
+            } else {
+                translate.clearCustomText();
+            }
+        });
+        translateChooseAll.disableProperty().bind(fileOpened.not());
+        languageDropdown.disableProperty().bind(
+                fileOpened.not().or(chooseAllMode)
+        );
+
     }
 
     private FileSelectable createFileSelectable(CustomTableView tableView) {
@@ -199,10 +224,18 @@ public class Main extends Application {
             fileTitleLabel.setText(file.getName());
 
             boolean ok = project.open(file, tableView);
-            translateToAll = false;
 
-            translate.setDisable(!ok);
-            translateChooseAll.disable(!ok);
+            fileOpened.set(ok);
+            System.out.println("[UI] project.open ok = " + ok);
+            System.out.println("[UI] fileOpened = " + fileOpened.get());
+            System.out.println("[UI] glossaryLoading = " + glossaryService.glossaryLoadingProperty().get());
+            System.out.println("[UI] translate disabled = " + translate.isDisable());
+            translateToAll = false;
+            chooseAllMode.set(false);
+            //translateToAll = false;
+
+            //translate.setDisable(!ok);
+            //.disable(!ok);
             System.out.println("ok=" + ok
                     + " translateDisabled=" + translate.isDisable()
                     + " chooseAllDisabled=" + translateChooseAll.isDisable());
@@ -226,14 +259,16 @@ public class Main extends Application {
 
                 if (tableView.isLastLoadWasMulti() && tableView.getLoadedUiLanguages().size() > 1) {
                     tableView.showAllColumns();
-                    sourceUi = tableView.getMainSourceLang();  // only this
+                    sourceUi = tableView.getMainSourceLang();
                 } else {
                     tableView.showOnly(sourceUi, languageDropdown.getValue());
                 }
+            } else {
+                fileOpened.set(false);
+                chooseAllMode.set(false);
             }
 
-            applyTranslateModeUI();
-            languageDropdown.disable(!ok || translateToAll);
+
         };
     }
 
@@ -246,7 +281,7 @@ public class Main extends Application {
 
         translateChooseAll.setOnAction(e -> {
             translateToAll = !translateToAll;
-
+            chooseAllMode.set(!chooseAllMode.get());
             if (translateToAll) {
                 tableView.showAllColumns();
             } else {
@@ -254,7 +289,7 @@ public class Main extends Application {
                 String srcUi = (sourceUi != null) ? sourceUi : tableView.getMainSourceLang();
                 tableView.showOnly(srcUi, targetUi);
             }
-            applyTranslateModeUI();
+            //  applyTranslateModeUI();
         });
 
         languageDropdown.setOnAction(e -> {
@@ -287,15 +322,15 @@ public class Main extends Application {
                 ok = project.saveTarget(tableView, targetUi);
             }
             if (!ok) System.err.println("[SAVE] failed or context not ready");
-            applyTranslateModeUI();
+            //    applyTranslateModeUI();
         });
 
         translate.setCancelHook(() -> {
             TranslationService.cancelInFlight();
             progressWin.close();
             Platform.runLater(() -> {
-                translateChooseAll.disable(false);
-                applyTranslateModeUI();
+                //  translateChooseAll.disable(false);
+                //  applyTranslateModeUI();
             });
         });
 
@@ -303,12 +338,14 @@ public class Main extends Application {
     }
 
     private void runTranslate(CustomTableView tableView, TranslationProgressOverlay progressWin) {
-
+        if (!glossaryService.isGlossaryReady()) {
+            System.err.println("[Glossary] glossary is still loading");
+            return;
+        }
         Thread.interrupted(); // reset interrupt flag
 
         Platform.runLater(() -> {
-            languageDropdown.disable(true);
-            translateChooseAll.disable(true);
+
             progressWin.showReset();
         });
 
@@ -343,8 +380,6 @@ public class Main extends Application {
         } finally {
             if (progressWin != null) progressWin.close();
             Platform.runLater(() -> {
-                translateChooseAll.disable(false);
-                applyTranslateModeUI();
             });
         }
     }
@@ -358,7 +393,7 @@ public class Main extends Application {
         VBox layoutMain = new VBox(UiScaleHelper.scaleY(20));
         HBox fileManager = new HBox(UiScaleHelper.scaleX(1));
         fileManager.setTranslateY(UiScaleHelper.scaleY(65));
-       // fileSelected.setTranslateY(UiScaleHelper.scaleY(10));
+        // fileSelected.setTranslateY(UiScaleHelper.scaleY(10));
 
         SquareDiscordURL discordURL = new SquareDiscordURL();
         discordURL.setTranslateY(UiScaleHelper.scaleY(-6));
@@ -451,11 +486,11 @@ public class Main extends Application {
         primaryStage.centerOnScreen();
         primaryStage.setIconified(false);
 
-            // 1) Show immediately but invisible (avoid square/rectangle flash)
+        // 1) Show immediately but invisible (avoid square/rectangle flash)
         primaryStage.setOpacity(0.0);
         primaryStage.show();
 
-            // 2) On next frame enable fullscreen and make visible
+        // 2) On next frame enable fullscreen and make visible
         Platform.runLater(() -> {
             primaryStage.setFullScreenExitHint("");
             primaryStage.setFullScreen(true);

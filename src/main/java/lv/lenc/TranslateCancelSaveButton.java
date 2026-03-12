@@ -64,6 +64,13 @@ public final class TranslateCancelSaveButton extends StackPane {
 
         button.setOnAction(e -> handleClick());
     }
+    public void setCustomText(String text) {
+        button.setText(text);
+    }
+    public void clearCustomText() {
+        applyText(state.get());
+    }
+
 
     public static CompletableFuture<Void> runAsync(Runnable work, Consumer<Thread> onThread) {
         return CompletableFuture.runAsync(() -> {
