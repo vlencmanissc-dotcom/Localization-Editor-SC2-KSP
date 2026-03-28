@@ -13,9 +13,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 public class FileUtil {
-    private static final Pattern LOCALE_PATTERN =
-            Pattern.compile("^[A-Za-z]{4}\\.SC2Data$", Pattern.CASE_INSENSITIVE);
-
     private static final Pattern LOCALE_DIR =
             Pattern.compile("^[A-Za-z]{4}\\.SC2Data$", Pattern.CASE_INSENSITIVE);
     private static final String LOCALIZED_DATA = "LocalizedData";
@@ -38,13 +35,13 @@ public class FileUtil {
                     List<File> filtered = list.stream()
                             .filter(file -> pattern.matcher(file.getName()).matches())
                             .toList();
-                    System.out.println(">" + filtered);
+                    // AppLog.info("[FileUtil] locale dirs: " + filtered);
                     return filtered;
                 } else {
-                    System.out.println("No files found in parent directory or directory is inaccessible.");
+                    // AppLog.info("[FileUtil] parent directory inaccessible or empty");
                 }
             } else {
-                System.out.println("Parent directory three levels up does not exist.");
+                // AppLog.info("[FileUtil] parent directory three levels up does not exist");
             }
         } catch (Exception e2) {
             e2.printStackTrace();
@@ -54,24 +51,20 @@ public class FileUtil {
 
 
     public static Map<String, File> listFilesByMask(File file, String llName) { // deDE.SC2Data
-        System.out.println("llName: " + llName);
         String name = file.getName();
         String langCode = normalizeLocale(name.length() >= 4 ? name.substring(0, 4) : name);
 
         File[] children = file.listFiles();
         if (children == null) return Collections.emptyMap();
         List<File> files2 = Arrays.asList(children);
-        System.out.println("langCode: " + langCode);
         Map<String, File>  resList = new HashMap<>();
 
-        Map<String, Map<String, String>> perLang2 = new LinkedHashMap<>();
         File locFile =  files2.stream()
                 .filter(ffff -> ffff.isDirectory())
                 .filter(ffff -> "LocalizedData".equals(ffff.getName()))
                 .findFirst().orElse(null);
         if (locFile != null) {
                 List<File> filesSmal = Arrays.asList(locFile.listFiles());
-            System.out.println("filesSmal: " + filesSmal.stream().map(o -> o.getName()).toList());
             File res = filesSmal.stream()
                         .filter(ppp -> ppp.getName().endsWith(llName))
                     .findFirst().orElse(null);
@@ -243,8 +236,19 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
             return targetFile;
         }
 
-        // 2) .<ll>
-        return withLocaleSuffixSibling(originalFile, targetLocale);
+        // 2) No SC2Data structure in source path:
+        //    create it near the source file so save behavior is consistent.
+        File sourceParent = originalFile.getParentFile();
+        if (sourceParent == null) {
+            // Last-resort fallback for root-level files.
+            return withLocaleSuffixSibling(originalFile, targetLocale);
+        }
+
+        File targetRoot = new File(sourceParent, targetLocale + ".SC2Data");
+        File targetLoc = new File(targetRoot, LOCALIZED_DATA);
+        File targetFile = new File(targetLoc, originalFile.getName());
+        Files.createDirectories(targetFile.getParentFile().toPath());
+        return targetFile;
     }
 
     private static File withLocaleSuffixSibling(File originalFile, String locale) {
@@ -266,7 +270,7 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
             Path bak = targetPath.resolveSibling(target.getName() + ".bak");
             try {
                 Files.copy(targetPath, bak, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-                System.out.println("[SAVE] backup -> " + bak.toAbsolutePath());
+                AppLog.info("[SAVE] backup -> " + bak.toAbsolutePath());
             } catch (Exception ignored) { /* не критично */ }
         }
 
@@ -280,7 +284,7 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
                                                String targetUiLang,
                                                String fileText) {
         try {
-            if (openedFile == null || projectRoot == null) return false;
+            if (openedFile == null) return false;
             File out = resolveTargetFile(openedFile, targetUiLang);
             writeUtf8Atomic(out, fileText);
             AppLog.info("[SAVE] OK -> " + out.getAbsolutePath());

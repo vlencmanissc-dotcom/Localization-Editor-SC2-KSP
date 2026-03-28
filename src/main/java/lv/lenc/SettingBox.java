@@ -1,6 +1,7 @@
 package lv.lenc;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javafx.animation.FadeTransition;
@@ -26,9 +27,42 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.util.Duration;
 
 public class SettingBox {
+    private static final double SETTINGS_WINDOW_SCALE = 1.25;
+
+    private static double sv(double fullHdValue) {
+        return fullHdValue * SETTINGS_WINDOW_SCALE;
+    }
+
+    private static double sx(double fullHdValue) {
+        return UiScaleHelper.scaleX(sv(fullHdValue));
+    }
+
+    private static double sy(double fullHdValue) {
+        return UiScaleHelper.scaleY(sv(fullHdValue));
+    }
+
+    private static double ss(double fullHdValue) {
+        return UiScaleHelper.scale(sv(fullHdValue));
+    }
+
+    private static void tuneSettingLabel(GlowingLabel label, double baseFullHdFontPx) {
+        if (label == null) return;
+        label.setFont(Font.font("Arial Black", sy(baseFullHdFontPx)));
+    }
+
+    private static void tuneSettingCheckRow(LabeledCheckRow row) {
+        if (row == null) return;
+
+        row.getLabel().setFont(Font.font("Arial Black", sy(17)));
+        row.getCheckBox().setStyle("-fx-font-size: " + sy(18) + "px;");
+        row.getCheckBox().setTranslateY(sy(1.5));
+        row.setSpacing(sx(10));
+        row.setPadding(new Insets(sy(1), sx(12), sy(1), sx(12)));
+    }
 
     // --- UI refs for localization updates ---
     private static final GaussianBlur blurEffect = new GaussianBlur(0);
@@ -43,8 +77,23 @@ public class SettingBox {
     private static CustomAlternativeButton uiDEFAUTBUTTON;
     private static CustomAlternativeButton saveButton;
     private static CustomAlternativeButton discordURL;
+    private static CustomAlternativeButton clearCacheButton;
 
     private static CustomLanguageButton[] menuButtons;
+    private static final List<LanguageOption> LANGUAGE_OPTIONS = List.of(
+            new LanguageOption("ru", "Русский"),
+            new LanguageOption("de", "Deutsch"),
+            new LanguageOption("en", "English"),
+            new LanguageOption("es-MX", "Español (Latinoamérica)"),
+            new LanguageOption("es-ES", "Español (España)"),
+            new LanguageOption("fr", "Français"),
+            new LanguageOption("it", "Italiano"),
+            new LanguageOption("pl", "Polski"),
+            new LanguageOption("pt-BR", "Português (Brasil)"),
+            new LanguageOption("ko", "한국어"),
+            new LanguageOption("zh-CN", "简体中文"),
+            new LanguageOption("zh-TW", "繁體中文")
+    );
 
     private static LabeledCheckRow tableLightCheckBox;
     private static LabeledCheckRow shimmerRow;
@@ -56,12 +105,32 @@ public class SettingBox {
     private static StackPane overlayRoot;     // full-screen dim layer
     private static StackPane windowHolder;    // centers the window
     private static Pane windowContent;        // actual settings window (your old root)
-    private static ParallelTransition selectionAnim;
-    // we keep last references for updateTexts() calls
-    private static LocalizationManager lastLocalization;
-    private static CustomTableView lastTableView;
 
     private SettingBox() {}
+
+    private static final class LanguageOption {
+        final String code;
+        final String nativeName;
+
+        LanguageOption(String code, String nativeName) {
+            this.code = code;
+            this.nativeName = nativeName;
+        }
+    }
+
+    private static String findNativeNameByCode(String code) {
+        for (LanguageOption opt : LANGUAGE_OPTIONS) {
+            if (opt.code.equalsIgnoreCase(code)) return opt.nativeName;
+        }
+        return "English";
+    }
+
+    private static String findCodeByNativeName(String nativeName) {
+        for (LanguageOption opt : LANGUAGE_OPTIONS) {
+            if (opt.nativeName.equals(nativeName)) return opt.code;
+        }
+        return "en";
+    }
 
     /**
      * Show settings as an in-app overlay ("window in window") inside the provided appRoot StackPane.
@@ -75,9 +144,6 @@ public class SettingBox {
             CustomBorder borderTable,
             CustomTableView tableView
     ) {
-        lastLocalization = localization;
-        lastTableView = tableView;
-
         if (overlayRoot == null) {
             overlayRoot = buildOverlay(appRoot, localization, background, longButton, main, borderTable, tableView);
             appRoot.getChildren().add(overlayRoot);
@@ -120,7 +186,7 @@ public class SettingBox {
                     new javafx.animation.KeyFrame(Duration.millis(220),
                             new javafx.animation.KeyValue(
                                     blurEffect.radiusProperty(),
-                                    UiScaleHelper.scaleY(10),
+                                    sy(10),
                                     Interpolator.EASE_OUT
                             ))
             );
@@ -222,7 +288,7 @@ public class SettingBox {
     private static void playOpenAnim(Pane content) {
         if (content == null) return;
 
-        double fromY = UiScaleHelper.scaleY(-26);
+        double fromY = sy(-26);
 
         content.setOpacity(0);
         content.setTranslateY(fromY);
@@ -251,8 +317,8 @@ public class SettingBox {
             CustomBorder borderTable,
             CustomTableView tableView
     ) {
-        final double WIDTH  = UiScaleHelper.scaleX(473);
-        final double HEIGHT = UiScaleHelper.scaleY(509);
+        final double WIDTH  = sx(500);
+        final double HEIGHT = sy(509);
 
         String texturePath = SettingBox.class.getResource("/Assets/Textures/").toExternalForm();
 
@@ -269,7 +335,7 @@ public class SettingBox {
                 BorderRepeat.STRETCH
         );
 
-        double highlightThickness = UiScaleHelper.scale(8);
+        double highlightThickness = ss(8);
         BorderImage highlightBorder = new BorderImage(
                 highlightImage,
                 new BorderWidths(highlightThickness),
@@ -286,17 +352,17 @@ public class SettingBox {
         frame.setBorder(new Border(border));
 
         // Left panel with buttons
-        VBox buttonBox = new VBox(UiScaleHelper.scaleY(20));
+        VBox buttonBox = new VBox(sy(20));
         buttonBox.setPadding(new Insets(
-                UiScaleHelper.scaleY(20),
-                UiScaleHelper.scaleX(10),
-                UiScaleHelper.scaleY(20),
-                UiScaleHelper.scaleX(20)
+                sy(20),
+                sx(10),
+                sy(20),
+                sx(20)
         ));
 
         Region lefthighlightRegion = new Region();
-        lefthighlightRegion.setMinWidth(UiScaleHelper.scaleX(140));
-        lefthighlightRegion.setMinHeight(UiScaleHelper.scaleY(470));
+        lefthighlightRegion.setMinWidth(sx(162));
+        lefthighlightRegion.setMinHeight(sy(470));
         StackPane.setAlignment(lefthighlightRegion, Pos.TOP_LEFT);
         lefthighlightRegion.setBorder(new Border(highlightBorder));
 
@@ -304,7 +370,7 @@ public class SettingBox {
         ImageView selectionMarkImage = new ImageView(selectionImage);
         selectionMarkImage.setManaged(false);
         selectionMarkImage.setRotate(270);
-        selectionMarkImage.setFitWidth(UiScaleHelper.scaleX(75));
+        selectionMarkImage.setFitWidth(sx(75));
         selectionMarkImage.setPreserveRatio(true);
         selectionMarkImage.setVisible(false);
 
@@ -317,24 +383,28 @@ public class SettingBox {
 
         // Close button (in-app close)
         CustomCloseButton closeButton = new CustomCloseButton();
+        double closeButtonSize = sy(34);
+        closeButton.setPrefSize(closeButtonSize, closeButtonSize);
+        closeButton.setMinSize(closeButtonSize, closeButtonSize);
+        closeButton.setMaxSize(closeButtonSize, closeButtonSize);
         closeButton.setOnAction(e -> close(longButton));
 
         // -------------------------
         // Language Panel
         // -------------------------
         languageLabel = new GlowingLabel(localization.get("settingbox.language.choose"));
+        tuneSettingLabel(languageLabel, 19);
 
         CustomComboBoxClassic<String> languageComboBox =
-                new CustomComboBoxClassic<>(texturePath, false, 200, 45, 15, 13);
+                new CustomComboBoxClassic<>(texturePath, false, sv(260), sv(54), sv(17), sv(15), sv(28), 12);
 
-        languageComboBox.getItems().addAll(
-                localization.get("settingbox.language.ru"),
-                localization.get("settingbox.language.en")
+        languageComboBox.getItems().setAll(
+                LANGUAGE_OPTIONS.stream().map(o -> o.nativeName).toList()
         );
 
         languageComboBox.setOnAction(e -> {
-            int selectedIndex = languageComboBox.getSelectionModel().getSelectedIndex();
-            String lang = (selectedIndex == 0) ? "ru" : "en";
+            String selectedName = languageComboBox.getValue();
+            String lang = findCodeByNativeName(selectedName);
 
             SettingsManager.saveLanguage(lang);
             localization.changeLanguage(lang);
@@ -348,15 +418,9 @@ public class SettingBox {
         });
 
         String currentLang = SettingsManager.loadLanguage();
-        if ("ru".equals(currentLang)) {
-            languageComboBox.setValue(localization.get("settingbox.language.ru"));
-            languageComboBox.getSelectionModel().select(0);
-        } else {
-            languageComboBox.setValue(localization.get("settingbox.language.en"));
-            languageComboBox.getSelectionModel().select(1);
-        }
+        languageComboBox.setValue(findNativeNameByCode(currentLang));
 
-        VBox languageBox = new VBox(UiScaleHelper.scaleY(10), languageLabel, languageComboBox);
+        VBox languageBox = new VBox(sy(10), languageLabel, languageComboBox);
         languageBox.setAlignment(Pos.TOP_CENTER);
         Pane languageView = new StackPane(languageBox);
 
@@ -364,15 +428,19 @@ public class SettingBox {
         // UI Settings Panel
         // -------------------------
         uiLabel = new GlowingLabel(localization.get("setting.box.ui.placeholder"));
-        VBox.setMargin(uiLabel, new Insets(0, 0, UiScaleHelper.scaleY(10), 0));
+        tuneSettingLabel(uiLabel, 19);
+        VBox.setMargin(uiLabel, new Insets(0, 0, sy(10), 0));
 
         uilabelFLASH = new GlowingLabel(localization.get("setting.box.ui.flash"));
+        tuneSettingLabel(uilabelFLASH, 18);
         CustomSlider sliderFlash = new CustomSlider(0, 100, background.getFlashAlpha() * 100);
 
         uilabelPOINT = new GlowingLabel(localization.get("setting.box.ui.point"));
+        tuneSettingLabel(uilabelPOINT, 18);
         CustomSlider sliderPoint = new CustomSlider(0, 100, background.getPointAlpha() * 100);
 
         uilabelGRIDE = new GlowingLabel(localization.get("setting.box.ui.gride"));
+        tuneSettingLabel(uilabelGRIDE, 18);
         CustomSlider slideGRIDE = new CustomSlider(0, 12, background.getGridAlpha() * 100);
 
         sliderFlash.valueProperty().addListener((obs, oldVal, newVal) ->
@@ -389,14 +457,17 @@ public class SettingBox {
                 localization.get("setting.box.ui.tableLight"),
                 SettingsManager.loadCheckboxState(SettingsManager.TABLE_LIGHTING_KEY, true)
         );
+        tuneSettingCheckRow(tableLightCheckBox);
         shimmerRow = new LabeledCheckRow(
                 localization.get("setting.box.ui.shimmers"),
                 SettingsManager.loadCheckboxState(SettingsManager.SHIMMERS_KEY, true)
         );
+        tuneSettingCheckRow(shimmerRow);
         backgroundLightCheckBox = new LabeledCheckRow(
                 localization.get("setting.box.ui.backgroundBlur"),
                 SettingsManager.loadCheckboxState(SettingsManager.BLUR_KEY, true)
         );
+        tuneSettingCheckRow(backgroundLightCheckBox);
 
         backgroundLightCheckBox.getCheckBox().selectedProperty().addListener((obs, oldVal, newVal) -> {
             background.blurredLights.setVisible(newVal);
@@ -410,7 +481,7 @@ public class SettingBox {
 
         uiDEFAUTBUTTON = new CustomAlternativeButton(
                 localization.get("setting.box.ui.defaut"),
-                0.6, 0.8, 156.0, 50, 13
+                0.6, 0.8, sv(156.0), sv(50), sv(13)
         );
         uiDEFAUTBUTTON.setOnAction(e -> {
             background.setFlashAlpha(SettingsManager.DEFAULT_FLASH_ALPHA);
@@ -428,7 +499,7 @@ public class SettingBox {
 
         saveButton = new CustomAlternativeButton(
                 localization.get("button.save"),
-                0.6, 0.8, 156.0, 50, 13
+                0.6, 0.8, sv(156.0), sv(50), sv(13)
         );
         saveButton.setOnAction(e -> {
             SettingsManager.saveAllSettings(
@@ -447,12 +518,12 @@ public class SettingBox {
             );
         });
 
-        HBox defaultSaveRow = new HBox(UiScaleHelper.scaleX(8), uiDEFAUTBUTTON, saveButton);
+        HBox defaultSaveRow = new HBox(sx(8), uiDEFAUTBUTTON, saveButton);
         defaultSaveRow.setAlignment(Pos.CENTER);
-        VBox.setMargin(defaultSaveRow, new Insets(UiScaleHelper.scaleY(-9), 0, 0, 0));
+        VBox.setMargin(defaultSaveRow, new Insets(sy(-9), 0, 0, 0));
 
         VBox uiBox = new VBox(
-                UiScaleHelper.scaleY(10),
+                sy(10),
                 uiLabel,
                 uilabelFLASH, sliderFlash,
                 uilabelPOINT, sliderPoint,
@@ -466,19 +537,16 @@ public class SettingBox {
         Pane uiView = new StackPane(uiBox);
 
         // -------------------------
-        // Other Panel
+        // Controls Panel (cache/GPU)
         // -------------------------
-        otherDescrption = new GlowingLabel(localization.get("setting.box.other.description"));
-        VBox.setMargin(otherDescrption, new Insets(0, 0, UiScaleHelper.scaleY(10), 0));
-        otherDescrption.setWrapText(true);
-        otherDescrption.setPrefSize(UiScaleHelper.scaleX(260), UiScaleHelper.scaleY(100));
-
         translationCachePersistRow = new LabeledCheckRow(
                 localization.get("setting.box.other.translationCachePersist"),
                 SettingsManager.loadTranslationCachePersistence()
         );
+        tuneSettingCheckRow(translationCachePersistRow);
         translationCachePersistRow.getCheckBox().selectedProperty().addListener((obs, oldVal, newVal) -> {
             TranslationService.setPersistentCacheEnabled(newVal);
+            SettingsManager.saveTranslationCachePersistence(newVal);
             if (!newVal) {
                 TranslationService.clearTranslationCache();
             }
@@ -488,19 +556,49 @@ public class SettingBox {
                 localization.get("setting.box.other.useGpuDocker"),
                 SettingsManager.loadUseGpuDocker()
         );
+        tuneSettingCheckRow(useGpuDockerRow);
         useGpuDockerRow.getCheckBox().selectedProperty().addListener((obs, oldVal, newVal) -> {
             TranslationService.setGpuDockerEnabled(newVal);
+            SettingsManager.saveUseGpuDocker(newVal);
         });
 
-        CustomAlternativeButton clearCacheButton = new CustomAlternativeButton(
+        clearCacheButton = new CustomAlternativeButton(
                 localization.get("setting.box.other.clearCache"),
-                0.6, 0.8, 200.0, 45.0, 13.0
+                0.6, 0.8, sv(250.0), sv(62.0), sv(16.0)
         );
         clearCacheButton.setOnAction(e -> TranslationService.clearTranslationCache());
 
+        translationCachePersistRow.setMaxWidth(sx(286));
+        useGpuDockerRow.setMaxWidth(sx(286));
+        translationCachePersistRow.setAlignment(Pos.CENTER_LEFT);
+        useGpuDockerRow.setAlignment(Pos.CENTER_LEFT);
+
+        HBox clearCacheWrap = new HBox(clearCacheButton);
+        clearCacheWrap.setAlignment(Pos.CENTER);
+        VBox.setMargin(clearCacheWrap, new Insets(sy(14), 0, sy(6), 0));
+
+        VBox controlsBox = new VBox(
+                sy(14),
+                translationCachePersistRow,
+                useGpuDockerRow,
+                clearCacheWrap
+        );
+        controlsBox.setAlignment(Pos.TOP_CENTER);
+        controlsBox.setPadding(new Insets(sy(18), sx(10), sy(12), sx(10)));
+        Pane controlsView = new StackPane(controlsBox);
+
+        // -------------------------
+        // Other Panel (Discord only)
+        // -------------------------
+        otherDescrption = new GlowingLabel(localization.get("setting.box.other.description"));
+        tuneSettingLabel(otherDescrption, 17);
+        VBox.setMargin(otherDescrption, new Insets(0, 0, sy(10), 0));
+        otherDescrption.setWrapText(true);
+        otherDescrption.setPrefSize(sx(260), sy(100));
+
         discordURL = new CustomAlternativeButton(
                 localization.get("setting.box.other.join"),
-                0.6, 0.8, 200.0, 55.0, 14.0
+                0.6, 0.8, sv(200.0), sv(55.0), sv(14.0)
         );
         discordURL.setOnAction(e -> {
             try {
@@ -510,7 +608,7 @@ public class SettingBox {
             }
         });
 
-        VBox otherBox = new VBox(10, otherDescrption, translationCachePersistRow, useGpuDockerRow, clearCacheButton, discordURL);
+        VBox otherBox = new VBox(sy(10), otherDescrption, discordURL);
         otherBox.setAlignment(Pos.TOP_CENTER);
         Pane otherView = new StackPane(otherBox);
 
@@ -518,20 +616,22 @@ public class SettingBox {
         Map<Integer, Pane> viewMap = new HashMap<>();
         viewMap.put(0, languageView);
         viewMap.put(1, uiView);
+        viewMap.put(3, controlsView);
         viewMap.put(4, otherView);
 
         // Configure right panel
         languageView.setVisible(false);
         uiView.setVisible(false);
+        controlsView.setVisible(false);
         otherView.setVisible(false);
 
-        StackPane rightPanel = new StackPane(languageView, uiView, otherView);
-        rightPanel.setMinSize(UiScaleHelper.scaleX(316), UiScaleHelper.scaleY(470));
-        rightPanel.setMaxSize(UiScaleHelper.scaleX(316), UiScaleHelper.scaleY(470));
-        rightPanel.setPrefSize(UiScaleHelper.scaleX(316), UiScaleHelper.scaleY(470));
+        StackPane rightPanel = new StackPane(languageView, uiView, controlsView, otherView);
+        rightPanel.setMinSize(sx(316), sy(470));
+        rightPanel.setMaxSize(sx(316), sy(470));
+        rightPanel.setPrefSize(sx(316), sy(470));
         rightPanel.setBorder(new Border(highlightBorder));
         rightPanel.setAlignment(Pos.TOP_CENTER);
-        rightPanel.setPadding(new Insets(10));
+        rightPanel.setPadding(new Insets(sy(10), sx(10), sy(10), sx(10)));
 
         // Menu buttons
         String[] keys = {
@@ -542,17 +642,18 @@ public class SettingBox {
                 localization.get("setting.box.other"),
         };
 
-        languageView.setMinSize(UiScaleHelper.scaleX(306), UiScaleHelper.scaleY(470));
-        uiView.setMinSize(UiScaleHelper.scaleX(306), UiScaleHelper.scaleY(470));
-        otherView.setMinSize(UiScaleHelper.scaleX(306), UiScaleHelper.scaleY(470));
+        languageView.setMinSize(sx(306), sy(470));
+        uiView.setMinSize(sx(306), sy(470));
+        controlsView.setMinSize(sx(306), sy(470));
+        otherView.setMinSize(sx(306), sy(470));
 
         menuButtons = new CustomLanguageButton[5];
 
         for (int i = 0; i < keys.length; i++) {
             String key = keys[i];
-            menuButtons[i] = new CustomLanguageButton(key, 104, 56, 16);
+            menuButtons[i] = new CustomLanguageButton(key, sv(136), sv(56), sv(15));
 
-            VBox.setMargin(menuButtons[i], new Insets(0, 0, 0, -1));
+            VBox.setMargin(menuButtons[i], new Insets(0, 0, 0, sx(-1)));
 
             final int index = i;
             final CustomLanguageButton button = menuButtons[i];
@@ -565,31 +666,31 @@ public class SettingBox {
 
                 int buttonIndex = buttonBox.getChildren().indexOf(button);
                 double buttonHeight = button.getHeight();
-                double spacing = UiScaleHelper.scaleY(20);
-                double paddingTop = UiScaleHelper.scaleY(20);
+                double spacing = sy(20);
+                double paddingTop = sy(20);
 
                 double centerY = paddingTop
                         + buttonIndex * (buttonHeight + spacing)
                         + buttonHeight / 2.0;
 
                 double markerHeight = selectionMarkImage.getBoundsInParent().getHeight();
-                double baseOffset = UiScaleHelper.scaleY(28);
+                double baseOffset = sy(28);
                 double scaleFactor = UiScaleHelper.scale(1);
 
-                double hdLift = (scaleFactor < 1.0) ? UiScaleHelper.scaleY(6) : 0.0;
+                double hdLift = (scaleFactor < 1.0) ? sy(6) : 0.0;
                 double adjustedY = centerY - markerHeight / 2.0 + baseOffset - hdLift;
 
                 selectionMarkImage.setLayoutY(adjustedY);
-                selectionMarkImage.setLayoutX(-UiScaleHelper.scaleX(20));
+                selectionMarkImage.setLayoutX(-sx(20));
                 selectionMarkImage.setVisible(true);
 
                 selectionMarkImage.setOpacity(0);
 
-                double startTranslate = UiScaleHelper.scaleY(-6);
-                double fromY = UiScaleHelper.scaleY(-9);
-                double toY = UiScaleHelper.scaleY(3);
+                double startTranslate = sy(-6);
+                double fromY = sy(-9);
+                double toY = sy(3);
 
-                double animLift = (scaleFactor < 1.0) ? UiScaleHelper.scaleY(2) : 0.0;
+                double animLift = (scaleFactor < 1.0) ? sy(2) : 0.0;
 
                 selectionMarkImage.setTranslateY(startTranslate - animLift);
 
@@ -611,7 +712,7 @@ public class SettingBox {
                 pt.playFromStart();
             });
 
-            if (index >= 2 && index <= 3) {
+            if (index == 2) {
                 menuButtons[i].disable(true);
             }
 
@@ -622,10 +723,10 @@ public class SettingBox {
         HBox contentLayout = new HBox(0, leftPanel, rightPanel);
         contentLayout.setAlignment(Pos.TOP_LEFT);
         contentLayout.setPadding(new Insets(
-                UiScaleHelper.scaleY(20),
-                UiScaleHelper.scaleX(6),
-                UiScaleHelper.scaleY(20),
-                UiScaleHelper.scaleX(8)
+                sy(20),
+                sx(6),
+                sy(20),
+                sx(8)
         ));
 
         Pane root = new Pane();
@@ -638,8 +739,8 @@ public class SettingBox {
         // place close button after layout
         root.layoutBoundsProperty().addListener((obs, oldVal, newVal) -> {
             double w = newVal.getWidth();
-            closeButton.setLayoutX(w - closeButton.getWidth() + UiScaleHelper.scaleX(2));
-            closeButton.setLayoutY(-UiScaleHelper.scaleY(3));
+            closeButton.setLayoutX(w - closeButton.getWidth() + sx(8));
+            closeButton.setLayoutY(-sy(8));
         });
 
         // default open first tab (language)
@@ -676,6 +777,7 @@ public class SettingBox {
         if (backgroundLightCheckBox != null) backgroundLightCheckBox.setLabel(localization.get("setting.box.ui.backgroundBlur"));
         if (translationCachePersistRow != null) translationCachePersistRow.setLabel(localization.get("setting.box.other.translationCachePersist"));
         if (useGpuDockerRow != null) useGpuDockerRow.setLabel(localization.get("setting.box.other.useGpuDocker"));
+        if (clearCacheButton != null) clearCacheButton.setText(localization.get("setting.box.other.clearCache"));
 
         if (menuButtons != null) {
             String[] keys = {

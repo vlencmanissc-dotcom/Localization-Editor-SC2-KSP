@@ -50,7 +50,7 @@ public class SettingsManager {
 
         try (FileOutputStream out = new FileOutputStream(SETTINGS_FILE)) {
             props.store(out, null);
-            System.out.println("Alpha settings saved.");
+            AppLog.info("[Settings] Alpha settings saved.");
         } catch (IOException e) {
             e.printStackTrace();
         }

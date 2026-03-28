@@ -62,7 +62,7 @@ public class CustomFileChooser extends StackPane implements Disabable {
                 if (file != null) {
                     selectedFile = file;
                     readFile();
-                    fileSelectable.onSelect(file);
+                    this.fileSelectable.onSelect(file);
                 }
             });
         });
@@ -86,7 +86,7 @@ public class CustomFileChooser extends StackPane implements Disabable {
         try {
             Files.readString(selectedFile.toPath(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            System.err.println("File read error: " + e.getMessage());
+            AppLog.warn("[FileChooser] File read error: " + e.getMessage());
         }
     }
 

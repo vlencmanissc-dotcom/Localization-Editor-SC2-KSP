@@ -2,9 +2,8 @@ package lv.lenc;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
-public class MyListTest<E> extends ArrayList<E> implements List<E> {
+public class MyListTest<E> extends ArrayList<E> {
 
     @Override
     public boolean add(E e) {

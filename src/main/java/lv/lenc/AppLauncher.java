@@ -1,10 +1,17 @@
 package lv.lenc;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Locale;
 
 public class AppLauncher {
     public static void main(String[] args) {
+        AppLog.init();
+        AppLog.info("[APP] Starting application");
+        AppLog.info("[APP] Log directory: " + AppLog.getLogDirectory());
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->
+                AppLog.error("[APP] Uncaught exception in thread " + thread.getName(), throwable));
+
         // Prefer hardware acceleration so the app is more likely to run on discrete GPU.
         System.setProperty("prism.order", "d3d,sw");
         System.setProperty("prism.forceGPU", "true");
@@ -60,7 +67,10 @@ public class AppLauncher {
             } else {
                 AppLog.warn("[GPU] Failed to set Windows GPU preference for: " + path + " (exit=" + exit + ")");
             }
-        } catch (Exception ex) {
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            AppLog.warn("[GPU] Unable to configure Windows GPU preference: interrupted");
+        } catch (IOException ex) {
             AppLog.warn("[GPU] Unable to configure Windows GPU preference: " + ex.getMessage());
         }
     }

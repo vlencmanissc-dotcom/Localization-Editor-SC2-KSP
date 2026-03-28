@@ -36,7 +36,7 @@ import javafx.scene.text.Text;
                     "-fx-focus-color: transparent; " +
                     "-fx-faint-focus-color: transparent; " +
                     // Keep label visually centered in all states (normal/hover/pressed).
-                    "-fx-padding:" + paddingTop + " 0 0 0; " +
+                    "-fx-padding:" + paddingTop + " 0 0 " + leftPadding + "; " +
                     "-fx-alignment: center; " +
                     "-fx-font-family: 'Arial Black'; " +
                     "-fx-font-size: " + controlFontSize + "px; " +
@@ -103,10 +103,8 @@ import javafx.scene.text.Text;
         private void applyBaseStyles() {
             String normalTexture = "ui_glue_dropdownbutton_normal_terran.png";
             String overTexture = "ui_glue_dropdownbutton_over_terran.png";
-            String downTexture = "ui_glue_dropdownbutton_Pressed_terran.png";
             String arrowNormal = "ui_glue_dropdownarrow_normal_terran.png";
             String arrowOver = "ui_glue_dropdownarrow_over_terran.png";
-            String arrowPressed = "ui_glue_dropdownarrow_pressed_terran.png";
 
             // Keep geometry identical across normal/hover/pressed to avoid text jitter.
             double arrowSize = realHeight * (16.0 / 40.0);

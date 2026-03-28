@@ -27,7 +27,11 @@ public final class TranslationProgressOverlay extends StackPane {
         setVisible(false);
         setManaged(false);
 
-        addEventFilter(MouseEvent.ANY, e -> e.consume());
+        addEventFilter(MouseEvent.ANY, e -> {
+            if (isVisible() && !isMouseTransparent()) {
+                e.consume();
+            }
+        });
 
         VBox content = new VBox(8, title, line1, line2, percent, bar);
         content.setAlignment(Pos.CENTER);
@@ -73,6 +77,7 @@ public final class TranslationProgressOverlay extends StackPane {
             percent.setText("0%");
             bar.setProgress(0);
 
+            setMouseTransparent(false);
             setManaged(true);
             setVisible(true);
             toFront();
@@ -93,6 +98,7 @@ public final class TranslationProgressOverlay extends StackPane {
             line1.setText(l1 == null ? "" : l1);
             line2.setText(l2 == null ? "" : l2);
 
+            setMouseTransparent(false);
             setManaged(true);
             setVisible(true);
             toFront();
@@ -118,10 +124,12 @@ public final class TranslationProgressOverlay extends StackPane {
 
     public void close() {
         if (Platform.isFxApplicationThread()) {
+            setMouseTransparent(true);
             setVisible(false);
             setManaged(false);
         } else {
             Platform.runLater(() -> {
+                setMouseTransparent(true);
                 setVisible(false);
                 setManaged(false);
             });

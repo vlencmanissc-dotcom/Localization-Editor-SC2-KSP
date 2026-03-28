@@ -20,10 +20,18 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
     private final double cellHeight;
     private final double cellRadius;
     private final double cellFontSize;
+    private final int visibleRows;
 
     public CustomComboBoxClassic(String texturePath, boolean isGreen,
                                  double widthFullHD, double heightFullHD,
                                  double fontSizeFullHD, double dropdownFontSizeFullHD) {
+        this(texturePath, isGreen, widthFullHD, heightFullHD, fontSizeFullHD, dropdownFontSizeFullHD, 20, 6);
+    }
+
+    public CustomComboBoxClassic(String texturePath, boolean isGreen,
+                                 double widthFullHD, double heightFullHD,
+                                 double fontSizeFullHD, double dropdownFontSizeFullHD,
+                                 double cellHeightFullHD, int visibleRows) {
         super();
         this.texturePath = texturePath;
         this.isGreen = isGreen;
@@ -38,13 +46,14 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
         this.arrowRight = UiScaleHelper.scaleX(20);
         this.borderRadius = UiScaleHelper.scaleY(8);
 
-        this.cellHeight = UiScaleHelper.scaleY(20);
+        this.cellHeight = UiScaleHelper.scaleY(cellHeightFullHD);
         this.cellRadius = UiScaleHelper.scaleY(3);
         this.cellFontSize = this.dropdownFontSize;
+        this.visibleRows = Math.max(4, visibleRows);
 
         setPrefSize(width, height);
         setMaxSize(width, height);
-        setVisibleRowCount(6);
+        setVisibleRowCount(this.visibleRows);
 
         hideScrollBar();
         applyTextCells();

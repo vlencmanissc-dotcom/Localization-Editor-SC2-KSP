@@ -17,7 +17,6 @@ public class BackgroundGridLayer extends Pane {
     private ImageView swipe;
     public ImageView blurredLights; // Fog / blurred lights layer
     private final double TILE_WIDTH = 51;  // 
-    private final double TILE_HEIGHT = 96;
 
     private final double sw = UiScaleHelper.SCREEN_WIDTH;
     private final double sh = UiScaleHelper.SCREEN_HEIGHT;

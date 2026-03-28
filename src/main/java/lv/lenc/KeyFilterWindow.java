@@ -1,6 +1,5 @@
 package lv.lenc;
 
-import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -109,8 +108,11 @@ public final class KeyFilterWindow {
         overlayRoot.setVisible(true);
         overlayRoot.setMouseTransparent(false);
         overlayRoot.setOpacity(1.0);
+        overlayRoot.setViewOrder(-10_000);
+        overlayRoot.toFront();
 
         Platform.runLater(() -> {
+            overlayRoot.toFront();
             overlayRoot.requestFocus();
             playOpen(panelRoot);
             Timeline blurIn = new Timeline(
@@ -186,6 +188,7 @@ public final class KeyFilterWindow {
         overlay.setVisible(false);
         overlay.setMouseTransparent(true);
         overlay.setFocusTraversable(true);
+        overlay.setViewOrder(-10_000);
         overlay.prefWidthProperty().bind(appRoot.widthProperty());
         overlay.prefHeightProperty().bind(appRoot.heightProperty());
 
@@ -646,6 +649,9 @@ public final class KeyFilterWindow {
 
         TextArea area = new TextArea();
         area.getStyleClass().add("key-filter-edit-area");
+        area.getStyleClass().add("key-filter-edit-overlay");
+        // Keep editor interactive (caret/selection), but render visible text via preview layer only.
+        area.setStyle("-fx-text-fill: transparent; -fx-prompt-text-fill: transparent;");
         area.setWrapText(true);
         area.setPrefRowCount(8);
         area.setMinHeight(UiScaleHelper.scaleY(96));
@@ -654,6 +660,7 @@ public final class KeyFilterWindow {
         editors.put(lang, area);
 
         area.textProperty().addListener((obs, oldText, newText) -> {
+            updateXmlHighlightMode(area, previewScroll, previewFlow, newText);
             renderXmlSyntax(previewFlow, newText);
             syncPreviewScroll(area, previewScroll, previewFlow);
         });
@@ -664,25 +671,71 @@ public final class KeyFilterWindow {
 
         previewScroll.viewportBoundsProperty().addListener((obs, oldB, newB) -> {
             if (newB != null) {
-                previewFlow.setPrefWidth(Math.max(0, newB.getWidth() - UiScaleHelper.scaleX(8)));
+                previewFlow.setPrefWidth(Math.max(0, newB.getWidth()));
                 syncPreviewScroll(area, previewScroll, previewFlow);
             }
         });
 
         Platform.runLater(() -> {
+            updateXmlHighlightMode(area, previewScroll, previewFlow, area.getText());
             renderXmlSyntax(previewFlow, area.getText());
             syncPreviewScroll(area, previewScroll, previewFlow);
         });
 
-        StackPane editStack = new StackPane(previewScroll, area);
-        StackPane.setAlignment(previewScroll, Pos.TOP_LEFT);
+        StackPane editStack = new StackPane(area, previewScroll);
         StackPane.setAlignment(area, Pos.TOP_LEFT);
-        area.setPadding(new Insets(0.5, 0.5, 0.5, 0.5));
+        StackPane.setAlignment(previewScroll, Pos.TOP_LEFT);
+        area.setPadding(Insets.EMPTY);
         editStack.getStyleClass().add("key-filter-edit-stack");
 
         VBox box = new VBox(UiScaleHelper.scaleY(3), label, editStack);
         box.getStyleClass().add("key-filter-edit-block");
         return box;
+    }
+
+    private static void updateXmlHighlightMode(
+            TextArea area,
+            ScrollPane previewScroll,
+            TextFlow previewFlow,
+            String text
+    ) {
+        if (area == null || previewScroll == null || previewFlow == null) {
+            return;
+        }
+        boolean hasTags = containsXmlTag(text);
+        if (hasTags) {
+            if (!area.getStyleClass().contains("key-filter-edit-overlay")) {
+                area.getStyleClass().add("key-filter-edit-overlay");
+            }
+            previewScroll.setVisible(true);
+            previewScroll.setManaged(true);
+        } else {
+            area.getStyleClass().remove("key-filter-edit-overlay");
+            previewFlow.getChildren().clear();
+            previewScroll.setVisible(false);
+            previewScroll.setManaged(false);
+        }
+    }
+
+    private static boolean containsXmlTag(String text) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+        int open = text.indexOf('<');
+        while (open >= 0) {
+            int close = text.indexOf('>', open + 1);
+            if (close < 0) {
+                return false;
+            }
+            if (close > open + 1) {
+                char c = text.charAt(open + 1);
+                if (Character.isLetter(c) || c == '/' || c == '!' || c == '?') {
+                    return true;
+                }
+            }
+            open = text.indexOf('<', close + 1);
+        }
+        return false;
     }
 
     private static void syncPreviewScroll(TextArea area, ScrollPane previewScroll, TextFlow previewFlow) {
@@ -702,33 +755,77 @@ public final class KeyFilterWindow {
         String text = raw == null ? "" : raw;
         if (text.isEmpty()) return;
 
-        final String normalColor = "#80d2a2";
+        final String normalColor = "#97b1ae";
         final String tagNameColor = "#1f58c9";
         final String attrColor = "#2f7dff";
         final String valueColor = "#75d7ff";
+        final String taggedInnerColor = "#75d7ff";
 
         int pos = 0;
+        int openTagDepth = 0;
         while (pos < text.length()) {
             int open = text.indexOf('<', pos);
             if (open < 0) {
-                appendColoredText(flow, text.substring(pos), normalColor, false);
+                appendColoredText(
+                        flow,
+                        text.substring(pos),
+                        openTagDepth > 0 ? taggedInnerColor : normalColor,
+                        false
+                );
                 break;
             }
 
             if (open > pos) {
-                appendColoredText(flow, text.substring(pos, open), normalColor, false);
+                appendColoredText(
+                        flow,
+                        text.substring(pos, open),
+                        openTagDepth > 0 ? taggedInnerColor : normalColor,
+                        false
+                );
             }
 
             int close = text.indexOf('>', open);
             if (close < 0) {
-                appendColoredText(flow, text.substring(open), normalColor, false);
+                appendColoredText(
+                        flow,
+                        text.substring(open),
+                        openTagDepth > 0 ? taggedInnerColor : normalColor,
+                        false
+                );
                 break;
             }
 
             String tag = text.substring(open, close + 1);
+            boolean closing = isClosingTagToken(tag);
+            boolean selfClosing = isSelfClosingTagToken(tag);
+            if (closing && openTagDepth > 0) {
+                openTagDepth--;
+            }
             appendTagSyntax(flow, tag, tagNameColor, attrColor, valueColor);
+            if (!closing && !selfClosing) {
+                openTagDepth++;
+            }
             pos = close + 1;
         }
+    }
+
+    private static boolean isClosingTagToken(String tag) {
+        if (tag == null) return false;
+        int i = 0;
+        while (i < tag.length() && Character.isWhitespace(tag.charAt(i))) i++;
+        if (i >= tag.length() || tag.charAt(i) != '<') return false;
+        i++;
+        while (i < tag.length() && Character.isWhitespace(tag.charAt(i))) i++;
+        return i < tag.length() && tag.charAt(i) == '/';
+    }
+
+    private static boolean isSelfClosingTagToken(String tag) {
+        if (tag == null || tag.isEmpty()) return false;
+        int gt = tag.lastIndexOf('>');
+        if (gt < 0) return false;
+        int i = gt - 1;
+        while (i >= 0 && Character.isWhitespace(tag.charAt(i))) i--;
+        return i >= 0 && tag.charAt(i) == '/';
     }
 
     private static void appendTagSyntax(
@@ -807,7 +904,7 @@ public final class KeyFilterWindow {
         Text node = new Text(chunk);
         node.setFill(javafx.scene.paint.Color.web(color));
         node.setUnderline(underline);
-        node.setStyle("-fx-font-weight: bold; -fx-font-size: 15px;");
+        node.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
         flow.getChildren().add(node);
     }
 
@@ -899,17 +996,6 @@ public final class KeyFilterWindow {
         }
     }
 
-    private static TreeItem<NodeData> findFirstLeaf(TreeItem<NodeData> root) {
-        if (root == null) return null;
-        ArrayDeque<TreeItem<NodeData>> queue = new ArrayDeque<>(root.getChildren());
-        while (!queue.isEmpty()) {
-            TreeItem<NodeData> node = queue.removeFirst();
-            if (node.getChildren().isEmpty()) return node;
-            queue.addAll(node.getChildren());
-        }
-        return root.getChildren().isEmpty() ? null : root.getChildren().get(0);
-    }
-
     private static void selectKeyInTree(String key) {
         if (tree == null || key == null || key.isEmpty()) return;
         TreeItem<NodeData> item = findTreeItemByKey(tree.getRoot(), key);
@@ -946,21 +1032,46 @@ public final class KeyFilterWindow {
     private static void setByLang(LocalizationData row, String lang, String value) {
         if (row == null || lang == null) return;
         String v = value == null ? "" : value;
-        switch (lang.toLowerCase(Locale.ROOT)) {
-            case "ruru" -> row.setRuRu(v);
-            case "dede" -> row.setDeDe(v);
-            case "enus" -> row.setEnUs(v);
-            case "esmx" -> row.setEsMx(v);
-            case "eses" -> row.setEsEs(v);
-            case "frfr" -> row.setFrFr(v);
-            case "itit" -> row.setItIt(v);
-            case "plpl" -> row.setPlPl(v);
-            case "ptbr" -> row.setPtBr(v);
-            case "kokr" -> row.setKoKr(v);
-            case "zhcn" -> row.setZhCn(v);
-            case "zhtw" -> row.setZhTw(v);
-            default -> {
-            }
+        String normalized = lang.toLowerCase(Locale.ROOT);
+        switch (normalized) {
+            case "ruru":
+                row.setRuRu(v);
+                break;
+            case "dede":
+                row.setDeDe(v);
+                break;
+            case "enus":
+                row.setEnUs(v);
+                break;
+            case "esmx":
+                row.setEsMx(v);
+                break;
+            case "eses":
+                row.setEsEs(v);
+                break;
+            case "frfr":
+                row.setFrFr(v);
+                break;
+            case "itit":
+                row.setItIt(v);
+                break;
+            case "plpl":
+                row.setPlPl(v);
+                break;
+            case "ptbr":
+                row.setPtBr(v);
+                break;
+            case "kokr":
+                row.setKoKr(v);
+                break;
+            case "zhcn":
+                row.setZhCn(v);
+                break;
+            case "zhtw":
+                row.setZhTw(v);
+                break;
+            default:
+                break;
         }
     }
 

@@ -23,9 +23,6 @@ public class CustomBorder extends StackPane {
     private final List<Animation> animations = new ArrayList<>();
 
     public CustomBorder(CustomTableView table) {
-        double sw = UiScaleHelper.SCREEN_WIDTH;
-        double sh = UiScaleHelper.SCREEN_HEIGHT;
-
         bg = BackgroundApply(UiScaleHelper.scaleX(800), UiScaleHelper.scaleY(600));
         bgH = BackgroundHighLightApply(UiScaleHelper.scaleX(800), UiScaleHelper.scaleY(600));
         bgF = HighLightBackgroundFlash(UiScaleHelper.scaleX(800), UiScaleHelper.scaleY(600));
@@ -59,11 +56,10 @@ public class CustomBorder extends StackPane {
 
         setAlignment(lS, Pos.CENTER_LEFT);
         lS.setTranslateY(-UiScaleHelper.scaleY(85));
-        lS.setTranslateX(UiScaleHelper.scaleX(142));
 
         setAlignment(lSR, Pos.BOTTOM_RIGHT);
         lSR.setTranslateY(-UiScaleHelper.scaleY(46));
-        lSR.setTranslateX(-UiScaleHelper.scaleX(140));
+        applyTableFocusEdgeDecorations(false);
 
         scan1 = ApplyImageScanLines(
                 UiScaleHelper.scaleX(440), UiScaleHelper.scaleY(172),
@@ -182,6 +178,11 @@ public class CustomBorder extends StackPane {
 
     public boolean isTableLightingVisible() {
         return scan1 != null && scan1.isVisible();
+    }
+
+    public void applyTableFocusEdgeDecorations(boolean expanded) {
+        lS.setTranslateX(UiScaleHelper.scaleX(expanded ? 48 : 142));
+        lSR.setTranslateX(-UiScaleHelper.scaleX(expanded ? 36 : 140));
     }
 
     public void setAnimationEnabled(boolean enabled) {

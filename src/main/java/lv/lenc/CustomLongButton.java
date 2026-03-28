@@ -12,7 +12,6 @@ public class CustomLongButton extends MyButton {
 
     private static final PseudoClass PSEUDO_SELECTED = PseudoClass.getPseudoClass("selected");
 
-    private final boolean isGreen;
     private final double strengthGlow;
     private final double strengthGlowMAX;
 
@@ -24,7 +23,6 @@ public class CustomLongButton extends MyButton {
                             double strengthGlow, double strengthGlowMAX) {
         super(text);
 
-        this.isGreen = isGreen;
         this.strengthGlow = strengthGlow;
         this.strengthGlowMAX = strengthGlowMAX;
 

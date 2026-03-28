@@ -1,30 +1,11 @@
 package lv.lenc;
 
 import javafx.geometry.Pos;
-import javafx.scene.effect.Glow;
-
-import java.io.File;
-
-import javafx.application.Platform;
-import javafx.geometry.Insets;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.ListCell;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.effect.Glow;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import javafx.scene.text.Text;
-import javafx.scene.Node;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundImage;
-import javafx.scene.layout.BackgroundRepeat;
-import javafx.scene.layout.BackgroundPosition;
-import javafx.scene.layout.BackgroundSize;
-import javafx.scene.image.Image;
-import javafx.application.Platform; // For Platform.runLater
-import javafx.scene.Node;           // Node used for lookup()
-import javafx.scene.control.ComboBox; // ComboBox
-import javafx.scene.layout.Region;  // Region to style list-view
 
 
 public class UIElementFactory {
@@ -67,7 +48,9 @@ public class UIElementFactory {
         double paddingX = UiScaleHelper.scaleX(10);
 
         button.setPrefSize(btnWidth, btnHeight);
+        button.setMinSize(btnWidth, btnHeight);
         button.setMaxSize(btnWidth, btnHeight);
+        button.setPickOnBounds(true);
 
         final Glow buttonGlow = new Glow(strengthGlow);
         button.setEffect(buttonGlow);
@@ -264,9 +247,9 @@ public class UIElementFactory {
         MyButton button = new MyButton(text);
         final boolean[] isPressed = {false};
 
-        double btnWidth = UiScaleHelper.scaleX(220);
-        double btnHeight = UiScaleHelper.scaleY(65);
-        double fontSize = UiScaleHelper.scaleY(16);
+        double btnWidth = UiScaleHelper.scaleX(270);
+        double btnHeight = UiScaleHelper.scaleY(78);
+        double fontSize = UiScaleHelper.scaleY(19);
         double glowRadius = UiScaleHelper.scaleY(8);
 
         button.setPrefSize(btnWidth, btnHeight);
@@ -371,8 +354,6 @@ public class UIElementFactory {
         String hoverTexture = "ui_nova_global_mediumbutton_green_over.png";
         String downTexture = "ui_nova_global_mediumbutton_green_down.png";
         String disabledTexture = "ui_nova_global_mediumbutton_green_disabled.png";
-
-        String textColor = "limegreen";
 
         Runnable updateStyle = () -> {
             String currentTexture = button.isDisabled() ? disabledTexture : upTexture;

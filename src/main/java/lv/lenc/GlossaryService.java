@@ -99,19 +99,19 @@ public final class GlossaryService {
     public void loadFromResource(String resourcePath, Category category) {
         try (InputStream is = GlossaryService.class.getResourceAsStream(resourcePath)) {
             if (is == null) {
-                System.out.println("[Glossary] Resource not found: " + resourcePath);
+                AppLog.warn("[Glossary] Resource not found: " + resourcePath);
                 return;
             }
             loadFromStream(is, category, resourcePath);
         } catch (Exception e) {
-            System.out.println("[Glossary] Failed to load " + resourcePath + ": " + e.getMessage());
+            AppLog.warn("[Glossary] Failed to load " + resourcePath + ": " + e.getMessage());
         }
     }
 
     public void loadTxtFromResource(String resourcePath) {
         try (InputStream is = GlossaryService.class.getResourceAsStream(resourcePath)) {
             if (is == null) {
-                System.out.println("[Glossary] TXT resource not found: " + resourcePath);
+                AppLog.warn("[Glossary] TXT resource not found: " + resourcePath);
                 return;
             }
             if (isWordGlossaryFile(resourcePath)) {
@@ -120,7 +120,7 @@ public final class GlossaryService {
                 loadTxtGlossaryFromStream(is, resourcePath);
             }
         } catch (Exception e) {
-            System.out.println("[Glossary] Failed to load TXT glossary " + resourcePath + ": " + e.getMessage());
+            AppLog.warn("[Glossary] Failed to load TXT glossary " + resourcePath + ": " + e.getMessage());
         }
     }
 
@@ -128,13 +128,13 @@ public final class GlossaryService {
         List<String[]> csvRows = readSemicolonCsv(is);
 
         if (csvRows.isEmpty()) {
-            System.out.println("[Glossary] Empty CSV: " + sourceName);
+            AppLog.warn("[Glossary] Empty CSV: " + sourceName);
             return;
         }
 
         int headerIndex = findRealHeaderIndex(csvRows);
         if (headerIndex < 0) {
-            System.out.println("[Glossary] Header not found in: " + sourceName);
+            AppLog.warn("[Glossary] Header not found in: " + sourceName);
             return;
         }
 
@@ -142,7 +142,7 @@ public final class GlossaryService {
         Map<String, Integer> col = indexColumns(header);
 
         if (!col.containsKey("key")) {
-            System.out.println("[Glossary] No 'key' column in: " + sourceName);
+            AppLog.warn("[Glossary] No 'key' column in: " + sourceName);
             return;
         }
 
@@ -211,7 +211,7 @@ public final class GlossaryService {
             }
         }
 
-        System.out.println("[Glossary] Loaded " + imported + " mappings from " + sourceName
+        AppLog.info("[Glossary] Loaded " + imported + " mappings from " + sourceName
                 + " | exact keys = " + exactMap.size());
     }
 
@@ -300,6 +300,7 @@ public final class GlossaryService {
     public String findBestMatch(Category category, String key, String sourceLang, String sourceText, String targetLang) {
         return findBestMatch(sourceLang, sourceText, targetLang);
     }
+    @SuppressWarnings("unused")
     private String translateFallback(String sourceLang, String sourceText, String targetLang) {
         try {
             String cleaned = cleanGlossaryText(sourceText);
@@ -320,7 +321,7 @@ public final class GlossaryService {
 
             return out.get(0);
         } catch (Exception e) {
-            System.err.println("[GlossaryService] translateFallback failed: " + e.getMessage());
+            AppLog.warn("[GlossaryService] translateFallback failed: " + e.getMessage());
             return null;
         }
     }
@@ -345,7 +346,7 @@ public final class GlossaryService {
 
             return out.get(0);
         } catch (Exception e) {
-            System.err.println("[GlossaryService] MT translation failed: " + e.getMessage());
+            AppLog.warn("[GlossaryService] MT translation failed: " + e.getMessage());
             return null;
         }
     }
@@ -372,6 +373,7 @@ public final class GlossaryService {
                 return l;
         }
     }
+    @SuppressWarnings("unused")
     private static String restoreSimpleMarkup(String original, String translated) {
         if (isBlank(original) || isBlank(translated)) {
             return translated;
@@ -882,7 +884,7 @@ public final class GlossaryService {
             glossaryLoading.set(false);
             glossaryReady.set(true);
             glossaryStatus.set("Глоссарии загружены");
-            System.out.println("[Glossary] success, loading=" + glossaryLoading.get() + ", ready=" + glossaryReady.get());
+            AppLog.info("[Glossary] success, loading=" + glossaryLoading.get() + ", ready=" + glossaryReady.get());
         });
 
         task.setOnFailed(e -> {
@@ -912,7 +914,7 @@ public final class GlossaryService {
     private void loadTxtGlossaryFromStream(InputStream is, String sourceName) throws IOException {
         List<String[]> rows = readSemicolonCsv(is);
         if (rows.isEmpty()) {
-            System.out.println("[Glossary/TXT] Empty TXT: " + sourceName);
+            AppLog.warn("[Glossary/TXT] Empty TXT: " + sourceName);
             return;
         }
 
@@ -963,14 +965,14 @@ public final class GlossaryService {
             }
         }
 
-        System.out.println("[Glossary/TXT] Loaded " + imported + " mappings from " + sourceName
+        AppLog.info("[Glossary/TXT] Loaded " + imported + " mappings from " + sourceName
                 + " | txt keys = " + txtTextOnlyMap.size());
     }
 
     private void loadWordGlossaryFromStream(InputStream is, String sourceName) throws IOException {
         List<String[]> rows = readSemicolonCsv(is);
         if (rows.isEmpty()) {
-            System.out.println("[Glossary/WORD] Empty TXT: " + sourceName);
+            AppLog.warn("[Glossary/WORD] Empty TXT: " + sourceName);
             return;
         }
 
@@ -1033,9 +1035,9 @@ public final class GlossaryService {
             }
         }
 
-        System.out.println("[Glossary/WORD] Loaded " + imported + " direct mappings from " + sourceName
+        AppLog.info("[Glossary/WORD] Loaded " + imported + " direct mappings from " + sourceName
                 + " | direct keys = " + wordTextOnlyMap.size());
-        System.out.println("[Glossary/WORD] Loaded " + normalizedImported + " normalized mappings from " + sourceName
+        AppLog.info("[Glossary/WORD] Loaded " + normalizedImported + " normalized mappings from " + sourceName
                 + " | normalized keys = " + normalizedWordTextOnlyMap.size());
     }
 
@@ -1170,8 +1172,6 @@ public final class GlossaryService {
 
         StringBuilder out = new StringBuilder();
         int translatedCount = 0;
-        int tokenCount = 0;
-
         while (matcher.find()) {
             String token = matcher.group();
 
@@ -1185,8 +1185,6 @@ public final class GlossaryService {
                 out.append(token);
                 continue;
             }
-
-            tokenCount++;
 
             String translated = findWordMatch(sourceLang, plain, targetLang);
             if (!isBlank(translated) && !translated.equalsIgnoreCase(plain)) {
@@ -1295,7 +1293,7 @@ public final class GlossaryService {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("[GlossaryService] MT translation failed for untranslated words: " + e.getMessage());
+                AppLog.warn("[GlossaryService] MT translation failed for untranslated words: " + e.getMessage());
             }
 
             // Replace placeholders with MT translations
@@ -1463,13 +1461,11 @@ public final class GlossaryService {
     private static final class TermEntry {
         final String sourceText;
         final String targetText;
-        final String normalizedSource;
         final int priority;
 
-        TermEntry(String sourceText, String targetText, String normalizedSource, int priority) {
+        TermEntry(String sourceText, String targetText, int priority) {
             this.sourceText = sourceText;
             this.targetText = targetText;
-            this.normalizedSource = normalizedSource;
             this.priority = priority;
         }
     }
@@ -1496,6 +1492,7 @@ public final class GlossaryService {
             this.key = key;
         }
     }
+    @SuppressWarnings("unused")
     private void buildAutoTerms() {
         termIndex.clear();
 
@@ -1526,7 +1523,6 @@ public final class GlossaryService {
                             .add(new TermEntry(
                                     c.sourceText,
                                     c.targetText,
-                                    normalizeText(c.sourceText),
                                     calcPriority(c)
                             ));
                 }
@@ -1539,7 +1535,7 @@ public final class GlossaryService {
                     .thenComparingInt((TermEntry t) -> t.priority).reversed());
         }
 
-        System.out.println("[Glossary] Auto terms built: " + termIndex.size() + " buckets");
+        AppLog.info("[Glossary] Auto terms built: " + termIndex.size() + " buckets");
     }
     private boolean looksLikeSimpleReusableTerm(TermCandidate c) {
         String src = cleanGlossaryText(c.sourceText);
@@ -1907,6 +1903,7 @@ public final class GlossaryService {
         }
         return out;
     }
+    @SuppressWarnings("unused")
     private List<Category> categoriesForComposition(Category category) {
         if (category == null) {
             return List.of(Category.UNIT, Category.BUTTON, Category.ABILITY);

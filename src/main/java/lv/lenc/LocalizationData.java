@@ -1,7 +1,5 @@
 package lv.lenc;
 
-import java.util.Locale;
-
 public class LocalizationData {
     private final String key;
     private String ruRu;
@@ -58,26 +56,6 @@ public class LocalizationData {
                 break;
             default:
                // throw new IllegalArgumentException("Unsupported language: " + language);
-        }
-    }
-    private static void setValueByLang(LocalizationData data, String lang, String value) {
-        if (data == null || lang == null) return;
-
-        switch (lang.toLowerCase(Locale.ROOT)) {
-            case "ruru": data.setRuRu(value); break;
-            case "dede": data.setDeDe(value); break;
-            case "enus": data.setEnUs(value); break;
-            case "esmx": data.setEsMx(value); break;
-            case "eses": data.setEsEs(value); break;
-            case "frfr": data.setFrFr(value); break;
-            case "itit": data.setItIt(value); break;
-            case "plpl": data.setPlPl(value); break;
-            case "ptbr": data.setPtBr(value); break;
-            case "kokr": data.setKoKr(value); break;
-            case "zhcn": data.setZhCn(value); break;
-            case "zhtw": data.setZhTw(value); break;
-            default:
-                // unsupported lang - ignore
         }
     }
     public String getRuRu() {

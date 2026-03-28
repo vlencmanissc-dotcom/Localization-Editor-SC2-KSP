@@ -25,10 +25,12 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
@@ -57,6 +59,9 @@ public class CustomTableView extends TableView<LocalizationData> {
 
     private double baseNMinW;
     private double baseNPrefW;
+    private boolean tableFocusMode = false;
+    private boolean currentSingleMode = false;
+    private boolean baseWidthsCaptured = false;
 
     private boolean lastLoadWasMulti = false;
     private final java.util.Set<String> loadedUiLanguages = new java.util.HashSet<>();
@@ -73,13 +78,13 @@ public class CustomTableView extends TableView<LocalizationData> {
     private String activeKeyPrefixFilter = null;
 
     public CustomTableView(String texturePath,
-                           LocalizationManager localization,
+                           LocalizationManager localizationManager,
                            double width,
                            double height,
                            GlossaryService glossaryService) {
 
         this.texturePath = texturePath;
-        this.localization = localization;
+        this.localization = localizationManager;
         // Styling
         //  this.applyScrollBarStyle();
         this.glossaryService = glossaryService;
@@ -117,7 +122,7 @@ public class CustomTableView extends TableView<LocalizationData> {
 
         TableColumn<LocalizationData, String> ruRUColumn = new TableColumn<>("ruRU");
         ruRUColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getByLang("ruRU")));
-        // ā”€ā”€ā”€ German ā”€ā”€ā”€
+        // Ć„ĀÄā‚¬ĀÆÄā€Ā¬Ć„ĀÄā‚¬ĀÆÄā€Ā¬Ć„ĀÄā‚¬ĀÆÄā€Ā¬ German Ć„ĀÄā‚¬ĀÆÄā€Ā¬Ć„ĀÄā‚¬ĀÆÄā€Ā¬Ć„ĀÄā‚¬ĀÆÄā€Ā¬
         TableColumn<LocalizationData, String> deDEColumn = new TableColumn<>("deDE");
         deDEColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getByLang("deDE")));
 
@@ -162,6 +167,8 @@ public class CustomTableView extends TableView<LocalizationData> {
 
         countColumn.getStyleClass().add("col-n");
         keyColumn.getStyleClass().add("col-key");
+        countColumn.setReorderable(false);
+        keyColumn.setReorderable(false);
         this.setEditable(true);
 
         // OPTIMIZED: Enable in-place cell editing with proper TextField support
@@ -189,20 +196,25 @@ public class CustomTableView extends TableView<LocalizationData> {
         countColumn.setMaxWidth(UiScaleHelper.scaleX(150));
         countColumn.setMinWidth(UiScaleHelper.scaleX(100));
         countColumn.setPrefWidth(UiScaleHelper.scaleX(100));
-        this.setMinWidth(width);
-        this.setMaxWidth(width);
-        this.setMinHeight(height);
-        this.setMaxHeight(height);
-
         hideHeaderSortedArrow();
         enableHeaderColumnSelectionHighlighting();
-        Label placeholderLabel = new Label(localization.get("table.placeholder"));
+        Label placeholderLabel = new Label(this.localization.get("table.placeholder"));
         this.setPlaceholder(placeholderLabel);
         this.setFixedCellSize(UiScaleHelper.scaleY(52));
         // edit
         applyCustomCellStyleToAllColumns();
         removeScrollCorner();
         captureBaseColumnWidths();
+        setViewportSize(width, height);
+        widthProperty().addListener((obs, oldV, newV) -> {
+            if (!baseWidthsCaptured || newV == null || oldV == null) {
+                return;
+            }
+            if (Math.abs(newV.doubleValue() - oldV.doubleValue()) < 1.0) {
+                return;
+            }
+            Platform.runLater(() -> applyColumnSizing(currentSingleMode));
+        });
         countColumn.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -245,7 +257,7 @@ public class CustomTableView extends TableView<LocalizationData> {
                         current = current.getParent();
                     }
                     if (stackPane != null) {
-                        KeyFilterWindow.show(stackPane, (CustomTableView) getTableView(), localization, data.getKey());
+                        KeyFilterWindow.show(stackPane, (CustomTableView) getTableView(), CustomTableView.this.localization, data.getKey());
                         event.consume();
                     }
                 });
@@ -311,10 +323,58 @@ public class CustomTableView extends TableView<LocalizationData> {
             baseNMinW = UiScaleHelper.scaleX(50);
             baseNPrefW = baseNMinW;
         }
+        baseWidthsCaptured = true;
+    }
+
+    private int visibleSupportedLangCount() {
+        return (int) getColumns().stream()
+                .filter(col -> SUPPORTED_LANGS.contains(col.getText()) && col.isVisible())
+                .count();
+    }
+
+    public void setTableFocusMode(boolean tableFocusMode) {
+        this.tableFocusMode = tableFocusMode;
+        Runnable relayout = () -> applyColumnSizing(currentSingleMode);
+        if (Platform.isFxApplicationThread()) {
+            relayout.run();
+        } else {
+            Platform.runLater(relayout);
+        }
     }
 
     public void applyColumnSizing(boolean singleMode) {
-        double mult = singleMode ? 4.5 : 1.0;
+        currentSingleMode = singleMode;
+        double tableWidth = getEffectiveTableContentWidth();
+        int visibleLangCount = visibleSupportedLangCount();
+        boolean fillAvailableWidth = tableFocusMode && visibleLangCount > 0;
+        double keyWidth = baseKeyPrefW;
+        double stretchedLangWidth = baseLangPrefW;
+
+        if (visibleLangCount > 0 && tableWidth > 0) {
+            if (singleMode) {
+                double keyWidthRatio = tableFocusMode ? 0.21 : 0.18;
+                double keyMaxWidth = tableFocusMode ? UiScaleHelper.scaleX(500) : UiScaleHelper.scaleX(420);
+                keyWidth = Math.max(baseKeyPrefW, Math.min(keyMaxWidth, tableWidth * keyWidthRatio));
+                double chromeReserve = UiScaleHelper.scaleX(10);
+                double availableForLangs = Math.max(
+                        baseLangMinW * visibleLangCount,
+                        tableWidth - baseNPrefW - keyWidth - chromeReserve
+                );
+
+                // Keep all visible language columns strictly equal, absorb rounding remainder into key column.
+                stretchedLangWidth = Math.max(baseLangMinW, Math.floor(availableForLangs / visibleLangCount));
+                double remainder = Math.max(0, availableForLangs - (stretchedLangWidth * visibleLangCount));
+                keyWidth = keyWidth + remainder;
+            } else if (fillAvailableWidth) {
+                double keyMinWidth = UiScaleHelper.scaleX(220);
+                double keyMaxWidth = UiScaleHelper.scaleX(360);
+                double keyWidthRatio = visibleLangCount >= 8 ? 0.13 : 0.16;
+                keyWidth = Math.max(keyMinWidth, Math.min(keyMaxWidth, tableWidth * keyWidthRatio));
+                double reserved = baseNPrefW + keyWidth + UiScaleHelper.scaleX(12);
+                double availableForLangs = Math.max(UiScaleHelper.scaleX(82) * visibleLangCount, tableWidth - reserved);
+                stretchedLangWidth = Math.max(UiScaleHelper.scaleX(82), availableForLangs / visibleLangCount);
+            }
+        }
 
         for (TableColumn<LocalizationData, ?> col : getColumns()) {
             String name = col.getText();
@@ -328,17 +388,21 @@ public class CustomTableView extends TableView<LocalizationData> {
 
             if ("key".equalsIgnoreCase(name)) {
                 col.setMinWidth(baseKeyMinW);
-                col.setPrefWidth(baseKeyPrefW);
-                col.setMaxWidth(UiScaleHelper.scaleX(4000));
+                col.setPrefWidth((singleMode || fillAvailableWidth) ? keyWidth : baseKeyPrefW);
+                col.setMaxWidth((singleMode || fillAvailableWidth) ? keyWidth : UiScaleHelper.scaleX(4000));
                 continue;
             }
 
             if (SUPPORTED_LANGS.contains(name)) {
                 //
                 if (col.isVisible() && singleMode) {
-                    col.setMinWidth(baseLangMinW * mult);
-                    col.setPrefWidth(baseLangPrefW * mult);
-                    col.setMaxWidth(baseLangMaxW);
+                    col.setMinWidth(stretchedLangWidth);
+                    col.setPrefWidth(stretchedLangWidth);
+                    col.setMaxWidth(stretchedLangWidth);
+                } else if (col.isVisible() && fillAvailableWidth) {
+                    col.setMinWidth(stretchedLangWidth);
+                    col.setPrefWidth(stretchedLangWidth);
+                    col.setMaxWidth(stretchedLangWidth);
                 } else {
                     //
                     col.setMinWidth(baseLangMinW);
@@ -348,10 +412,91 @@ public class CustomTableView extends TableView<LocalizationData> {
             }
         }
 
-        Platform.runLater(() -> {
+        if (Platform.isFxApplicationThread()) {
             refresh();
             layout();
-        });
+        } else {
+            Platform.runLater(() -> {
+                refresh();
+                layout();
+            });
+        }
+    }
+
+    private double getVisibleVerticalScrollbarWidth() {
+        double width = 0;
+        for (Node node : lookupAll(".scroll-bar")) {
+            if (node instanceof ScrollBar scrollBar
+                    && scrollBar.getOrientation() == Orientation.VERTICAL
+                    && scrollBar.isVisible()) {
+                width = Math.max(width, scrollBar.getWidth());
+            }
+        }
+        return width;
+    }
+
+    private double getEffectiveTableContentWidth() {
+        double raw = getWidth() > 1 ? getWidth() : getPrefWidth();
+        double insets = snappedLeftInset() + snappedRightInset();
+        double scrollbar = getVisibleVerticalScrollbarWidth();
+        return Math.max(0, raw - insets - scrollbar);
+    }
+
+    private void resetAllColumnWidthsToBase() {
+        for (TableColumn<LocalizationData, ?> col : getColumns()) {
+            String name = col.getText();
+            if ("N".equalsIgnoreCase(name)) {
+                col.setMinWidth(baseNMinW);
+                col.setPrefWidth(baseNPrefW);
+                col.setMaxWidth(baseNPrefW);
+                continue;
+            }
+            if ("key".equalsIgnoreCase(name)) {
+                col.setMinWidth(baseKeyMinW);
+                col.setPrefWidth(baseKeyPrefW);
+                col.setMaxWidth(UiScaleHelper.scaleX(4000));
+                continue;
+            }
+            if (SUPPORTED_LANGS.contains(name)) {
+                col.setMinWidth(baseLangMinW);
+                col.setPrefWidth(baseLangPrefW);
+                col.setMaxWidth(baseLangMaxW);
+            }
+        }
+    }
+
+    public void setViewportSize(double width, double height) {
+        setViewportSize(width, height, true);
+    }
+
+    public void setViewportSize(double width, double height, boolean relayoutColumns) {
+        this.setMinWidth(width);
+        this.setPrefWidth(width);
+        this.setMaxWidth(width);
+        this.setMinHeight(height);
+        this.setPrefHeight(height);
+        this.setMaxHeight(height);
+
+        if (!relayoutColumns || !baseWidthsCaptured) {
+            return;
+        }
+
+        Runnable resizeLayout = () -> applyColumnSizing(currentSingleMode);
+        if (Platform.isFxApplicationThread()) {
+            resizeLayout.run();
+        } else {
+            Platform.runLater(resizeLayout);
+        }
+    }
+
+    private void resetHorizontalScroll() {
+        applyCss();
+        layout();
+        for (Node node : lookupAll(".scroll-bar")) {
+            if (node instanceof ScrollBar scrollBar && scrollBar.getOrientation() == Orientation.HORIZONTAL) {
+                scrollBar.setValue(scrollBar.getMin());
+            }
+        }
     }
 
     public String getCurrentSourceUi() {
@@ -388,7 +533,7 @@ public class CustomTableView extends TableView<LocalizationData> {
                     this.setOnMouseClicked(event -> {
                         if (!isEmpty() && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                             if (event.getClickCount() == 2) {
-                                // одном кликом активируем редактирование ячеек языков
+                                // Å Ā¾Å Ā´Å Ā½Å Ā¾Å Ā¼ Å Å—Å Ā»Å ĆøÅ Å—Å Ā¾Å Ā¼ Å Ā°Å Å—Åā€Å ĆøÅ Ā²Å ĆøÅā‚¬ÅĀÅ ĀµÅ Ā¼ Åā‚¬Å ĀµÅ Ā´Å Ā°Å Å—Åā€Å ĆøÅā‚¬Å Ā¾Å Ā²Å Ā°Å Ā½Å ĆøÅ Āµ ÅĀøÅā€Å ĀµÅ ĀµÅ Å— ÅĀøÅ Ā·Åā€¹Å Å—Å Ā¾Å Ā²
                                 if (!isEditing()) {
                                     getTableView().getSelectionModel().clearAndSelect(getIndex(), getTableColumn());
                                     getTableView().getFocusModel().focus(getIndex(), getTableColumn());
@@ -458,7 +603,7 @@ public class CustomTableView extends TableView<LocalizationData> {
                         textColor = "white";
                     } else if (isHovered) {
                         tex = missingValue ? missingOver : over;
-                        textColor = "#80d2a2"; // hover Š½Šµ Š¼ŠµŠ½Ń¸ŠµŃ‚ Ń†Š²ŠµŃ‚ Ń‚ŠµŠŗŃŃ‚Š°
+                        textColor = "#80d2a2"; // hover Ć…Ā Ä€Ā½Ć…Ā Ä€Āµ Ć…Ā Ä€Ā¼Ć…Ā Ä€ĀµĆ…Ā Ä€Ā½Ć…ĀÄ€ĆøĆ…Ā Ä€ĀµĆ…ĀÄā‚¬Ā Ć…ĀÄā‚¬Ā Ć…Ā Ä€Ā²Ć…Ā Ä€ĀµĆ…ĀÄā‚¬Ā Ć…ĀÄā‚¬ĀĆ…Ā Ä€ĀµĆ…Ā Ć…ā€”Ć…ĀÄ€ĀĆ…ĀÄā‚¬ĀĆ…Ā Ä€Ā°
                     }
 
                     if (missingValue && isHovered && !isEditing && !isSelected()) {
@@ -483,7 +628,7 @@ public class CustomTableView extends TableView<LocalizationData> {
                     }
 
                     if (isEditing() || isEditing) {
-                        // Во время редактирования показываем исходный текст, чтобы нас не выносило в графику
+                        // Å ā€™Å Ā¾ Å Ā²Åā‚¬Å ĀµÅ Ā¼ÅĀø Åā‚¬Å ĀµÅ Ā´Å Ā°Å Å—Åā€Å ĆøÅā‚¬Å Ā¾Å Ā²Å Ā°Å Ā½Å ĆøÅĀø Å Ć¦Å Ā¾Å Å—Å Ā°Å Ā·Åā€¹Å Ā²Å Ā°Å ĀµÅ Ā¼ Å ĆøÅĀÅā€¦Å Ā¾Å Ā´Å Ā½Åā€¹Å Ā¹ Åā€Å ĀµÅ Å—ÅĀÅā€, Åā€Åā€Å Ā¾Å Ā±Åā€¹ Å Ā½Å Ā°ÅĀ Å Ā½Å Āµ Å Ā²Åā€¹Å Ā½Å Ā¾ÅĀÅ ĆøÅ Ā»Å Ā¾ Å Ā² Å Ā³Åā‚¬Å Ā°Åā€˛Å ĆøÅ Å—ÅĀ
                         setGraphic(getGraphic());
                         setContentDisplay(getGraphic() == null ? ContentDisplay.TEXT_ONLY : ContentDisplay.GRAPHIC_ONLY);
                         setText(getGraphic() == null ? value : null);
@@ -664,34 +809,63 @@ public class CustomTableView extends TableView<LocalizationData> {
                     flow.setLineSpacing(UiScaleHelper.scaleY(1.5));
                     String text = raw == null ? "" : raw;
                     int pos = 0;
-                    final String textColor = "#75d7ff";
+                    int openTagDepth = 0;
+                    final String textColor = "#80d2a2";
                     final String tagNameColor = "#1f58c9";
                     final String attrColor = "#2f7dff";
                     final String valueColor = "#75d7ff";
+                    final String taggedInnerColor = "#75d7ff";
 
                     while (pos < text.length()) {
                         int open = text.indexOf('<', pos);
                         if (open < 0) {
-                            appendChunk(flow, text.substring(pos), textColor);
+                            appendChunk(flow, text.substring(pos), openTagDepth > 0 ? taggedInnerColor : textColor);
                             break;
                         }
 
                         if (open > pos) {
-                            appendChunk(flow, text.substring(pos, open), textColor);
+                            appendChunk(flow, text.substring(pos, open), openTagDepth > 0 ? taggedInnerColor : textColor);
                         }
 
                         int close = text.indexOf('>', open);
                         if (close < 0) {
-                            appendChunk(flow, text.substring(open), textColor);
+                            appendChunk(flow, text.substring(open), openTagDepth > 0 ? taggedInnerColor : textColor);
                             break;
                         }
 
                         String tag = text.substring(open, close + 1);
+                        boolean closing = isClosingTagToken(tag);
+                        boolean selfClosing = isSelfClosingTagToken(tag);
+                        if (closing && openTagDepth > 0) {
+                            openTagDepth--;
+                        }
                         appendTagWithSyntaxColors(flow, tag, tagNameColor, attrColor, valueColor);
+                        if (!closing && !selfClosing) {
+                            openTagDepth++;
+                        }
                         pos = close + 1;
                     }
 
                     return flow;
+                }
+
+                private boolean isClosingTagToken(String tag) {
+                    if (tag == null) return false;
+                    int i = 0;
+                    while (i < tag.length() && Character.isWhitespace(tag.charAt(i))) i++;
+                    if (i >= tag.length() || tag.charAt(i) != '<') return false;
+                    i++;
+                    while (i < tag.length() && Character.isWhitespace(tag.charAt(i))) i++;
+                    return i < tag.length() && tag.charAt(i) == '/';
+                }
+
+                private boolean isSelfClosingTagToken(String tag) {
+                    if (tag == null || tag.isEmpty()) return false;
+                    int gt = tag.lastIndexOf('>');
+                    if (gt < 0) return false;
+                    int i = gt - 1;
+                    while (i >= 0 && Character.isWhitespace(tag.charAt(i))) i--;
+                    return i >= 0 && tag.charAt(i) == '/';
                 }
 
                 private void appendTagWithSyntaxColors(
@@ -1358,7 +1532,6 @@ public class CustomTableView extends TableView<LocalizationData> {
             }
 
             if (textsToTranslate.isEmpty()) {
-                javafx.application.Platform.runLater(this::refresh);
                 continue;
             }
 
@@ -1387,8 +1560,6 @@ public class CustomTableView extends TableView<LocalizationData> {
                     setValueByLang(rowsToTranslate.get(i), targetUi, translated);
                 }
 
-                javafx.application.Platform.runLater(this::refresh);
-
             } catch (IOException | InterruptedException ex) {
                 if (ex instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
@@ -1403,13 +1574,16 @@ public class CustomTableView extends TableView<LocalizationData> {
         if (!stop.getAsBoolean() && progress != null) {
             progress.onProgress(1.0, sourceUiFinal + " -> all||done");
         }
+        if (!stop.getAsBoolean()) {
+            javafx.application.Platform.runLater(this::refresh);
+        }
     }
     private static String extractBatchLine(String msg) {
         if (msg == null) return "";
-        //
-        int idx = msg.indexOf("batch");
-        if (idx >= 0) return msg.substring(idx).trim();
-        return "";
+        String trimmed = msg.trim();
+        int idx = trimmed.toLowerCase(Locale.ROOT).indexOf("batch");
+        if (idx >= 0) return trimmed.substring(idx).trim();
+        return trimmed;
     }
 
     // (ui-code: "enUS", "ruRU"...)
@@ -1465,7 +1639,7 @@ public class CustomTableView extends TableView<LocalizationData> {
             String actualSourceUi = sourceUi;
             String sourceText = row.getByLang(sourceUi);
 
-            // Š•ŃŠ»Šø ŠæŠµŃ€ŠµŠ²Š¾Š´ŠøŠ¼ Š¯Š• Š² enUS Šø enUS ŃŠ¶Šµ Š·Š°ŠæŠ¾Š»Š½ŠµŠ½ ā€” Š±ŠµŃ€Ń‘Š¼ enUS ŠŗŠ°Šŗ ŠøŃŃ‚Š¾Ń‡Š½ŠøŠŗ
+            // Ć…Ā Äā‚¬Ā¢Ć…ĀÄ€ĀĆ…Ā Ä€Ā»Ć…Ā Ä†Ćø Ć…Ā Ä†Ā¦Ć…Ā Ä€ĀµĆ…ĀÄā€Ā¬Ć…Ā Ä€ĀµĆ…Ā Ä€Ā²Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā´Ć…Ā Ä†ĆøĆ…Ā Ä€Ā¼ Ć…Ā Ä€Ć†Ć…Ā Äā‚¬Ā¢ Ć…Ā Ä€Ā² enUS Ć…Ā Ä†Ćø enUS Ć…ĀÄ€ĀĆ…Ā Ä€Ā¶Ć…Ā Ä€Āµ Ć…Ā Ä€Ā·Ć…Ā Ä€Ā°Ć…Ā Ä†Ā¦Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā»Ć…Ā Ä€Ā½Ć…Ā Ä€ĀµĆ…Ā Ä€Ā½ Ć„ĀÄā€Ā¬Äā‚¬ĀÆ Ć…Ā Ä€Ā±Ć…Ā Ä€ĀµĆ…ĀÄā€Ā¬Ć…ĀÄā‚¬ĀĆ…Ā Ä€Ā¼ enUS Ć…Ā Ć…ā€”Ć…Ā Ä€Ā°Ć…Ā Ć…ā€” Ć…Ā Ä†ĆøĆ…ĀÄ€ĀĆ…ĀÄā‚¬ĀĆ…Ā Ä€Ā¾Ć…ĀÄā‚¬ļ£¼Ć…Ā Ä€Ā½Ć…Ā Ä†ĆøĆ…Ā Ć…ā€”
             String enText = row.getByLang("enUS");
             if (!"enUS".equalsIgnoreCase(targetUi) && enText != null && !enText.isBlank()) {
                 actualSourceUi = "enUS";
@@ -1519,7 +1693,7 @@ public class CustomTableView extends TableView<LocalizationData> {
         }
 
         try {
-            // Š Š°Š·Š±ŠøŠ²Š°ŠµŠ¼ ŠæŠ¾ Ń„Š°ŠŗŃ‚ŠøŃ‡ŠµŃŠŗŠ¾Š¼Ń source language
+            // Ć…Ā Ä€Ā Ć…Ā Ä€Ā°Ć…Ā Ä€Ā·Ć…Ā Ä€Ā±Ć…Ā Ä†ĆøĆ…Ā Ä€Ā²Ć…Ā Ä€Ā°Ć…Ā Ä€ĀµĆ…Ā Ä€Ā¼ Ć…Ā Ä†Ā¦Ć…Ā Ä€Ā¾ Ć…ĀÄā‚¬Ė›Ć…Ā Ä€Ā°Ć…Ā Ć…ā€”Ć…ĀÄā‚¬ĀĆ…Ā Ä†ĆøĆ…ĀÄā‚¬ļ£¼Ć…Ā Ä€ĀµĆ…ĀÄ€ĀĆ…Ā Ć…ā€”Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā¼Ć…ĀÄ€Ā source language
             Map<String, List<Integer>> sourceIsoToIndexes = new LinkedHashMap<>();
             for (int i = 0; i < actualSourceUis.size(); i++) {
                 String sourceIso = toApiLang(actualSourceUis.get(i));
@@ -1667,12 +1841,22 @@ public class CustomTableView extends TableView<LocalizationData> {
 
             final String sourceUiFinal = sourceUi;
             final String targetUiFinal = targetUi;
+            final int totalWorkItems = sourceIsoToIndexes.values().stream()
+                    .mapToInt(List::size)
+                    .sum();
+            final int[] doneItems = new int[] {0};
+
+            if (progress != null) {
+                progress.onProgress(0.0, sourceUiFinal + " -> " + targetUiFinal + "||batch 0");
+            }
 
             for (Map.Entry<String, List<Integer>> entry : sourceIsoToIndexes.entrySet()) {
                 if (stop.getAsBoolean()) return;
 
                 String sourceIso = entry.getKey();
                 List<Integer> indexes = entry.getValue();
+                final int groupSize = indexes.size();
+                final int groupDoneBefore = doneItems[0];
 
                 List<String> batchTexts = new ArrayList<>(indexes.size());
                 for (Integer idx : indexes) {
@@ -1689,7 +1873,10 @@ public class CustomTableView extends TableView<LocalizationData> {
                             if (progress == null) return;
                             String line1 = sourceUiFinal + " -> " + targetUiFinal;
                             String line2 = (msg == null ? "" : msg);
-                            progress.onProgress(frac, line1 + "||" + line2);
+                            double weighted = totalWorkItems <= 0
+                                    ? frac
+                                    : (groupDoneBefore + frac * groupSize) / (double) totalWorkItems;
+                            progress.onProgress(Math.min(0.999, weighted), line1 + "||" + line2);
                         }
                 );
 
@@ -1704,9 +1891,14 @@ public class CustomTableView extends TableView<LocalizationData> {
                     translated = glossaryService.unfreezeTerms(translated, frozenForRows.get(originalIndex));
                     setValueByLang(rowsToTranslate.get(originalIndex), targetUi, translated);
                 }
+
+                doneItems[0] += groupSize;
             }
 
             Platform.runLater(this::refresh);
+            if (progress != null) {
+                progress.onProgress(1.0, sourceUiFinal + " -> " + targetUiFinal + "||done");
+            }
 
         } catch (IOException | InterruptedException ex) {
             if (ex instanceof InterruptedException) {
@@ -1739,29 +1931,56 @@ public class CustomTableView extends TableView<LocalizationData> {
         return null;
     }
 
+    private void ensureCoreColumns() {
+        TableColumn<LocalizationData, ?> nCol = findCol("N");
+        TableColumn<LocalizationData, ?> keyCol = findCol("key");
+
+        if (nCol != null) nCol.setVisible(true);
+        if (keyCol != null) keyCol.setVisible(true);
+
+        if (nCol != null && getColumns().remove(nCol)) {
+            getColumns().add(0, nCol);
+        }
+        if (keyCol != null && getColumns().remove(keyCol)) {
+            int keyIndex = Math.min(1, getColumns().size());
+            getColumns().add(keyIndex, keyCol);
+        }
+    }
+
 
     public void showAllColumns() {
-        Platform.runLater(() -> {
+        Runnable apply = () -> {
+            resetAllColumnWidthsToBase();
             for (TableColumn<LocalizationData, ?> c : getColumns()) {
                 c.setVisible(true);
             }
-            requestLayout();
+            ensureCoreColumns();
 
-            //
-            Platform.runLater(() -> applyColumnSizing(false));
-        });
+            requestLayout();
+            applyColumnSizing(false);
+            resetHorizontalScroll();
+            TableColumn<LocalizationData, ?> firstColumn = findCol("N");
+            if (firstColumn != null) {
+                scrollToColumn(firstColumn);
+            }
+            Platform.runLater(() -> {
+                // Final pass after skin/scrollbars settle to keep fullscreen width stable.
+                applyColumnSizing(false);
+            });
+        };
+        if (Platform.isFxApplicationThread()) {
+            apply.run();
+        } else {
+            Platform.runLater(apply);
+        }
     }
     public void showOnly(String sourceUi, String targetUi) {
-        Platform.runLater(() -> {
+        Runnable apply = () -> {
+            resetAllColumnWidthsToBase();
             for (TableColumn<LocalizationData, ?> c : getColumns()) {
                 c.setVisible(false);
             }
-
-            TableColumn<LocalizationData, ?> nCol = findCol("N");
-            if (nCol != null) nCol.setVisible(true);
-
-            TableColumn<LocalizationData, ?> keyCol = findCol("key");
-            if (keyCol != null) keyCol.setVisible(true);
+            ensureCoreColumns();
 
             if (sourceUi != null && !sourceUi.isBlank()) {
                 TableColumn<LocalizationData, ?> s = findCol(sourceUi);
@@ -1774,10 +1993,22 @@ public class CustomTableView extends TableView<LocalizationData> {
             }
 
             requestLayout();
-
-            //
-            Platform.runLater(() -> applyColumnSizing(true /* single mode */));
-        });
+            applyColumnSizing(true /* single mode */);
+            resetHorizontalScroll();
+            TableColumn<LocalizationData, ?> firstColumn = findCol("N");
+            if (firstColumn != null) {
+                scrollToColumn(firstColumn);
+            }
+            Platform.runLater(() -> {
+                // Final pass after visibility + scrollbar state changes.
+                applyColumnSizing(true /* single mode */);
+            });
+        };
+        if (Platform.isFxApplicationThread()) {
+            apply.run();
+        } else {
+            Platform.runLater(apply);
+        }
     }
     boolean isLastLoadWasMulti() { return lastLoadWasMulti; }
 
@@ -1875,4 +2106,5 @@ public class CustomTableView extends TableView<LocalizationData> {
         }
     }
 }
+
 

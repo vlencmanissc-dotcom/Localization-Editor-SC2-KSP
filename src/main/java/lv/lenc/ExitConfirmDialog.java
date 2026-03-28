@@ -198,7 +198,10 @@ public class ExitConfirmDialog {
         if (dialog == null) {
             overlayRoot.setVisible(false);
             overlayRoot.setMouseTransparent(true);
-            if (onResult != null) blurOutAndClear();onResult.accept(result);
+            blurOutAndClear();
+            if (onResult != null) {
+                onResult.accept(result);
+            }
             return;
         }
 
@@ -258,7 +261,7 @@ public class ExitConfirmDialog {
 
         URL cssUrl = ExitConfirmDialog.class.getResource("/Assets/Style/alert-box.css");
         if (cssUrl == null) {
-            System.err.println("[AlertBox] CSS not found: /Assets/Style/alert-box.css");
+            AppLog.warn("[AlertBox] CSS not found: /Assets/Style/alert-box.css");
             return;
         }
 

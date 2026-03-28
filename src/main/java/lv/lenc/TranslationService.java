@@ -47,10 +47,11 @@ public final class TranslationService {
     public static final String GPU_FALLBACK_BASE_URL = "http://127.0.0.1:5001/";
     public static volatile String BASE_URL = DEFAULT_BASE_URL;
     public static final String SEP = "\n";
-    private static final int BATCH_MAX_ITEMS = 200;
-    private static final int BATCH_MAX_CHARS = 30_000;
-    private static final int GPU_BATCH_MAX_ITEMS = 260;
-    private static final int GPU_BATCH_MAX_CHARS = 45_000;
+    private static final double PERFORMANCE_LOAD_FACTOR = 1.0;
+    private static final int BATCH_MAX_ITEMS = 220;
+    private static final int BATCH_MAX_CHARS = 18_000;
+    private static final int GPU_BATCH_MAX_ITEMS = 220;
+    private static final int GPU_BATCH_MAX_CHARS = 18_000;
     private static final int TRANSLATION_CACHE_LIMIT = 20_000;
     // We no longer send tags. Additionally protect "geometric" symbols (progress bars).
     private static final Pattern GEOM_RUN = Pattern.compile("[\\u2580-\\u259F\\u25A0-\\u25FF]+");
@@ -113,10 +114,13 @@ public final class TranslationService {
     }
 
     private static OkHttpClient buildTranslationClient() {
+        int cores = Runtime.getRuntime().availableProcessors();
+        int perHost = Math.max(4, Math.min(64, (int) Math.ceil(cores * PERFORMANCE_LOAD_FACTOR * 2.0)));
+        int total = Math.max(perHost + 4, Math.min(96, perHost * 2));
+
         Dispatcher dispatcher = new Dispatcher();
-        // OPTIMIZED: Increased parallelism for faster translations (was 1 request at a time)
-        dispatcher.setMaxRequests(16);          // 16 concurrent requests total
-        dispatcher.setMaxRequestsPerHost(8);    // 8 requests per host
+        dispatcher.setMaxRequests(total);
+        dispatcher.setMaxRequestsPerHost(perHost);
 
         return new OkHttpClient.Builder()
                 .dispatcher(dispatcher)
@@ -188,7 +192,8 @@ public final class TranslationService {
 
     private static int effectiveConcurrency() {
         int cores = Runtime.getRuntime().availableProcessors();
-        return Math.max(2, Math.min(64, cores * 2));
+        int target = (int) Math.ceil(cores * PERFORMANCE_LOAD_FACTOR * 2.0);
+        return Math.max(2, Math.min(64, target));
     }
 
     private static List<String> translatePreservingTagsBatchedSequential(
@@ -767,7 +772,7 @@ public final class TranslationService {
             var resp = executeTrackedResponse(effectiveApi.translateAny(body));
             int code = (resp != null ? resp.code() : -1);
             if (resp == null || !resp.isSuccessful() || resp.body() == null) {
-                String err = (resp != null && resp.errorBody() != null) ? resp.errorBody().string() : "null";
+                String err = safeErrorBody(resp);
                 throw new IOException("[LT] HTTP " + code + ": " + err);
             }
 
@@ -923,6 +928,9 @@ public final class TranslationService {
                 + " maxItems=" + maxItems + " maxChars=" + maxChars);
 
         int total = parts.size();
+        if (progress != null) {
+            progress.onProgress(0.0, "batch 0/" + total);
+        }
 
         if (total <= 1) {
             // fallback to sequential for tiny jobs
@@ -1073,7 +1081,6 @@ public final class TranslationService {
         if (!cur.isEmpty()) batches.add(cur);
         return batches;
     }
-
 
     // ===== startup and health check =====
     public static boolean isLtAlive() {
@@ -1227,7 +1234,8 @@ public final class TranslationService {
                     "--host", "127.0.0.1",
                     "--port", "5000"
             )
-                    .inheritIO()
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start();
         }
 
@@ -1240,7 +1248,8 @@ public final class TranslationService {
                     "--host", "127.0.0.1",
                     "--port", "5000"
             )
-                    .inheritIO()
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start();
         }
 
@@ -1258,7 +1267,8 @@ public final class TranslationService {
                     "-p", "127.0.0.1:5000:5000",
                     "libretranslate/libretranslate"
             )
-                    .inheritIO()
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start();
         }
 
@@ -1309,7 +1319,8 @@ public final class TranslationService {
                 "-e", "CUDA_LAUNCH_BLOCKING=0",
                 "libretranslate/libretranslate:latest-cuda"
         )
-                .inheritIO()
+                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                .redirectError(ProcessBuilder.Redirect.DISCARD)
                 .start();
         managedLtProcess = process;
         managedLtGpu = true;
@@ -1374,7 +1385,10 @@ public final class TranslationService {
             env.putIfAbsent("TF_FORCE_GPU_ALLOW_GROWTH", "true");  // Avoid OOM
         }
 
-        Process process = pb.inheritIO().start();
+        Process process = pb
+                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                .redirectError(ProcessBuilder.Redirect.DISCARD)
+                .start();
         managedLtProcess = process;
         managedLtGpu = requestCuda;
         tryRaiseProcessPriority(process, "High");
@@ -1448,10 +1462,6 @@ public final class TranslationService {
         destroyProcess(process.toHandle(), "[LT] stopped managed LibreTranslate process");
     }
 
-    private static void stopCompetingLibreTranslateOn5000() {
-        stopCompetingLibreTranslateProcesses(Set.of(5000));
-    }
-
     private static void stopCompetingLibreTranslateProcesses(Set<Integer> ports) {
         long currentPid = ProcessHandle.current().pid();
         ProcessHandle.allProcesses()
@@ -1462,10 +1472,6 @@ public final class TranslationService {
                         "[LT] stopped stale LibreTranslate process (pid=" + handle.pid() + ")"));
     }
 
-    private static boolean looksLikeLibreTranslate5000Process(ProcessHandle handle) {
-        return looksLikeLibreTranslateProcess(handle, Set.of(5000));
-    }
-
     private static boolean looksLikeLibreTranslateProcess(ProcessHandle handle, Set<Integer> ports) {
         ProcessHandle.Info info = handle.info();
         String command = info.command().orElse("").toLowerCase();
@@ -1473,9 +1479,10 @@ public final class TranslationService {
         if (!command.contains("python") && !command.contains("libretranslate")) {
             return false;
         }
-        boolean portMatched = ports == null || ports.isEmpty();
+        Set<Integer> checkedPorts = (ports == null) ? Set.of() : ports;
+        boolean portMatched = checkedPorts.isEmpty();
         if (!portMatched) {
-            for (Integer port : ports) {
+            for (Integer port : checkedPorts) {
                 if (port != null && commandLine.contains(String.valueOf(port))) {
                     portMatched = true;
                     break;
@@ -1503,6 +1510,21 @@ public final class TranslationService {
             AppLog.info(successLog);
         } catch (Exception ex) {
             AppLog.warn("[LT] failed to stop stale LibreTranslate process: " + ex.getMessage());
+        }
+    }
+
+    private static String safeErrorBody(retrofit2.Response<?> resp) {
+        if (resp == null) {
+            return "null";
+        }
+        okhttp3.ResponseBody errorBody = resp.errorBody();
+        if (errorBody == null) {
+            return "null";
+        }
+        try {
+            return errorBody.string();
+        } catch (IOException e) {
+            return "<failed to read error body: " + e.getMessage() + ">";
         }
     }
 
@@ -1844,4 +1866,3 @@ public final class TranslationService {
     }
 
 }
-

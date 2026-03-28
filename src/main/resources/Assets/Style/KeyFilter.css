@@ -194,7 +194,7 @@
     -fx-background-radius: 0;
     -fx-border-radius: 0;
     -fx-background-insets: 0;
-    -fx-padding: 0;
+    -fx-padding: 8 10 8 10;
 }
 
 .key-filter-edit-area:focused {
@@ -205,19 +205,19 @@
     -fx-background-color: rgba(0, 0, 0, 0.98);
     -fx-background-insets: 0;
     -fx-background-radius: 0;
-    -fx-padding: 0;
+    -fx-padding: 8 10 8 10;
 }
 
 .key-filter-edit-area .scroll-pane {
     -fx-background-color: rgba(0, 0, 0, 0.98);
     -fx-background-insets: 0;
-    -fx-padding: 0;
+    -fx-padding: 8 10 8 10;
 }
 
 .key-filter-edit-area .viewport {
     -fx-background-color: rgba(0, 0, 0, 0.98);
     -fx-background-insets: 0;
-    -fx-padding: 0;
+    -fx-padding: 8 10 8 10;
 }
 
 .key-filter-edit-area .text {
@@ -236,8 +236,8 @@
 .key-filter-edit-area.key-filter-edit-overlay {
     -fx-background-color: rgba(0, 0, 0, 0.98);
     -fx-control-inner-background: rgba(0, 0, 0, 0.98);
-    -fx-text-fill: #80d2a2;
-    -fx-prompt-text-fill: rgba(128, 210, 162, 0.48);
+    -fx-text-fill: transparent;
+    -fx-prompt-text-fill: transparent;
     -fx-highlight-fill: rgba(120, 62, 10, 0.65);
     -fx-highlight-text-fill: #fff2df;
     -fx-border-color: transparent;
@@ -246,7 +246,7 @@
     -fx-border-image-width: 7;
     -fx-border-image-repeat: stretch;
     -fx-background-insets: 0;
-    -fx-padding: 0;
+    -fx-padding: 8 10 8 10;
 }
 
 .key-filter-edit-area.key-filter-edit-overlay .content {
@@ -278,25 +278,21 @@
 }
 
 .key-filter-preview-scroll {
-    -fx-background-color: rgba(0, 0, 0, 0.98);
+    -fx-background-color: transparent;
     -fx-background-insets: 0;
     -fx-border-color: transparent;
-    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
-    -fx-border-image-slice: 12;
-    -fx-border-image-width: 5;
-    -fx-border-image-repeat: stretch;
     -fx-padding: 0;
     -fx-cursor: text;
 }
 
 .key-filter-preview-scroll>.viewport {
-    -fx-background-color: rgba(0, 0, 0, 0.98);
+    -fx-background-color: transparent;
 }
 
 .key-filter-preview-flow {
-    -fx-padding: 0;
-    -fx-translate-y: -1px;
-    -fx-font-size: 15px;
+    -fx-padding: 8 10 8 10;
+    -fx-translate-y: 0px;
+    -fx-font-size: 16px;
     -fx-font-weight: bold;
     -fx-font-family: "Segoe UI", "Arial", sans-serif;
     -fx-text-fill: #80d2a2;

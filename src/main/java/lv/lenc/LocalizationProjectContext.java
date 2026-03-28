@@ -1,7 +1,6 @@
 package lv.lenc;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,14 +44,14 @@ public final class LocalizationProjectContext {
 
 
     public boolean saveTarget(CustomTableView tableView, String targetUiLang) {
-        if (!isReady()) return false;
+        if (openedFile == null) return false;
         if (targetUiLang == null || targetUiLang.isBlank()) return false;
 
         String fileText = tableView.buildFileTextForLang(targetUiLang);
         return FileUtil.saveToTargetLanguage(openedFile, projectRoot, targetUiLang, fileText);
     }
     public boolean saveAllTargets(CustomTableView tableView) {
-        if (!isReady()) return false;
+        if (openedFile == null) return false;
 
         // get languages directly from table columns (excluding N and key)
         List<String> langs = tableView.getColumns().stream()

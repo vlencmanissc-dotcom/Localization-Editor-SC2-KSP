@@ -1,7 +1,6 @@
 package lv.lenc;
 
 import javafx.scene.control.Button;
-import javafx.scene.text.Font;
 
 public class CustomLanguageButton extends Button implements Disabable {
 
@@ -17,8 +16,7 @@ public class CustomLanguageButton extends Button implements Disabable {
 
         // CSS class
         getStyleClass().add("lang-btn");
-        double baseFont = UiScaleHelper.scaleY(17); // 
-        setStyle("-fx-font-size: " + baseFont + "px;");
+        setStyle("-fx-font-size: " + fontSize + "px;");
     }
 
     @Override

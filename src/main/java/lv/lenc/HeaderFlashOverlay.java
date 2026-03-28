@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
+import javafx.geometry.Point2D;
 import javafx.util.Duration;
 
 public class HeaderFlashOverlay {
@@ -19,7 +20,8 @@ public class HeaderFlashOverlay {
 
         Platform.runLater(() -> {
             tableView.lookupAll(".column-header").forEach(header -> {
-                if (!(header instanceof Region region)) return;
+                if (!(header instanceof Region)) return;
+                Region region = (Region) header;
 
                 Region flash = new Region();
                 flash.getStyleClass().add("header-flash-border");
@@ -33,8 +35,8 @@ public class HeaderFlashOverlay {
 
                 // track header size and position
                 region.layoutBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
-                    var scenePos = region.localToScene(0, 0);
-                    var rootLocal = root.sceneToLocal(scenePos);
+                    Point2D scenePos = region.localToScene(0, 0);
+                    Point2D rootLocal = root.sceneToLocal(scenePos);
 
                     flash.setLayoutX(rootLocal.getX());
                     flash.setLayoutY(rootLocal.getY());
@@ -43,8 +45,8 @@ public class HeaderFlashOverlay {
                 });
 
                 region.setOnMouseClicked(e -> Platform.runLater(() -> {
-                    var scenePos = region.localToScene(0, 0);
-                    var rootLocal = root.sceneToLocal(scenePos);
+                    Point2D scenePos = region.localToScene(0, 0);
+                    Point2D rootLocal = root.sceneToLocal(scenePos);
 
                     double w = region.getWidth();
                     double h = region.getHeight();
