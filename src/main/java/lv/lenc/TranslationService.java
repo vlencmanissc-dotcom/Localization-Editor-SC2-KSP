@@ -1090,6 +1090,14 @@ public final class TranslationService {
     public static void waitLtReady(int attempts, long sleepMs) throws InterruptedException {
         for (int i = 0; i < attempts; i++) {
             if (refreshActiveEndpoint()) return;
+
+            Process process = managedLtProcess;
+            if (process != null && !process.isAlive()) {
+                throw new RuntimeException(
+                        "LibreTranslate process exited early (code=" + safeExitCode(process)
+                                + "). Check libretranslate installation and Python dependencies."
+                );
+            }
             Thread.sleep(sleepMs);
         }
         throw new RuntimeException("LibreTranslate did not become ready on " + endpointCandidates());
@@ -1229,7 +1237,7 @@ public final class TranslationService {
         // 1) LibreTranslate CLI Å ĆøÅ Ā· PATH
         if (isOnPath("libretranslate")) {
             AppLog.info("[LT] trying libretranslate CLI");
-            return new ProcessBuilder(
+            Process process = new ProcessBuilder(
                     "libretranslate",
                     "--host", "127.0.0.1",
                     "--port", "5000"
@@ -1237,13 +1245,26 @@ public final class TranslationService {
                     .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start();
+            managedLtProcess = process;
+            managedLtGpu = false;
+            tryRaiseProcessPriority(process, "High");
+            try {
+                if (waitForCpuEndpointAfterStart("libretranslate CLI", 16, 1_000L)) {
+                    return process;
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting libretranslate CLI startup", ex);
+            }
+            stopManagedLtProcess();
+            AppLog.warn("[LT] libretranslate CLI is installed, but API did not become ready. Trying next fallback.");
         }
 
         // 2) local exe Åā‚¬ÅĀøÅ Ā´Å Ā¾Å Ā¼ ÅĀ Å Ć¦Åā‚¬Å Ā¾Å Ā³Åā‚¬Å Ā°Å Ā¼Å Ā¼Å Ā¾Å Ā¹
         File localExe = new File("libretranslate.exe");
         if (localExe.exists()) {
             AppLog.info("[LT] trying local libretranslate.exe");
-            return new ProcessBuilder(
+            Process process = new ProcessBuilder(
                     localExe.getAbsolutePath(),
                     "--host", "127.0.0.1",
                     "--port", "5000"
@@ -1251,10 +1272,33 @@ public final class TranslationService {
                     .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start();
+            managedLtProcess = process;
+            managedLtGpu = false;
+            tryRaiseProcessPriority(process, "High");
+            try {
+                if (waitForCpuEndpointAfterStart("local libretranslate.exe", 16, 1_000L)) {
+                    return process;
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting local libretranslate.exe startup", ex);
+            }
+            stopManagedLtProcess();
+            AppLog.warn("[LT] local libretranslate.exe did not become ready. Trying next fallback.");
         }
 
         try {
-            return startLocalPythonLibreTranslateProcess();
+            Process process = startLocalPythonLibreTranslateProcess();
+            try {
+                if (waitForCpuEndpointAfterStart("python -m libretranslate.main", 20, 1_000L)) {
+                    return process;
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting python LibreTranslate startup", ex);
+            }
+            stopManagedLtProcess();
+            AppLog.warn("[LT] Python LibreTranslate process did not become ready. Trying Docker CPU fallback.");
         } catch (IOException ex) {
             AppLog.warn("[LT] local python LibreTranslate start failed: " + ex.getMessage());
         }
@@ -1262,7 +1306,7 @@ public final class TranslationService {
         // 4) Docker Åā€Å Ā¾Å Ā»ÅĀÅ Å—Å Ā¾ Å Ā² ÅĀÅ Ā°Å Ā¼Å Ā¾Å Ā¼ Å Å—Å Ā¾Å Ā½Åā€ Å Āµ
         if (isDockerUsable()) {
             AppLog.info("[LT] trying docker CPU container");
-            return new ProcessBuilder(
+            Process process = new ProcessBuilder(
                     "docker", "run", "--rm",
                     "-p", "127.0.0.1:5000:5000",
                     "libretranslate/libretranslate"
@@ -1270,12 +1314,44 @@ public final class TranslationService {
                     .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start();
+            managedLtProcess = process;
+            managedLtGpu = false;
+            tryRaiseProcessPriority(process, "High");
+            try {
+                if (waitForCpuEndpointAfterStart("docker CPU container", 24, 1_500L)) {
+                    return process;
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting docker CPU startup", ex);
+            }
+            stopManagedLtProcess();
+            AppLog.warn("[LT] docker CPU container did not become ready.");
         }
 
         throw new IllegalStateException(
                 "LibreTranslate launch failed: no working libretranslate/python/docker found"
         );
     }
+
+    private static boolean waitForCpuEndpointAfterStart(String source, int attempts, long sleepMs) throws InterruptedException {
+        String cpuBase = normalizeBaseUrl(DEFAULT_BASE_URL);
+        for (int i = 0; i < attempts; i++) {
+            if (probeBaseUrl(cpuBase)) {
+                activateEndpoint(cpuBase);
+                return true;
+            }
+            Process process = managedLtProcess;
+            if (process != null && !process.isAlive()) {
+                AppLog.warn("[LT] " + source + " exited early (code=" + safeExitCode(process) + ")");
+                return false;
+            }
+            Thread.sleep(sleepMs);
+        }
+        AppLog.warn("[LT] " + source + " did not become ready on " + cpuBase);
+        return false;
+    }
+
     private static boolean isOnPath(String tool) {
         try {
             Process p = new ProcessBuilder("cmd", "/c", "where", tool).start();
@@ -1614,6 +1690,17 @@ public final class TranslationService {
             return p.waitFor() == 0;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private static int safeExitCode(Process process) {
+        if (process == null) {
+            return -1;
+        }
+        try {
+            return process.exitValue();
+        } catch (IllegalThreadStateException ex) {
+            return -1;
         }
     }
 

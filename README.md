@@ -18,7 +18,7 @@ https://github.com/vlencmanissc-dotcom/Localization-Editor-SC2-KSP/releases
 Run the installer:
 
 ```
-LocalizationEditor-Setup-1.1.exe
+LocalizationEditor-Setup-1.1.1exe
 ```
 
 After installation, launch the editor normally.
@@ -253,6 +253,14 @@ Later starts:
 ```bash
 libretranslate --load-only en,ru,de,es,fr,it,pl,pt,ko,zh,zt
 ```
+
+If `libretranslate` command exists but server still does not become ready,
+start via Python module directly (recommended fallback):
+
+```bash
+python -m libretranslate.main --host 127.0.0.1 --port 5000 --disable-web-ui
+```
+
 If everything is correct, you should see:
 ```
 Running on http://127.0.0.1:5000
@@ -275,6 +283,28 @@ curl -X POST http://127.0.0.1:5000/translate -H "Content-Type: application/json"
   {
   "translatedText": "Hallo Welt"
 }
+```
+
+### Troubleshooting (Windows)
+
+If startup fails with an error similar to:
+
+`FileExistsError ... C:\Users\<user>\.config\argos-translate`
+
+then `argos-translate` path is broken (file exists where directory is expected).
+
+PowerShell fix:
+
+```powershell
+$cfg = "$env:USERPROFILE\.config\argos-translate"
+if (Test-Path $cfg -PathType Leaf) { Remove-Item $cfg -Force }
+New-Item -ItemType Directory -Path $cfg -Force | Out-Null
+```
+
+Then start LibreTranslate again and verify:
+
+```bash
+http://127.0.0.1:5000/languages
 ```
 ---
 

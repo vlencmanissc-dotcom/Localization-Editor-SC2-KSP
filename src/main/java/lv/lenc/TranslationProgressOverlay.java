@@ -135,4 +135,30 @@ public final class TranslationProgressOverlay extends StackPane {
             });
         }
     }
+
+    public void showError(String titleText, String l1, String l2) {
+        Runnable action = () -> {
+            title.setText((titleText == null || titleText.isBlank()) ? "Error" : titleText);
+            line1.setText(l1 == null ? "" : l1);
+            line2.setText(l2 == null ? "" : l2);
+            line1.setWrapText(true);
+            line2.setWrapText(true);
+            line1.setMaxWidth(UiScaleHelper.scaleX(470));
+            line2.setMaxWidth(UiScaleHelper.scaleX(470));
+            bar.setProgress(0);
+            percent.setText("0%");
+
+            // Keep overlay visible as an in-app notification, but do not block UI.
+            setMouseTransparent(true);
+            setManaged(true);
+            setVisible(true);
+            toFront();
+        };
+
+        if (Platform.isFxApplicationThread()) {
+            action.run();
+        } else {
+            Platform.runLater(action);
+        }
+    }
 }

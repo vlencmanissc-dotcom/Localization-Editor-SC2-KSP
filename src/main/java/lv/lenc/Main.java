@@ -383,7 +383,11 @@ public class Main extends Application {
         translate.setErrorHandler(error -> {
             Throwable cause = (error != null && error.getCause() != null) ? error.getCause() : error;
             AppLog.exception(cause);
-            progressWin.close();
+            progressWin.showError(
+                    localization.get("translating.error.title"),
+                    buildTranslateErrorLine1(cause),
+                    buildTranslateErrorLine2(cause)
+            );
         });
         translate.setSaveAction(() -> {
             boolean ok;
@@ -524,6 +528,30 @@ public class Main extends Application {
         long minutes = seconds / 60L;
         long remSec = seconds % 60L;
         return minutes + "m " + remSec + "s";
+    }
+
+    private String buildTranslateErrorLine1(Throwable error) {
+        if (error == null) {
+            return localization.get("translating.error.generic");
+        }
+
+        String message = error.getMessage();
+        if (message == null || message.isBlank()) {
+            return localization.get("translating.error.generic");
+        }
+        return message;
+    }
+
+    private String buildTranslateErrorLine2(Throwable error) {
+        String message = (error == null || error.getMessage() == null)
+                ? ""
+                : error.getMessage().toLowerCase();
+
+        if (message.contains("libretranslate is not reachable") || message.contains("did not become ready")) {
+            return localization.get("translating.error.hint.server");
+        }
+
+        return localization.get("translating.error.hint.generic");
     }
 
     private void scheduleTranslationServerWarmup(String srcUi, String targetUi, String reason) {

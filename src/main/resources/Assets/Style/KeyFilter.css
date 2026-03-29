@@ -238,8 +238,8 @@
     -fx-control-inner-background: rgba(0, 0, 0, 0.98);
     -fx-text-fill: transparent;
     -fx-prompt-text-fill: transparent;
-    -fx-highlight-fill: rgba(120, 62, 10, 0.65);
-    -fx-highlight-text-fill: #fff2df;
+    -fx-highlight-fill: transparent;
+    -fx-highlight-text-fill: transparent;
     -fx-border-color: transparent;
     -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
     -fx-border-image-slice: 20;
