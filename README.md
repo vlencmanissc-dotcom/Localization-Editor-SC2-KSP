@@ -329,6 +329,45 @@ mvn exec:java -Dexec.mainClass=lv.lenc.AppLauncher
 
 ---
 
+### Run the CLI on Windows
+
+From the project root:
+
+```bash
+run-cli.bat check-missing "C:\Maps\MyMap\enUS.SC2Data\LocalizedData\GameStrings.txt"
+```
+
+JSON output for automation:
+
+```bash
+run-cli.bat check-missing "C:\Maps\MyMap\enUS.SC2Data\LocalizedData\GameStrings.txt" --json
+```
+
+Or directly through PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-cli.ps1 check-missing "C:\Maps\MyMap\enUS.SC2Data\LocalizedData\GameStrings.txt" --json
+```
+
+### What it reports
+
+The CLI currently reports:
+
+- missing locale files for sibling `.SC2Data/LocalizedData` folders
+- missing keys in one language compared with the others
+- blank or `null`-like values
+- malformed lines without `=`
+- duplicate keys inside one file
+
+### Exit codes
+
+- `0`: no issues found
+- `1`: warnings or errors found
+- `2`: usage or input error
+- `3`: unexpected runtime failure
+
+---
+
 ## Build (Optional)
 
 To compile the project:
