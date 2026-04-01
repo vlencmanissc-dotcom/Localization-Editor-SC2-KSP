@@ -42,4 +42,6 @@ build/
 settings.properties
 LanguageDetected/
 /Localization Standard.zip
+/Release ZIP/
 /Release ZIP/*.zip
+/Release ZIP/cli/LocalizationCli.jar

@@ -329,6 +329,122 @@ mvn exec:java -Dexec.mainClass=lv.lenc.AppLauncher
 
 ---
 
+### Run the CLI on Windows
+
+From the project root:
+
+```bash
+run-cli.bat check-missing "C:\Maps\MyMap\enUS.SC2Data\LocalizedData\GameStrings.txt"
+```
+
+JSON output for automation:
+
+```bash
+run-cli.bat check-missing "C:\Maps\MyMap\enUS.SC2Data\LocalizedData\GameStrings.txt" --json
+```
+
+Or directly through PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-cli.ps1 check-missing "C:\Maps\MyMap\enUS.SC2Data\LocalizedData\GameStrings.txt" --json
+```
+
+### Build a single-file CLI jar
+
+From the project root:
+
+```bash
+mvn -DskipTests package
+```
+
+This produces an executable CLI jar:
+
+```text
+target/Localization_Editor_SC2_KSP-1.1.1-cli.jar
+```
+
+You can run it from any folder (including a different repo):
+
+```bash
+java -jar C:\git-repo\Localization-Editor-SC2-KSP\target\Localization_Editor_SC2_KSP-1.1.1-cli.jar check-missing "C:\Maps\MyMap\enUS.SC2Data\LocalizedData\GameStrings.txt" --json
+```
+
+### Register a global command on Windows
+
+You can install a command shim so the CLI appears in your terminal command list (PATH),
+for example as `sc2loc`.
+
+From the project root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-cli-command.ps1 -Mode script
+```
+
+Then run from any folder:
+
+```powershell
+sc2loc check-missing "C:\Maps\MyMap\enUS.SC2Data\LocalizedData\GameStrings.txt" --json
+```
+
+Optional custom command name:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-cli-command.ps1 -CommandName lenc-loc
+```
+
+### Export a portable CLI package zip
+
+You can build a distributable zip that contains:
+
+- `LocalizationCli.jar`
+- `run-cli.bat`
+- `install-cli-command.bat`
+- `install-cli-command.ps1`
+
+Build it from the project root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-cli-package.ps1
+```
+
+This produces:
+
+```text
+dist/LocalizationCli-Package.zip
+```
+
+After extracting the zip, install the command with:
+
+```bat
+install-cli-command.bat
+```
+
+Then run from any folder:
+
+```powershell
+sc2loc --help
+sc2loc check-missing "C:\Maps\MyMap\enUS.SC2Data\LocalizedData\GameStrings.txt" --json
+```
+
+### What it reports
+
+The CLI currently reports:
+
+- missing locale files for sibling `.SC2Data/LocalizedData` folders
+- missing keys in one language compared with the others
+- blank or `null`-like values
+- malformed lines without `=`
+- duplicate keys inside one file
+
+### Exit codes
+
+- `0`: no issues found
+- `1`: warnings or errors found
+- `2`: usage or input error
+- `3`: unexpected runtime failure
+
+---
+
 ## Build (Optional)
 
 To compile the project:
