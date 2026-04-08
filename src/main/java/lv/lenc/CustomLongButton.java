@@ -28,7 +28,7 @@ public class CustomLongButton extends MyButton {
 
         double width = UiScaleHelper.scaleX(widthFullHD);
         double height = UiScaleHelper.scaleY(heightFullHD);
-        double fontSize = UiScaleHelper.scaleY(fontSizeFullHD);
+        double fontSize = UiScaleHelper.scaleFont(fontSizeFullHD, 10.0);
 
         setPrefSize(width, height);
         setMaxSize(width, height);

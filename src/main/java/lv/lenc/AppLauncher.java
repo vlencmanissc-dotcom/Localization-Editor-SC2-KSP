@@ -2,6 +2,9 @@ package lv.lenc;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,11 +39,34 @@ public class AppLauncher {
 
     private static void suppressJavaFxWarnings() {
         try {
+            installJavaFxErrFilter();
             Logger.getLogger("com.sun.javafx.application.PlatformImpl").setLevel(Level.SEVERE);
             Logger.getLogger("javafx.scene.CssStyleHelper").setLevel(Level.SEVERE);
+            Logger.getLogger("javafx").setLevel(Level.SEVERE);
         } catch (Exception ignored) {
             // Keep startup safe even if logging implementation changes.
         }
+    }
+
+    private static void installJavaFxErrFilter() {
+        PrintStream originalErr = System.err;
+        if (originalErr instanceof FilteringPrintStream) {
+            return;
+        }
+        System.setErr(new FilteringPrintStream(originalErr));
+    }
+
+    private static boolean shouldSuppressJavaFxErrLine(String line) {
+        if (line == null || line.isBlank()) {
+            return false;
+        }
+        String normalized = line.trim();
+        return normalized.contains("Unsupported JavaFX configuration: classes were loaded from 'unnamed module")
+                || normalized.contains("javafx.scene.CssStyleHelper calculateValue")
+                || normalized.contains("com.sun.javafx.application.PlatformImpl startup")
+                || normalized.contains("java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.")
+                || normalized.contains("while converting value for '-fx-background-color' from rule '*.progress-bar>*.track'")
+                || normalized.contains("while converting value for '-fx-background-color' from rule '*.progress-bar>*.bar'");
     }
 
     private static boolean isForceGpuRequested() {
@@ -92,6 +118,53 @@ public class AppLauncher {
             AppLog.warn("[GPU] Unable to configure Windows GPU preference: interrupted");
         } catch (IOException ex) {
             AppLog.warn("[GPU] Unable to configure Windows GPU preference: " + ex.getMessage());
+        }
+    }
+
+    private static final class FilteringPrintStream extends PrintStream {
+        private FilteringPrintStream(PrintStream delegate) {
+            super(new FilteringOutputStream(delegate), true, StandardCharsets.UTF_8);
+        }
+    }
+
+    private static final class FilteringOutputStream extends OutputStream {
+        private final PrintStream delegate;
+        private final StringBuilder lineBuffer = new StringBuilder(256);
+
+        private FilteringOutputStream(PrintStream delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(int b) {
+            char ch = (char) (b & 0xFF);
+            if (ch == '\r') {
+                flushLine();
+                return;
+            }
+            if (ch == '\n') {
+                flushLine();
+                return;
+            }
+            lineBuffer.append(ch);
+        }
+
+        @Override
+        public void flush() {
+            flushLine();
+            delegate.flush();
+        }
+
+        private void flushLine() {
+            if (lineBuffer.isEmpty()) {
+                return;
+            }
+            String line = lineBuffer.toString();
+            lineBuffer.setLength(0);
+            if (shouldSuppressJavaFxErrLine(line)) {
+                return;
+            }
+            delegate.println(line);
         }
     }
 }

@@ -112,9 +112,9 @@
     -fx-background-insets: 0;
 
     /* EXACT size like scroll-bar:horizontal */
-    -fx-min-height: 1.7em;
-    -fx-pref-height: 1.7em;
-    -fx-max-height: 1.7em;
+    -fx-min-height: 2.04em;
+    -fx-pref-height: 2.04em;
+    -fx-max-height: 2.04em;
 
 
     -fx-border-color: transparent;

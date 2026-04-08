@@ -56,6 +56,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 final class InAppSwingFileChooserDialog {
+    private static final double DIALOG_SCALE = 1.20;
     private static final long DISABLE_ANIMATIONS_UPTIME_MS = 6_000;
     private static final long TYPEAHEAD_RESET_MS = 950;
     private static final double BACKGROUND_BLUR_RADIUS = 5.2;
@@ -163,10 +164,10 @@ final class InAppSwingFileChooserDialog {
     }
 
     private double sf(double fullHdPx, double minPx) {
-        return Math.max(UiScaleHelper.scaleY(fullHdPx), minPx);
+        return Math.max(UiScaleHelper.scaleY(fullHdPx * DIALOG_SCALE), minPx);
     }
     private double sfx(double fullHdPx, double minPx) {
-        return Math.max(UiScaleHelper.scaleX(fullHdPx), minPx);
+        return Math.max(UiScaleHelper.scaleX(fullHdPx * DIALOG_SCALE), minPx);
     }
 
     static void show(Node owner,
@@ -205,7 +206,7 @@ final class InAppSwingFileChooserDialog {
         HBox pathBar = new HBox(sfx(8, 6), upButton, pathField, searchField);
         pathBar.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(pathField, Priority.ALWAYS);
-        searchField.setPrefWidth(Math.max(UiScaleHelper.scaleX(240), UiScaleHelper.scaleX(180)));
+        searchField.setPrefWidth(Math.max(sfx(240, 180), sfx(180, 140)));
 
         SplitPane splitPane = new SplitPane(placesList, filesTable);
         splitPane.getStyleClass().add("file-open-split");
@@ -245,8 +246,8 @@ final class InAppSwingFileChooserDialog {
                 sf(14, 10),
                 sfx(14, 10)
         ));
-        double panelW = Math.max(UiScaleHelper.scaleX(920), UiScaleHelper.scaleX(720));
-        double panelH = Math.max(UiScaleHelper.scaleY(590), UiScaleHelper.scaleY(470));
+        double panelW = Math.max(sfx(920, 720), sfx(720, 560));
+        double panelH = Math.max(sf(590, 470), sf(470, 360));
         panel.setMinSize(panelW, panelH);
         panel.setPrefSize(panelW, panelH);
         panel.setMaxSize(panelW, panelH);

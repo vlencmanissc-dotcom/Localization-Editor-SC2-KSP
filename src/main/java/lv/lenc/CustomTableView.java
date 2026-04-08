@@ -49,6 +49,9 @@ import javafx.util.converter.DefaultStringConverter;
 
 
 public class CustomTableView extends TableView<LocalizationData> {
+    private static final double TABLE_TEXT_SCALE = 0.84;
+    private static final double TABLE_SPECIAL_COLUMNS_BOOST = 1.30;
+    private static final double TABLE_HEADER_BOOST = 1.10;
     String texturePath;
     private final List<TableColumn<LocalizationData, String>> editableColumns = new ArrayList<>();
     private double baseLangMinW;
@@ -260,8 +263,9 @@ public class CustomTableView extends TableView<LocalizationData> {
                 if (!getStyleClass().contains("col-n")) getStyleClass().add("col-n");
                 setStyle(""); //
                 double countFont = resolveCountCellFontSize(this);
+                String countFontFamily = Font.getFamilies().contains("Consolas") ? "Consolas" : "Monospaced";
                 setFont(Font.font(
-                        getFont().getFamily(),
+                        countFontFamily,
                         FontWeight.BOLD,
                         countFont
                 ));
@@ -320,8 +324,16 @@ public class CustomTableView extends TableView<LocalizationData> {
         return Math.max(UiScaleHelper.scaleY(fullHdPx), minPx);
     }
 
+    private double sff(double fullHdPx, double minPx) {
+        return Math.max(UiScaleHelper.scaleFont(fullHdPx), minPx);
+    }
+
+    private double tableText(double px) {
+        return Math.max(px * TABLE_TEXT_SCALE, 7.0);
+    }
+
     private double resolveKeyCellFontSize(TableCell<LocalizationData, String> cell) {
-        double base = sf(13, 10.0);
+        double base = tableText(sff(13, 10.0)) * TABLE_SPECIAL_COLUMNS_BOOST;
         if (cell == null || cell.getTableColumn() == null) {
             return base;
         }
@@ -336,24 +348,24 @@ public class CustomTableView extends TableView<LocalizationData> {
     }
 
     private double resolveCountCellFontSize(TableCell<LocalizationData, String> cell) {
-        double base = sf(13, 9.6);
+        double base = tableText(sff(14.2, 10.4)) * (TABLE_SPECIAL_COLUMNS_BOOST + 0.08);
         if (cell == null || cell.getTableColumn() == null) {
             return base;
         }
         double width = cell.getTableColumn().getWidth();
         if (width < UiScaleHelper.scaleX(78)) {
-            return Math.max(base - 1.8, 8.5);
+            return Math.max(base - 1.2, 9.2);
         }
         if (width < UiScaleHelper.scaleX(96)) {
-            return Math.max(base - 0.9, 9.0);
+            return Math.max(base - 0.4, 9.8);
         }
         return base;
     }
 
     private void applyDynamicTypography() {
-        double baseFont = sf(14, MIN_CELL_FONT_PX);
-        double headerFont = sf(13, MIN_HEADER_FONT_PX);
-        double placeholderFont = sf(36, MIN_PLACEHOLDER_FONT_PX);
+        double baseFont = tableText(sff(14, MIN_CELL_FONT_PX));
+        double headerFont = tableText(sff(13, MIN_HEADER_FONT_PX)) * TABLE_HEADER_BOOST;
+        double placeholderFont = tableText(sff(36, MIN_PLACEHOLDER_FONT_PX));
         setStyle("-fx-font-size: " + baseFont + "px;");
         Label placeholder = (Label) getPlaceholder();
         if (placeholder != null) {
@@ -645,7 +657,7 @@ public class CustomTableView extends TableView<LocalizationData> {
                     double padX = Math.max(UiScaleHelper.scaleX(7), 5);
                     double borderSlice = sf(12, 9);
                     double borderWidth = sf(4, 3);
-                    double fontSize = sf(14, MIN_CELL_FONT_PX);
+                    double fontSize = tableText(sff(14, MIN_CELL_FONT_PX));
 
                     return "-fx-background-color: " + rowBg + ";"
                             + "-fx-background-insets: 0;"

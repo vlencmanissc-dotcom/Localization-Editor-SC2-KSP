@@ -40,7 +40,9 @@ public class Main extends Application {
 
     public static final String RU = "RU";
     public static final String EN = "EN";
-    private static final String LIBRE_TRANSLATE_LABEL = "LibreTranslate";
+    private static final String LIBRE_TRANSLATE_LABEL = "LibreTranslate AI";
+    private static final String SILICONFLOW_DEEPSEEK_LABEL = "SiliconFlow AI (DeepSeek-V3.2)";
+    private static final String SILICONFLOW_M2M100_LABEL = "SiliconFlow AI (M2M100)";
     private static final int STARTUP_ANIMATION_GRACE_MS = 3000;
 
     // UI / state
@@ -216,7 +218,7 @@ public class Main extends Application {
         quitButton.setTranslateY(UiScaleHelper.scaleY(-80));
         quitButton.setTranslateX(UiScaleHelper.scaleX(-450));
 
-        fileTitleLabel = new GlowingLabelWithBorder(localization.get("label.file.name"));
+        fileTitleLabel = new GlowingLabelWithBorder(localization.get("label.file.name"), 220, 70, 13.2);
         fileSelected = new CustomFileChooser(
                 localization,
                 createFileSelectable(tableView),
@@ -241,10 +243,10 @@ public class Main extends Application {
                 true,
                 343,
                 54,
-                16,
-                14,
+                11.2,
+                9.8,
                 22,
-                6
+                10
         );
         translateType.getStyleClass().add("ai-backend-combo");
         refreshTranslateBackendItems(TranslationService.getSelectedBackend());
@@ -257,7 +259,7 @@ public class Main extends Application {
                 true,
                 330,
                 58,
-                16,
+                12.6,
                 0.3,
                 0.6
         );
@@ -591,16 +593,18 @@ public class Main extends Application {
                     );
                 } else {
                     String checkingKey = switch (TranslationService.getSelectedBackend()) {
+                        case CLOUDFLARE_M2M100 -> "translating.cloudflare.checking";
                         case GOOGLE_WEB_FREE -> "translating.googlefree.checking";
                         case GEMINI -> "translating.gemini.checking";
-                        case SILICONFLOW -> "translating.siliconflow.checking";
+                        case SILICONFLOW, SILICONFLOW_DEEPSEEK_V3, SILICONFLOW_M2M100 -> "translating.siliconflow.checking";
                         case DEEPL_FREE -> "translating.deepl.checking";
                         default -> "translating.google.checking";
                     };
                     String hintKey = switch (TranslationService.getSelectedBackend()) {
+                        case CLOUDFLARE_M2M100 -> "translating.cloudflare.hint.key";
                         case GOOGLE_WEB_FREE -> "translating.googlefree.hint.key";
                         case GEMINI -> "translating.gemini.hint.key";
-                        case SILICONFLOW -> "translating.siliconflow.hint.key";
+                        case SILICONFLOW, SILICONFLOW_DEEPSEEK_V3, SILICONFLOW_M2M100 -> "translating.siliconflow.hint.key";
                         case DEEPL_FREE -> "translating.deepl.hint.key";
                         default -> "translating.google.hint.key";
                     };
@@ -702,13 +706,17 @@ public class Main extends Application {
                 endpoint = GeminiTranslationProvider.activeEndpointForLogs();
                 service = "Gemini Vertex AI";
                 model = GeminiTranslationProvider.MODEL_ID;
-            } else if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.SILICONFLOW) {
+            } else if (TranslationService.selectedBackendUsesSiliconFlowApi()) {
                 endpoint = SiliconFlowTranslationProvider.activeEndpointForLogs();
                 service = "SiliconFlow API";
                 model = SiliconFlowTranslationProvider.activeModelForLogs();
             } else if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.DEEPL_FREE) {
                 endpoint = DeepLTranslationProvider.activeEndpointForLogs();
                 service = "DeepL API Free";
+            } else if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.CLOUDFLARE_M2M100) {
+                endpoint = CloudflareM2M100TranslationProvider.activeEndpointForLogs();
+                service = "Cloudflare Worker AI";
+                model = CloudflareM2M100TranslationProvider.MODEL_ID;
             } else if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.GOOGLE_WEB_FREE) {
                 endpoint = GoogleWebFreeTranslationProvider.activeEndpointForLogs();
                 service = "Google Translate Free (Web)";
@@ -782,13 +790,16 @@ public class Main extends Application {
         if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.GOOGLE_CLOUD) {
             return localization.get("translating.error.hint.google");
         }
+        if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.CLOUDFLARE_M2M100) {
+            return localization.get("translating.error.hint.cloudflare");
+        }
         if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.GOOGLE_WEB_FREE) {
             return localization.get("translating.error.hint.googlefree");
         }
         if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.GEMINI) {
             return localization.get("translating.error.hint.gemini");
         }
-        if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.SILICONFLOW) {
+        if (TranslationService.selectedBackendUsesSiliconFlowApi()) {
             return localization.get("translating.error.hint.siliconflow");
         }
         if (TranslationService.getSelectedBackend() == TranslationService.TranslationBackend.DEEPL_FREE) {
@@ -802,10 +813,13 @@ public class Main extends Application {
         int selectedIndex = translateType == null ? 0 : translateType.getSelectionModel().getSelectedIndex();
         return switch (selectedIndex) {
             case 1 -> TranslationService.TranslationBackend.GOOGLE_CLOUD;
-            case 2 -> TranslationService.TranslationBackend.GOOGLE_WEB_FREE;
-            case 3 -> TranslationService.TranslationBackend.GEMINI;
-            case 4 -> TranslationService.TranslationBackend.SILICONFLOW;
-            case 5 -> TranslationService.TranslationBackend.DEEPL_FREE;
+            case 2 -> TranslationService.TranslationBackend.CLOUDFLARE_M2M100;
+            case 3 -> TranslationService.TranslationBackend.GOOGLE_WEB_FREE;
+            case 4 -> TranslationService.TranslationBackend.GEMINI;
+            case 5 -> TranslationService.TranslationBackend.SILICONFLOW;
+            case 6 -> TranslationService.TranslationBackend.SILICONFLOW_DEEPSEEK_V3;
+            case 7 -> TranslationService.TranslationBackend.SILICONFLOW_M2M100;
+            case 8 -> TranslationService.TranslationBackend.DEEPL_FREE;
             default -> TranslationService.TranslationBackend.LIBRE_TRANSLATE;
         };
     }
@@ -823,17 +837,23 @@ public class Main extends Application {
         translateType.getItems().setAll(
                 LIBRE_TRANSLATE_LABEL,
                 localization.get("combox.google"),
+                localization.get("combox.cloudflare"),
                 localization.get("combox.googlefree"),
                 localization.get("combox.gemini"),
                 localization.get("combox.siliconflow"),
+                SILICONFLOW_DEEPSEEK_LABEL,
+                SILICONFLOW_M2M100_LABEL,
                 localization.get("combox.deepl")
         );
         int selectedIndex = switch (selectedBackend) {
             case GOOGLE_CLOUD -> 1;
-            case GOOGLE_WEB_FREE -> 2;
-            case GEMINI -> 3;
-            case SILICONFLOW -> 4;
-            case DEEPL_FREE -> 5;
+            case CLOUDFLARE_M2M100 -> 2;
+            case GOOGLE_WEB_FREE -> 3;
+            case GEMINI -> 4;
+            case SILICONFLOW -> 5;
+            case SILICONFLOW_DEEPSEEK_V3 -> 6;
+            case SILICONFLOW_M2M100 -> 7;
+            case DEEPL_FREE -> 8;
             default -> 0;
         };
         translateType.getSelectionModel().select(selectedIndex);

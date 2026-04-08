@@ -58,9 +58,12 @@ public final class TranslationService {
     public enum TranslationBackend {
         LIBRE_TRANSLATE,
         GOOGLE_CLOUD,
+        CLOUDFLARE_M2M100,
         GOOGLE_WEB_FREE,
         GEMINI,
         SILICONFLOW,
+        SILICONFLOW_DEEPSEEK_V3,
+        SILICONFLOW_M2M100,
         DEEPL_FREE
     }
 
@@ -135,6 +138,8 @@ public final class TranslationService {
     private static volatile String cachedPythonProbeSummary = "";
     private static volatile PythonProbeResult cachedPythonProbeResult;
     private static volatile TranslationBackend selectedBackend = TranslationBackend.LIBRE_TRANSLATE;
+    public static final String SILICONFLOW_DEEPSEEK_MODEL_ID = SiliconFlowDeepSeekV3TranslationProvider.MODEL_ID;
+    public static final String SILICONFLOW_M2M100_MODEL_ID = SiliconFlowM2M100TranslationProvider.MODEL_ID;
 
     static {
         api = createApi(BASE_URL);
@@ -159,6 +164,7 @@ public final class TranslationService {
         } catch (Exception ignored) {
             selectedBackend = TranslationBackend.LIBRE_TRANSLATE;
         }
+        applySiliconFlowModelSelection(selectedBackend);
 
         ensurePersistentCacheLoaded();
         installCacheShutdownHook();
@@ -198,6 +204,7 @@ public final class TranslationService {
 
     public static synchronized void setSelectedBackend(TranslationBackend backend) {
         selectedBackend = (backend == null) ? TranslationBackend.LIBRE_TRANSLATE : backend;
+        applySiliconFlowModelSelection(selectedBackend);
         try {
             SettingsManager.saveTranslationBackendName(selectedBackend.name());
         } catch (Exception ignored) {
@@ -252,18 +259,43 @@ public final class TranslationService {
         return selectedBackend;
     }
 
+    private static boolean isSiliconFlowBackend(TranslationBackend backend) {
+        return backend == TranslationBackend.SILICONFLOW
+                || backend == TranslationBackend.SILICONFLOW_DEEPSEEK_V3
+                || backend == TranslationBackend.SILICONFLOW_M2M100;
+    }
+
+    public static boolean selectedBackendUsesSiliconFlowApi() {
+        return isSiliconFlowBackend(selectedBackend);
+    }
+
+    private static void applySiliconFlowModelSelection(TranslationBackend backend) {
+        if (backend == TranslationBackend.SILICONFLOW_DEEPSEEK_V3) {
+            SiliconFlowTranslationProvider.setRuntimeModelOverride(SILICONFLOW_DEEPSEEK_MODEL_ID, true);
+            return;
+        }
+        if (backend == TranslationBackend.SILICONFLOW_M2M100) {
+            SiliconFlowTranslationProvider.setRuntimeModelOverride(SILICONFLOW_M2M100_MODEL_ID, true);
+            return;
+        }
+        SiliconFlowTranslationProvider.setRuntimeModelOverride("", false);
+    }
+
     public static boolean selectedBackendRequiresLocalServer() {
         return selectedBackend == TranslationBackend.LIBRE_TRANSLATE;
     }
 
     public static boolean backendSupportsGlossaryInflectionHints() {
         return selectedBackend == TranslationBackend.GEMINI
-                || selectedBackend == TranslationBackend.SILICONFLOW;
+                || isSiliconFlowBackend(selectedBackend);
     }
 
     public static String selectedBackendLabel() {
         if (selectedBackend == TranslationBackend.GOOGLE_CLOUD) {
             return "Google Cloud Translate";
+        }
+        if (selectedBackend == TranslationBackend.CLOUDFLARE_M2M100) {
+            return "Cloudflare Worker AI (M2M100)";
         }
         if (selectedBackend == TranslationBackend.GOOGLE_WEB_FREE) {
             return "Google Translate Free (Web)";
@@ -273,6 +305,12 @@ public final class TranslationService {
         }
         if (selectedBackend == TranslationBackend.SILICONFLOW) {
             return "SiliconFlow API";
+        }
+        if (selectedBackend == TranslationBackend.SILICONFLOW_DEEPSEEK_V3) {
+            return "SiliconFlow API (DeepSeek-V3.2)";
+        }
+        if (selectedBackend == TranslationBackend.SILICONFLOW_M2M100) {
+            return "SiliconFlow API (M2M100)";
         }
         if (selectedBackend == TranslationBackend.DEEPL_FREE) {
             return "DeepL API Free";
@@ -284,6 +322,9 @@ public final class TranslationService {
         if (selectedBackend == TranslationBackend.GOOGLE_CLOUD) {
             return "Google Cloud Translate";
         }
+        if (selectedBackend == TranslationBackend.CLOUDFLARE_M2M100) {
+            return "Cloudflare Worker AI (M2M100)";
+        }
         if (selectedBackend == TranslationBackend.GOOGLE_WEB_FREE) {
             return "Google Translate Free (Web)";
         }
@@ -292,6 +333,12 @@ public final class TranslationService {
         }
         if (selectedBackend == TranslationBackend.SILICONFLOW) {
             return "SiliconFlow API";
+        }
+        if (selectedBackend == TranslationBackend.SILICONFLOW_DEEPSEEK_V3) {
+            return "SiliconFlow API (DeepSeek-V3.2)";
+        }
+        if (selectedBackend == TranslationBackend.SILICONFLOW_M2M100) {
+            return "SiliconFlow API (M2M100)";
         }
         if (selectedBackend == TranslationBackend.DEEPL_FREE) {
             return "DeepL API Free";
@@ -303,11 +350,20 @@ public final class TranslationService {
         if (selectedBackend == TranslationBackend.GOOGLE_CLOUD) {
             return GoogleCloudTranslationProvider.isConfigured();
         }
+        if (selectedBackend == TranslationBackend.CLOUDFLARE_M2M100) {
+            return CloudflareM2M100TranslationProvider.isConfigured();
+        }
         if (selectedBackend == TranslationBackend.GOOGLE_WEB_FREE) {
             return GoogleWebFreeTranslationProvider.isConfigured();
         }
         if (selectedBackend == TranslationBackend.GEMINI) {
             return GeminiTranslationProvider.isConfigured();
+        }
+        if (selectedBackend == TranslationBackend.SILICONFLOW_DEEPSEEK_V3) {
+            return SiliconFlowDeepSeekV3TranslationProvider.isConfigured();
+        }
+        if (selectedBackend == TranslationBackend.SILICONFLOW_M2M100) {
+            return SiliconFlowM2M100TranslationProvider.isConfigured();
         }
         if (selectedBackend == TranslationBackend.SILICONFLOW) {
             return SiliconFlowTranslationProvider.isConfigured();
@@ -326,6 +382,24 @@ public final class TranslationService {
             }
             setLastStartupFailureHint(
                     "Google Cloud Translate requires GOOGLE_TRANSLATE_API_KEY or settings.properties google.translate.api.key."
+            );
+            return false;
+        }
+        if (selectedBackend == TranslationBackend.CLOUDFLARE_M2M100) {
+            if (!CloudflareM2M100TranslationProvider.isConfigured()) {
+                setLastStartupFailureHint(
+                        "Cloudflare Worker AI (M2M100) requires CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN "
+                                + "or settings.properties cloudflare.account.id/cloudflare.api.token."
+                );
+                return false;
+            }
+            String hint = CloudflareM2M100TranslationProvider.checkAvailability(HTTP);
+            if (hint == null || hint.isBlank()) {
+                return true;
+            }
+            AppLog.error("[CLOUDFLARE-M2M100] availability check failed: " + hint);
+            setLastStartupFailureHint(
+                    hint
             );
             return false;
         }
@@ -350,6 +424,36 @@ public final class TranslationService {
                 return true;
             }
             AppLog.error("[GEMINI] availability check failed: " + hint);
+            setLastStartupFailureHint(hint);
+            return false;
+        }
+        if (selectedBackend == TranslationBackend.SILICONFLOW_DEEPSEEK_V3) {
+            if (!SiliconFlowDeepSeekV3TranslationProvider.isConfigured()) {
+                setLastStartupFailureHint(
+                        "SiliconFlow API requires SILICONFLOW_API_KEY or settings.properties siliconflow.api.key."
+                );
+                return false;
+            }
+            String hint = SiliconFlowDeepSeekV3TranslationProvider.checkAvailability(HTTP);
+            if (hint == null || hint.isBlank()) {
+                return true;
+            }
+            AppLog.error("[SILICONFLOW] availability check failed: " + hint);
+            setLastStartupFailureHint(hint);
+            return false;
+        }
+        if (selectedBackend == TranslationBackend.SILICONFLOW_M2M100) {
+            if (!SiliconFlowM2M100TranslationProvider.isConfigured()) {
+                setLastStartupFailureHint(
+                        "SiliconFlow API requires SILICONFLOW_API_KEY or settings.properties siliconflow.api.key."
+                );
+                return false;
+            }
+            String hint = SiliconFlowM2M100TranslationProvider.checkAvailability(HTTP);
+            if (hint == null || hint.isBlank()) {
+                return true;
+            }
+            AppLog.error("[SILICONFLOW] availability check failed: " + hint);
             setLastStartupFailureHint(hint);
             return false;
         }
@@ -408,7 +512,11 @@ public final class TranslationService {
             return TranslationBackend.LIBRE_TRANSLATE;
         }
         try {
-            return TranslationBackend.valueOf(normalized.toUpperCase(Locale.ROOT));
+            String upper = normalized.toUpperCase(Locale.ROOT);
+            if ("GOOGLE_FRAME_S2S100".equals(upper)) {
+                return TranslationBackend.CLOUDFLARE_M2M100;
+            }
+            return TranslationBackend.valueOf(upper);
         } catch (IllegalArgumentException ex) {
             return TranslationBackend.LIBRE_TRANSLATE;
         }
@@ -437,7 +545,7 @@ public final class TranslationService {
 
     private static int effectiveBatchMaxItems() {
         int base = Math.min(BATCH_MAX_ITEMS, GPU_BATCH_MAX_ITEMS);
-        if (selectedBackend == TranslationBackend.SILICONFLOW) {
+        if (isSiliconFlowBackend(selectedBackend)) {
             // LLM-based endpoint is more stable with smaller chunk sizes.
             return Math.min(50, base);
         }
@@ -446,7 +554,7 @@ public final class TranslationService {
 
     private static int effectiveBatchMaxChars() {
         int base = Math.min(BATCH_MAX_CHARS, GPU_BATCH_MAX_CHARS);
-        if (selectedBackend == TranslationBackend.SILICONFLOW) {
+        if (isSiliconFlowBackend(selectedBackend)) {
             // Reduce prompt/response pressure for multi-language runs.
             return Math.min(3_500, base);
         }
@@ -456,7 +564,7 @@ public final class TranslationService {
     private static int effectiveConcurrency() {
         int cores = Runtime.getRuntime().availableProcessors();
         if (!selectedBackendRequiresLocalServer()) {
-            if (selectedBackend == TranslationBackend.SILICONFLOW) {
+            if (isSiliconFlowBackend(selectedBackend)) {
                 // Free SiliconFlow models are strict on RPM/TPM. Single-flight is more stable.
                 return 1;
             }
@@ -752,7 +860,7 @@ public final class TranslationService {
         s = Normalizer.normalize(s, Normalizer.Form.NFKC);
 
         // 2) remove invisible/control characters only
-        //    (DO NOT touch Block Elements U+2580Äā‚¬ā€259F and Geometric Shapes U+25A0Äā‚¬ā€25FF!)
+        //    (DO NOT touch Block Elements U+2580Ć„ĀÄā€Ā¬Äā‚¬Ā259F and Geometric Shapes U+25A0Ć„ĀÄā€Ā¬Äā‚¬Ā25FF!)
         s = s.replace('\u00A0', ' ')
                 .replaceAll("[\\u0000-\\u001F\\u007F\\u200B-\\u200F\\u2028\\u2029\\u2060\\uFEFF]", "");
 
@@ -769,8 +877,8 @@ public final class TranslationService {
         // remove spaces BEFORE punctuation
         s = s.replaceAll("\\s+([,:;!?])", "$1");
         // remove spaces after opening brackets/quotes and before closing ones
-        s = s.replaceAll("([\\(\\[\\{Ä€Ā«])\\s+", "$1")
-                .replaceAll("\\s+([\\)\\]\\}Ä€Ā»])", "$1");
+        s = s.replaceAll("([\\(\\[\\{Ć„ā‚¬Ä€Ā«])\\s+", "$1")
+                .replaceAll("\\s+([\\)\\]\\}Ć„ā‚¬Ä€Ā»])", "$1");
         return s;
     }
     // Pass through sanitizeVisible: normalization, invisible chars, spacing.
@@ -1117,11 +1225,13 @@ public final class TranslationService {
         List<String> translated;
         if (selectedBackend == TranslationBackend.GOOGLE_CLOUD) {
             translated = translatePreparedTextsWithGoogleCloud(uncachedInputs, source, target);
+        } else if (selectedBackend == TranslationBackend.CLOUDFLARE_M2M100) {
+            translated = translatePreparedTextsWithCloudflareM2M100(uncachedInputs, source, target);
         } else if (selectedBackend == TranslationBackend.GOOGLE_WEB_FREE) {
             translated = translatePreparedTextsWithGoogleWebFree(uncachedInputs, source, target);
         } else if (selectedBackend == TranslationBackend.GEMINI) {
             translated = translatePreparedTextsWithGemini(uncachedInputs, source, target);
-        } else if (selectedBackend == TranslationBackend.SILICONFLOW) {
+        } else if (isSiliconFlowBackend(selectedBackend)) {
             translated = translatePreparedTextsWithSiliconFlow(uncachedInputs, source, target);
         } else if (selectedBackend == TranslationBackend.DEEPL_FREE) {
             translated = translatePreparedTextsWithDeepLFree(uncachedInputs, source, target);
@@ -1184,6 +1294,26 @@ public final class TranslationService {
         );
     }
 
+    private static List<String> translatePreparedTextsWithCloudflareM2M100(
+            List<String> uncachedInputs,
+            String source,
+            String target
+    ) throws IOException {
+        if (!CloudflareM2M100TranslationProvider.isConfigured()) {
+            setLastStartupFailureHint(
+                    "Cloudflare Worker AI (M2M100) requires CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN "
+                            + "or settings.properties cloudflare.account.id/cloudflare.api.token."
+            );
+            throw new IOException("Cloudflare Worker AI (M2M100) is not configured");
+        }
+        return CloudflareM2M100TranslationProvider.translatePreparedTexts(
+                uncachedInputs,
+                source,
+                target,
+                HTTP
+        );
+    }
+
     private static List<String> translatePreparedTextsWithGemini(
             List<String> uncachedInputs,
             String source,
@@ -1227,6 +1357,34 @@ public final class TranslationService {
             String source,
             String target
     ) throws IOException {
+        if (selectedBackend == TranslationBackend.SILICONFLOW_DEEPSEEK_V3) {
+            if (!SiliconFlowDeepSeekV3TranslationProvider.isConfigured()) {
+                setLastStartupFailureHint(
+                        "SiliconFlow API requires SILICONFLOW_API_KEY or settings.properties siliconflow.api.key."
+                );
+                throw new IOException("SiliconFlow DeepSeek-V3.2 is not configured");
+            }
+            return SiliconFlowDeepSeekV3TranslationProvider.translatePreparedTexts(
+                    uncachedInputs,
+                    source,
+                    target,
+                    HTTP
+            );
+        }
+        if (selectedBackend == TranslationBackend.SILICONFLOW_M2M100) {
+            if (!SiliconFlowM2M100TranslationProvider.isConfigured()) {
+                setLastStartupFailureHint(
+                        "SiliconFlow API requires SILICONFLOW_API_KEY or settings.properties siliconflow.api.key."
+                );
+                throw new IOException("SiliconFlow M2M100 is not configured");
+            }
+            return SiliconFlowM2M100TranslationProvider.translatePreparedTexts(
+                    uncachedInputs,
+                    source,
+                    target,
+                    HTTP
+            );
+        }
         if (!SiliconFlowTranslationProvider.isConfigured()) {
             setLastStartupFailureHint(
                     "SiliconFlow API requires SILICONFLOW_API_KEY or settings.properties siliconflow.api.key."
@@ -1250,7 +1408,7 @@ public final class TranslationService {
     }
 
     private static void ensureBackendReadyForBatchRun() throws IOException {
-        if (selectedBackend != TranslationBackend.SILICONFLOW) {
+        if (!isSiliconFlowBackend(selectedBackend)) {
             return;
         }
         if (ensureSelectedBackendAvailable()) {
@@ -1903,7 +2061,7 @@ public final class TranslationService {
             AppLog.info("[LT] GPU Docker mode is disabled by settings; use CPU or local process.");
         }
 
-        // 1) LibreTranslate CLI Å ĆøÅ Ā· PATH
+        // 1) LibreTranslate CLI Ć…Ā Ä†ĆøĆ…Ā Ä€Ā· PATH
         // Try LibreTranslate CLI from PATH, selected Python Scripts, or working directory.
         LibreTranslateCliCandidate cliCandidate = resolveLibreTranslateCliCandidate();
         if (cliCandidate != null) {
@@ -1931,7 +2089,7 @@ public final class TranslationService {
             AppLog.warn("[LT] " + cliCandidate.description() + " did not become ready. Trying next fallback.");
         }
 
-        // 2) local exe Åā‚¬ÅĀøÅ Ā´Å Ā¾Å Ā¼ ÅĀ Å Ć¦Åā‚¬Å Ā¾Å Ā³Åā‚¬Å Ā°Å Ā¼Å Ā¼Å Ā¾Å Ā¹
+        // 2) local exe Ć…ĀÄā€Ā¬Ć…ĀÄ€ĆøĆ…Ā Ä€Ā´Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā¼ Ć…ĀÄ€Ā Ć…Ā Ä†Ā¦Ć…ĀÄā€Ā¬Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā³Ć…ĀÄā€Ā¬Ć…Ā Ä€Ā°Ć…Ā Ä€Ā¼Ć…Ā Ä€Ā¼Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā¹
         // Fall back to the selected Python runtime if no standalone CLI worked.
         LtLauncherScriptCandidate launcherScript = resolveLtLauncherScriptCandidate();
         if (launcherScript != null) {
@@ -1984,7 +2142,7 @@ public final class TranslationService {
             AppLog.warn("[LT] local python LibreTranslate start failed: " + ex.getMessage());
         }
 
-        // 4) Docker Åā€Å Ā¾Å Ā»ÅĀÅ Å—Å Ā¾ Å Ā² ÅĀÅ Ā°Å Ā¼Å Ā¾Å Ā¼ Å Å—Å Ā¾Å Ā½Åā€ Å Āµ
+        // 4) Docker Ć…ĀÄā‚¬ĀĆ…Ā Ä€Ā¾Ć…Ā Ä€Ā»Ć…ĀÄ€ĀĆ…Ā Ć…ā€”Ć…Ā Ä€Ā¾ Ć…Ā Ä€Ā² Ć…ĀÄ€ĀĆ…Ā Ä€Ā°Ć…Ā Ä€Ā¼Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā¼ Ć…Ā Ć…ā€”Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā½Ć…ĀÄā‚¬Ā Ć…Ā Ä€Āµ
         if (isDockerUsable()) {
             AppLog.info("[LT] trying docker CPU container");
             ProcessBuilder pb = new ProcessBuilder(
@@ -3312,3 +3470,4 @@ public final class TranslationService {
     }
 
 }
+

@@ -9,7 +9,7 @@ public class CustomLanguageButton extends Button implements Disabable {
 
         double width = UiScaleHelper.SCREEN_WIDTH * (widthFullHD / 1920.0);
         double height = UiScaleHelper.SCREEN_HEIGHT * (heightFullHD / 1080.0);
-        double fontSize = UiScaleHelper.scale(fontSizeFullHD);
+        double fontSize = UiScaleHelper.scaleFont(fontSizeFullHD, 10.0);
 
         setPrefSize(width, height);
         setMaxSize(width, height);

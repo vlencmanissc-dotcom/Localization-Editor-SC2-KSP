@@ -37,8 +37,8 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
 
         double width = UiScaleHelper.scaleX(widthFullHD);
         double height = UiScaleHelper.scaleY(heightFullHD);
-        this.fontSize = UiScaleHelper.scale(fontSizeFullHD);
-        this.dropdownFontSize = UiScaleHelper.scale(dropdownFontSizeFullHD);
+        this.fontSize = UiScaleHelper.scaleFont(fontSizeFullHD, 10.0);
+        this.dropdownFontSize = UiScaleHelper.scaleFont(dropdownFontSizeFullHD, 9.0);
 
         this.paddingTop = UiScaleHelper.scaleY(-4);
         this.paddingLeft = UiScaleHelper.scaleX(25);

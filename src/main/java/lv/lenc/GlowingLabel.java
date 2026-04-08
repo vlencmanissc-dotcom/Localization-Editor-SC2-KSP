@@ -17,7 +17,7 @@ public class GlowingLabel extends Label {
         setTextAlignment(TextAlignment.CENTER);
         setAlignment(Pos.CENTER);
         setMaxWidth(Double.MAX_VALUE);
-        setFont(Font.font("Arial Black", UiScaleHelper.scaleY(18)));
+        setFont(Font.font("Arial Black", UiScaleHelper.scaleFont(18, 12)));
     }
 
     public void setGlowOrange(boolean orange) {

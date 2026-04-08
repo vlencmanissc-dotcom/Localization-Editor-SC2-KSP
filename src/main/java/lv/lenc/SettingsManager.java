@@ -40,6 +40,8 @@ public class SettingsManager {
     public static final String USE_GPU_DOCKER_KEY = "use.gpu.docker";
     public static final boolean DEFAULT_USE_GPU_DOCKER = false;
     public static final String GOOGLE_TRANSLATE_API_KEY_KEY = "google.translate.api.key";
+    public static final String CLOUDFLARE_ACCOUNT_ID_KEY = "cloudflare.account.id";
+    public static final String CLOUDFLARE_API_TOKEN_KEY = "cloudflare.api.token";
     public static final String GEMINI_API_KEY_KEY = "gemini.api.key";
     public static final String SILICONFLOW_API_KEY_KEY = "siliconflow.api.key";
     public static final String SILICONFLOW_MODEL_KEY = "siliconflow.model";
@@ -153,6 +155,54 @@ public class SettingsManager {
         }
         Properties props = loadAllProperties();
         return trimToNull(props.getProperty(GEMINI_API_KEY_KEY));
+    }
+
+    public static String loadCloudflareAccountId() {
+        String envValue = trimToNull(System.getenv("CLOUDFLARE_ACCOUNT_ID"));
+        if (envValue != null) {
+            return envValue;
+        }
+        Properties props = loadAllProperties();
+        return trimToNull(props.getProperty(CLOUDFLARE_ACCOUNT_ID_KEY));
+    }
+
+    public static String loadCloudflareApiToken() {
+        String envValue = trimToNull(System.getenv("CLOUDFLARE_API_TOKEN"));
+        if (envValue != null) {
+            return envValue;
+        }
+        Properties props = loadAllProperties();
+        return trimToNull(props.getProperty(CLOUDFLARE_API_TOKEN_KEY));
+    }
+
+    public static void saveCloudflareAccountId(String accountId) {
+        Properties props = loadAllProperties();
+        String normalized = trimToNull(accountId);
+        if (normalized == null) {
+            props.remove(CLOUDFLARE_ACCOUNT_ID_KEY);
+        } else {
+            props.setProperty(CLOUDFLARE_ACCOUNT_ID_KEY, normalized);
+        }
+        try (FileOutputStream out = new FileOutputStream(SETTINGS_FILE)) {
+            props.store(out, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void saveCloudflareApiToken(String apiToken) {
+        Properties props = loadAllProperties();
+        String normalized = trimToNull(apiToken);
+        if (normalized == null) {
+            props.remove(CLOUDFLARE_API_TOKEN_KEY);
+        } else {
+            props.setProperty(CLOUDFLARE_API_TOKEN_KEY, normalized);
+        }
+        try (FileOutputStream out = new FileOutputStream(SETTINGS_FILE)) {
+            props.store(out, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void saveGeminiApiKey(String apiKey) {

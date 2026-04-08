@@ -11,6 +11,7 @@ public class UiScaleHelper {
     public static double SCREEN_HEIGHT;
     public static final double BASE_W = 1920.0;
     public static final double BASE_H = 1080.0;
+    public static final double FONT_BOOST = 1.30;
     public static double UNIFORM_SCALE;
     public static double CONTENT_OFFSET_X;
     public static double CONTENT_OFFSET_Y;
@@ -62,6 +63,14 @@ public class UiScaleHelper {
 
     public static double scale(double pxFullHD) {
         return pxFullHD * UNIFORM_SCALE;
+    }
+
+    public static double scaleFont(double pxFullHD) {
+        return pxFullHD * UNIFORM_SCALE * FONT_BOOST;
+    }
+
+    public static double scaleFont(double pxFullHD, double minPx) {
+        return Math.max(scaleFont(pxFullHD), minPx);
     }
 
     public static double s(double v, double w, double h) {

@@ -612,7 +612,7 @@
     -fx-padding: 0 10;
     -fx-alignment: center;
     -fx-font-family: "Arial Black";
-    -fx-font-size: 1em;
+    -fx-font-size: 1.3em;
     -fx-font-weight: bold;
     -fx-text-fill: #80d2a2;
     -fx-border-color: transparent;
@@ -626,7 +626,7 @@
 .key-filter-table-button:hover {
     -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_over.png");
     -fx-text-fill: white;
-    -fx-font-size: 1em;
+    -fx-font-size: 1.3em;
     -fx-padding: 0 10;
     -fx-effect: dropshadow(gaussian, rgba(114, 255, 218, 0.45), 12, 0.32, 0, 0);
 }
@@ -634,7 +634,7 @@
 .key-filter-table-button:pressed {
     -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
     -fx-text-fill: #ffe7cb;
-    -fx-font-size: 1em;
+    -fx-font-size: 1.3em;
     -fx-padding: 0 10;
     -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.38), 12, 0.30, 0, 0),
         dropshadow(gaussian, rgba(44, 148, 112, 0.44), 18, 0.24, 0, 0);
@@ -645,18 +645,18 @@
 }
 
 .close-file-button {
-    -fx-font-size: 22px;
+    -fx-font-size: 1.7em;
     -fx-font-weight: 900;
     -fx-padding: 0;
 }
 
 .close-file-button:hover {
-    -fx-font-size: 22px;
+    -fx-font-size: 1.7em;
     -fx-padding: 0;
 }
 
 .close-file-button:pressed {
-    -fx-font-size: 22px;
+    -fx-font-size: 1.7em;
     -fx-padding: 0;
 }
 

@@ -40,7 +40,7 @@
     -fx-border-color: transparent;
     -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
     -fx-border-image-slice: 12 fill;
-    -fx-border-image-width: 0.3em; /* 4px ≈ 0.22em */
+    -fx-border-image-width: 0.3em; /* 4px ā‰ 0.22em */
     -fx-border-image-repeat: stretch;
     -fx-border-image-insets: 0;
     -fx-padding: 0.35em 0.5em;
@@ -61,7 +61,6 @@
     -fx-effect: dropshadow(gaussian, #cc5c28, 8, 0.15, 0, 0);
 } */
 .table-view .table-cell.col-n .text {
-    -fx-font-size: 1.15em; /* ≈ 16px если base 13–14px */
     -fx-font-weight: bold;
     -fx-effect: dropshadow(gaussian, #cc5c28, 10, 0.2, 0, 0);
 }
@@ -81,6 +80,34 @@
 
 .table-view .column-header:hover {
     -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_over.png");
+}
+
+/* Drag/reorder visuals */
+.table-view .column-drag-header {
+    -fx-background-color: rgba(12, 28, 24, 0.92);
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 12 fill;
+    -fx-border-image-width: 0.45em;
+    -fx-border-image-repeat: stretch;
+    -fx-effect: dropshadow(gaussian, rgba(64, 255, 190, 0.45), 12, 0.25, 0, 0);
+}
+.table-view .column-drag-header .label {
+    -fx-text-fill: #d8fff0;
+    -fx-font-weight: bold;
+}
+.table-view .column-overlay {
+    -fx-background-color: linear-gradient(to bottom, rgba(18, 44, 38, 0.94), rgba(12, 32, 28, 0.96));
+    -fx-background-image: url("../Textures/ui_nova_archives_backgroundframe_scanlines.png");
+    -fx-background-repeat: repeat;
+    -fx-background-size: 9em 9em;
+    -fx-background-position: center center;
+    -fx-border-color: rgba(108, 255, 206, 0.92);
+    -fx-border-width: 0 0.08em 0 0.08em;
+    -fx-effect: dropshadow(gaussian, rgba(34, 225, 166, 0.52), 11, 0.32, 0, 0);
+}
+.table-view .column-resize-line {
+    -fx-background-color: rgba(115, 255, 205, 0.95);
+    -fx-effect: dropshadow(gaussian, rgba(38, 255, 189, 0.60), 10, 0.35, 0, 0);
 }
 
 .table-view .column-header .label {
@@ -108,13 +135,13 @@
 
 /* Specific width/height */
 .scroll-bar:vertical {
-    -fx-pref-width: 1.7em; /* ≈ 21px */
+    -fx-pref-width: 1.7em; /* ā‰ 21px */
 }
 .scroll-bar:horizontal {
-    -fx-pref-height: 1.7em; /* ≈ 21px */
+    -fx-pref-height: 1.7em; /* ā‰ 21px */
 }
 
-/* Thumb — slider (normal state) */
+/* Thumb ā€” slider (normal state) */
 .scroll-bar .thumb {
     -fx-background-color: rgba(98, 202, 162, 1);
     -fx-background-radius: 0px;
@@ -139,7 +166,7 @@
     -fx-background-color: rgba(156, 255, 210, 1);
 }
 
-/* Remove arrows ↑ ↓ ← → */
+/* Remove arrows ā†‘ ā†“ ā† ā†’ */
 .scroll-bar .increment-button,
 .scroll-bar .decrement-button {
     -fx-padding: 0;
@@ -175,7 +202,6 @@
     -fx-border-image-insets: 0;
     -fx-padding: 0.1em 0.5em;
     -fx-min-height: 2em; /* ~22px */
-    -fx-font-size: 1.15em;
     -fx-highlight-fill: #3b1a0f;
     -fx-highlight-text-fill: white;
 }
@@ -192,7 +218,6 @@
     -fx-blend-mode: lighten;
     -fx-text-fill: #80d2a2;
     -fx-font-weight: bold;
-    -fx-font-size: 1.15em;
 }
 /* ===== FIX: white "corner" at top-right of TableView ===== */
 .table-view .corner,

@@ -24,7 +24,7 @@ public class GlowingLabelWithBorder extends StackPane {
         setMaxSize(w, h);
 
         // === font size scaling (
-        double fs = UiScaleHelper.scaleY(fontSizeFullHD);
+        double fs = UiScaleHelper.scaleFont(fontSizeFullHD, 10.0);
         label.setStyle("-fx-font-family: 'Arial Black'; -fx-font-size: " + fs + "px;");
         label.setAlignment(Pos.CENTER);
         label.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);

@@ -168,9 +168,9 @@ public final class TranslationProgressOverlay extends StackPane {
         line2.setMaxWidth(sfx(470, 300));
 
         // Keep old visual style, only scale bar height.
-        bar.setMinHeight(sf(18, 10));
-        bar.setPrefHeight(sf(18, 10));
-        bar.setMaxHeight(sf(18, 10));
+        bar.setMinHeight(sf(22, 12));
+        bar.setPrefHeight(sf(22, 12));
+        bar.setMaxHeight(sf(22, 12));
 
         updateAnchorPosition(false);
 

@@ -26,7 +26,7 @@ public class TitleLabelGlow extends StackPane {
     public TitleLabelGlow(String text, LocalizationManager localizationManager) {
         this.loc = localizationManager.getCurrentLanguage();
 
-        double fontSize = UiScaleHelper.scaleY(54); //
+        double fontSize = UiScaleHelper.scaleFont(54, 20); //
 
         label = new Label(text.toUpperCase());
         label.setFont(Font.font("Arial", FontWeight.BOLD, fontSize));

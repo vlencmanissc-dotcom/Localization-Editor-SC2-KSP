@@ -38,6 +38,9 @@ import javafx.util.Duration;
 
 public class SettingBox {
     private static final double SETTINGS_WINDOW_SCALE = 1.5125;
+    private static final double API_ROW_WIDTH = 238.0;
+    private static final double API_FIELD_WIDTH = 184.0;
+    private static final double API_ICON_SLOT_WIDTH = 48.0;
 
     private static double effectiveSettingsScale() {
         double ui = UiScaleHelper.scale(1.0);
@@ -83,6 +86,39 @@ public class SettingBox {
         row.setPadding(new Insets(sy(1), sx(12), sy(1), sx(12)));
     }
 
+    private static String buildGoogleApiKeyLabel(LocalizationManager localization) {
+        return localization.get("setting.box.other.googleApiKey");
+    }
+
+    private static String buildGoogleApiKeyHint(LocalizationManager localization) {
+        return localization.get("setting.box.other.googleApiKeyHint");
+    }
+
+    private static String buildSiliconFlowApiKeyLabel(LocalizationManager localization) {
+        return localization.get("setting.box.other.siliconflowApiKey");
+    }
+
+    private static String buildSiliconFlowApiKeyHint(LocalizationManager localization) {
+        return localization.get("setting.box.other.siliconflowApiKeyHint");
+    }
+    private static String localizedOrFallback(LocalizationManager localization, String key, String fallback) {
+        String value = localization.get(key);
+        if (value == null || value.isBlank() || key.equals(value)) {
+            return fallback;
+        }
+        return value;
+    }
+    private static String buildCloudflareServiceLabel(LocalizationManager localization) {
+        String fallback = localization.get("setting.box.other.cloudflareAccountId")
+                + " / "
+                + localization.get("setting.box.other.cloudflareApiToken");
+        return localizedOrFallback(localization, "setting.box.other.cloudflareService", fallback);
+    }
+    private static String buildCloudflareServiceHint(LocalizationManager localization) {
+        String fallback = localization.get("setting.box.other.cloudflareApiTokenHint");
+        return localizedOrFallback(localization, "setting.box.other.cloudflareServiceHint", fallback);
+    }
+
     // --- UI refs for localization updates ---
     private static final GaussianBlur blurEffect = new GaussianBlur(0);
     private static Node blurredTarget; // что размываем (обычно appRoot)
@@ -93,6 +129,7 @@ public class SettingBox {
     private static GlowingLabel uilabelGRIDE;
     private static GlowingLabel controlsLabel;
     private static GlowingLabel googleApiKeyLabel;
+    private static GlowingLabel cloudflareServiceLabel;
     private static GlowingLabel geminiApiKeyLabel;
     private static GlowingLabel siliconFlowApiKeyLabel;
     private static GlowingLabel deepLApiKeyLabel;
@@ -133,10 +170,13 @@ public class SettingBox {
     private static GlowingLabel dictionariesLabel;
     private static ApiHintIcon dictionariesHintIcon;
     private static TextField googleApiKeyField;
+    private static TextField cloudflareAccountIdField;
+    private static TextField cloudflareApiTokenField;
     private static TextField geminiApiKeyField;
     private static TextField siliconFlowApiKeyField;
     private static TextField deepLApiKeyField;
     private static ApiHintIcon googleApiKeyHintIcon;
+    private static ApiHintIcon cloudflareServiceHintIcon;
     private static ApiHintIcon geminiApiKeyHintIcon;
     private static ApiHintIcon siliconFlowApiKeyHintIcon;
     private static ApiHintIcon deepLApiKeyHintIcon;
@@ -154,6 +194,12 @@ public class SettingBox {
             return;
         }
         SettingsManager.saveGoogleTranslateApiKey(googleApiKeyField.getText());
+        if (cloudflareAccountIdField != null) {
+            SettingsManager.saveCloudflareAccountId(cloudflareAccountIdField.getText());
+        }
+        if (cloudflareApiTokenField != null) {
+            SettingsManager.saveCloudflareApiToken(cloudflareApiTokenField.getText());
+        }
         if (geminiApiKeyField != null) {
             SettingsManager.saveGeminiApiKey(geminiApiKeyField.getText());
         }
@@ -192,8 +238,9 @@ public class SettingBox {
     private static void tuneApiKeyField(TextField field, String promptText) {
         if (field == null) return;
         field.setPromptText(promptText);
-        field.setPrefWidth(sx(228));
-        field.setMaxWidth(sx(228));
+        field.setMinWidth(sx(API_FIELD_WIDTH));
+        field.setPrefWidth(sx(API_FIELD_WIDTH));
+        field.setMaxWidth(sx(API_FIELD_WIDTH));
         field.setStyle(
                 "-fx-background-color: rgba(4, 16, 16, 0.95);"
                         + "-fx-text-fill: #9fffe7;"
@@ -211,8 +258,24 @@ public class SettingBox {
     private static HBox createApiFieldRow(TextField field, Node hintIcon) {
         HBox row = new HBox(sx(6), field, hintIcon);
         row.setAlignment(Pos.CENTER);
-        row.setPrefWidth(sx(286));
-        row.setMaxWidth(sx(286));
+        row.setMinWidth(sx(API_ROW_WIDTH));
+        row.setPrefWidth(sx(API_ROW_WIDTH));
+        row.setMaxWidth(sx(API_ROW_WIDTH));
+        return row;
+    }
+    private static HBox createApiFieldOnlyRow(TextField field) {
+        Region rightSpacer = new Region();
+        rightSpacer.setMinWidth(sx(API_ICON_SLOT_WIDTH));
+        rightSpacer.setPrefWidth(sx(API_ICON_SLOT_WIDTH));
+        rightSpacer.setMaxWidth(sx(API_ICON_SLOT_WIDTH));
+        HBox row = new HBox(sx(6), field, rightSpacer);
+        row.setAlignment(Pos.CENTER);
+        row.setMinWidth(sx(API_ROW_WIDTH));
+        row.setPrefWidth(sx(API_ROW_WIDTH));
+        row.setMaxWidth(sx(API_ROW_WIDTH));
+        field.setMinWidth(sx(API_FIELD_WIDTH));
+        field.setPrefWidth(sx(API_FIELD_WIDTH));
+        field.setMaxWidth(sx(API_FIELD_WIDTH));
         return row;
     }
 
@@ -487,7 +550,7 @@ public class SettingBox {
         tuneSettingLabel(languageLabel, 19);
 
         CustomComboBoxClassic<String> languageComboBox =
-                new CustomComboBoxClassic<>(texturePath, false, sv(260), sv(54), sv(17), sv(15), sv(28), 12);
+                new CustomComboBoxClassic<>(texturePath, false, sv(260), sv(54), sv(11.9), sv(10.5), sv(28), 12);
 
         languageComboBox.getItems().setAll(
                 LANGUAGE_OPTIONS.stream().map(o -> o.nativeName).toList()
@@ -572,7 +635,7 @@ public class SettingBox {
 
         uiDEFAUTBUTTON = new CustomAlternativeButton(
                 localization.get("setting.box.ui.defaut"),
-                0.6, 0.8, sv(156.0), sv(50), sv(13)
+                0.6, 0.8, sv(148.0), sv(50), sv(10.6)
         );
         uiDEFAUTBUTTON.setOnAction(e -> {
             background.setFlashAlpha(SettingsManager.DEFAULT_FLASH_ALPHA);
@@ -590,7 +653,7 @@ public class SettingBox {
 
         saveButton = new CustomAlternativeButton(
                 localization.get("button.save"),
-                0.6, 0.8, sv(156.0), sv(50), sv(13)
+                0.6, 0.8, sv(148.0), sv(50), sv(10.6)
         );
         saveButton.setOnAction(e -> {
             SettingsManager.saveAllSettings(
@@ -661,7 +724,7 @@ public class SettingBox {
 
         clearCacheButton = new CustomAlternativeButton(
                 localization.get("setting.box.other.clearCache"),
-                0.6, 0.8, sv(250.0), sv(62.0), sv(16.0)
+                0.6, 0.8, sv(250.0), sv(62.0), sv(10.6)
         );
         clearCacheButton.setOnAction(e -> TranslationService.clearTranslationCache());
 
@@ -672,7 +735,7 @@ public class SettingBox {
         double apiHintIconSize = sy(48); // 3x bigger than previous 16px icon
         double apiHintTooltipFont = sy(12);
 
-        googleApiKeyLabel = new GlowingLabel(localization.get("setting.box.other.googleApiKey"));
+        googleApiKeyLabel = new GlowingLabel(buildGoogleApiKeyLabel(localization));
         tuneSettingLabel(googleApiKeyLabel, 15);
         googleApiKeyLabel.setWrapText(true);
         googleApiKeyLabel.setPrefWidth(sx(286));
@@ -686,11 +749,56 @@ public class SettingBox {
             }
         });
         googleApiKeyHintIcon = new ApiHintIcon(
-                localization.get("setting.box.other.googleApiKeyHint"),
+                buildGoogleApiKeyHint(localization),
                 apiHintIconSize,
                 apiHintTooltipFont
         );
         HBox googleApiKeyRow = createApiFieldRow(googleApiKeyField, googleApiKeyHintIcon);
+
+        cloudflareServiceLabel = new GlowingLabel(buildCloudflareServiceLabel(localization));
+        tuneSettingLabel(cloudflareServiceLabel, 15);
+        cloudflareServiceLabel.setWrapText(true);
+        cloudflareServiceLabel.setMinWidth(sx(API_ROW_WIDTH));
+        cloudflareServiceLabel.setPrefWidth(sx(API_ROW_WIDTH));
+        cloudflareServiceLabel.setMaxWidth(sx(API_ROW_WIDTH));
+
+        cloudflareAccountIdField = new TextField(SettingsManager.loadCloudflareAccountId());
+        tuneApiKeyField(cloudflareAccountIdField, localization.get("setting.box.other.cloudflareAccountIdPrompt"));
+        cloudflareAccountIdField.setOnAction(e -> persistApiKeys());
+        cloudflareAccountIdField.focusedProperty().addListener((obs, oldVal, focused) -> {
+            if (!focused) {
+                persistApiKeys();
+            }
+        });
+        cloudflareServiceHintIcon = new ApiHintIcon(
+                buildCloudflareServiceHint(localization),
+                apiHintIconSize,
+                apiHintTooltipFont
+        );
+        HBox cloudflareTitleRow = new HBox(cloudflareServiceLabel);
+        cloudflareTitleRow.setAlignment(Pos.CENTER);
+        cloudflareTitleRow.setMinWidth(sx(API_ROW_WIDTH));
+        cloudflareTitleRow.setPrefWidth(sx(API_ROW_WIDTH));
+        cloudflareTitleRow.setMaxWidth(sx(API_ROW_WIDTH));
+
+        cloudflareApiTokenField = new TextField(SettingsManager.loadCloudflareApiToken());
+        tuneApiKeyField(cloudflareApiTokenField, localization.get("setting.box.other.cloudflareApiTokenPrompt"));
+        cloudflareApiTokenField.setOnAction(e -> persistApiKeys());
+        cloudflareApiTokenField.focusedProperty().addListener((obs, oldVal, focused) -> {
+            if (!focused) {
+                persistApiKeys();
+            }
+        });
+        VBox cloudflareFieldsColumn = new VBox(sy(10), cloudflareAccountIdField, cloudflareApiTokenField);
+        cloudflareFieldsColumn.setAlignment(Pos.CENTER);
+        cloudflareFieldsColumn.setMinWidth(sx(API_FIELD_WIDTH));
+        cloudflareFieldsColumn.setPrefWidth(sx(API_FIELD_WIDTH));
+        cloudflareFieldsColumn.setMaxWidth(sx(API_FIELD_WIDTH));
+        HBox cloudflareFieldsRow = new HBox(sx(6), cloudflareFieldsColumn, cloudflareServiceHintIcon);
+        cloudflareFieldsRow.setAlignment(Pos.CENTER);
+        cloudflareFieldsRow.setMinWidth(sx(API_ROW_WIDTH));
+        cloudflareFieldsRow.setPrefWidth(sx(API_ROW_WIDTH));
+        cloudflareFieldsRow.setMaxWidth(sx(API_ROW_WIDTH));
 
         geminiApiKeyLabel = new GlowingLabel(localization.get("setting.box.other.geminiApiKey"));
         tuneSettingLabel(geminiApiKeyLabel, 15);
@@ -712,7 +820,7 @@ public class SettingBox {
         );
         HBox geminiApiKeyRow = createApiFieldRow(geminiApiKeyField, geminiApiKeyHintIcon);
 
-        siliconFlowApiKeyLabel = new GlowingLabel(localization.get("setting.box.other.siliconflowApiKey"));
+        siliconFlowApiKeyLabel = new GlowingLabel(buildSiliconFlowApiKeyLabel(localization));
         tuneSettingLabel(siliconFlowApiKeyLabel, 15);
         siliconFlowApiKeyLabel.setWrapText(true);
         siliconFlowApiKeyLabel.setPrefWidth(sx(286));
@@ -726,7 +834,7 @@ public class SettingBox {
             }
         });
         siliconFlowApiKeyHintIcon = new ApiHintIcon(
-                localization.get("setting.box.other.siliconflowApiKeyHint"),
+                buildSiliconFlowApiKeyHint(localization),
                 apiHintIconSize,
                 apiHintTooltipFont
         );
@@ -754,7 +862,7 @@ public class SettingBox {
 
         saveApiKeysButton = new CustomAlternativeButton(
                 localization.get("button.save"),
-                0.6, 0.8, sv(186.0), sv(48.0), sv(13.0)
+                0.6, 0.8, sv(186.0), sv(48.0), sv(10.4)
         );
         saveApiKeysButton.setOnAction(e -> persistApiKeys());
 
@@ -763,7 +871,7 @@ public class SettingBox {
 
         apiGuideButton = new CustomAlternativeButton(
                 localization.get("setting.box.api.guide"),
-                0.6, 0.8, sv(286.0), sv(46.0), sv(13.0)
+                0.6, 0.8, sv(286.0), sv(46.0), sv(10.4)
         );
         apiGuideButton.setOnAction(e -> {
             try {
@@ -890,6 +998,8 @@ public class SettingBox {
                 sy(8),
                 googleApiKeyLabel,
                 googleApiKeyRow,
+                cloudflareTitleRow,
+                cloudflareFieldsRow,
                 geminiApiKeyLabel,
                 geminiApiKeyRow,
                 siliconFlowApiKeyLabel,
@@ -955,7 +1065,7 @@ public class SettingBox {
 
         discordURL = new CustomAlternativeButton(
                 localization.get("setting.box.other.join"),
-                0.6, 0.8, sv(200.0), sv(55.0), sv(14.0)
+                0.6, 0.8, sv(200.0), sv(55.0), sv(12.0)
         );
         discordURL.setOnAction(e -> {
             try {
@@ -1015,7 +1125,7 @@ public class SettingBox {
 
         for (int i = 0; i < keys.length; i++) {
             String key = keys[i];
-            menuButtons[i] = new CustomLanguageButton(key, sv(136), sv(56), sv(15));
+            menuButtons[i] = new CustomLanguageButton(key, sv(136), sv(56), sv(10.5));
 
             VBox.setMargin(menuButtons[i], new Insets(0, 0, 0, sx(-1)));
 
@@ -1038,7 +1148,7 @@ public class SettingBox {
                         + buttonHeight / 2.0;
 
                 double markerHeight = selectionMarkImage.getBoundsInParent().getHeight();
-                double baseOffset = sy(25);
+                double baseOffset = sy(36);
                 double scaleFactor = UiScaleHelper.scale(1);
 
                 double hdLift = (scaleFactor < 1.0) ? sy(6) : 0.0;
@@ -1150,15 +1260,19 @@ public class SettingBox {
         if (backgroundLightCheckBox != null) backgroundLightCheckBox.setLabel(localization.get("setting.box.ui.backgroundBlur"));
         if (translationCachePersistRow != null) translationCachePersistRow.setLabel(localization.get("setting.box.other.translationCachePersist"));
         if (useGpuDockerRow != null) useGpuDockerRow.setLabel(localization.get("setting.box.other.useGpuDocker"));
-        if (googleApiKeyLabel != null) googleApiKeyLabel.setText(localization.get("setting.box.other.googleApiKey"));
+        if (googleApiKeyLabel != null) googleApiKeyLabel.setText(buildGoogleApiKeyLabel(localization));
         if (googleApiKeyField != null) googleApiKeyField.setPromptText(localization.get("setting.box.other.googleApiKeyPrompt"));
-        if (googleApiKeyHintIcon != null) googleApiKeyHintIcon.setHintText(localization.get("setting.box.other.googleApiKeyHint"));
+        if (googleApiKeyHintIcon != null) googleApiKeyHintIcon.setHintText(buildGoogleApiKeyHint(localization));
+        if (cloudflareServiceLabel != null) cloudflareServiceLabel.setText(buildCloudflareServiceLabel(localization));
+        if (cloudflareAccountIdField != null) cloudflareAccountIdField.setPromptText(localization.get("setting.box.other.cloudflareAccountIdPrompt"));
+        if (cloudflareServiceHintIcon != null) cloudflareServiceHintIcon.setHintText(buildCloudflareServiceHint(localization));
+        if (cloudflareApiTokenField != null) cloudflareApiTokenField.setPromptText(localization.get("setting.box.other.cloudflareApiTokenPrompt"));
         if (geminiApiKeyLabel != null) geminiApiKeyLabel.setText(localization.get("setting.box.other.geminiApiKey"));
         if (geminiApiKeyField != null) geminiApiKeyField.setPromptText(localization.get("setting.box.other.geminiApiKeyPrompt"));
         if (geminiApiKeyHintIcon != null) geminiApiKeyHintIcon.setHintText(localization.get("setting.box.other.geminiApiKeyHint"));
-        if (siliconFlowApiKeyLabel != null) siliconFlowApiKeyLabel.setText(localization.get("setting.box.other.siliconflowApiKey"));
+        if (siliconFlowApiKeyLabel != null) siliconFlowApiKeyLabel.setText(buildSiliconFlowApiKeyLabel(localization));
         if (siliconFlowApiKeyField != null) siliconFlowApiKeyField.setPromptText(localization.get("setting.box.other.siliconflowApiKeyPrompt"));
-        if (siliconFlowApiKeyHintIcon != null) siliconFlowApiKeyHintIcon.setHintText(localization.get("setting.box.other.siliconflowApiKeyHint"));
+        if (siliconFlowApiKeyHintIcon != null) siliconFlowApiKeyHintIcon.setHintText(buildSiliconFlowApiKeyHint(localization));
         if (deepLApiKeyLabel != null) deepLApiKeyLabel.setText(localization.get("setting.box.other.deeplApiKey"));
         if (deepLApiKeyField != null) deepLApiKeyField.setPromptText(localization.get("setting.box.other.deeplApiKeyPrompt"));
         if (deepLApiKeyHintIcon != null) deepLApiKeyHintIcon.setHintText(localization.get("setting.box.other.deeplApiKeyHint"));

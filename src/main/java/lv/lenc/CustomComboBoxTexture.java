@@ -23,7 +23,7 @@ import javafx.scene.text.Text;
                                          double arrowRight,
                                          double leftPadding,
                                          double paddingTop) {
-            double controlFontSize = UiScaleHelper.scaleY(16.0);
+            double controlFontSize = UiScaleHelper.scaleFont(11.2, 9.0);
             return "-fx-background-color: transparent; " +
                     "-fx-background-image: url('" + texturePath + buttonTexture + "'), url('" + texturePath + arrowTexture + "'); " +
                     "-fx-background-size: stretch, " + arrowSize + "px " + arrowSize + "px; " +
@@ -140,7 +140,7 @@ import javafx.scene.text.Text;
                     textNode.setStyle(
                             "-fx-fill: linear-gradient(from 0% 0% to 100% 100%, white, limegreen);" +
                                     "-fx-font-family: 'Arial Black';" +
-                                    "-fx-font-size: " + UiScaleHelper.scaleY(16.0) + "px;"
+                                    "-fx-font-size: " + UiScaleHelper.scaleFont(11.2, 9.0) + "px;"
                     );
                 }
             });
@@ -207,7 +207,7 @@ import javafx.scene.text.Text;
                                     "-fx-background-repeat: no-repeat;" +
                                     "-fx-background-position: center;" +
                                     "-fx-font-family: 'Arial Black';" +
-                                    "-fx-font-size: " + (UiScaleHelper.SCREEN_HEIGHT * (14.0 / 1080.0)) + "px;" +
+                                    "-fx-font-size: " + UiScaleHelper.scaleFont(9.8, 8.0) + "px;" +
                                     "-fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, white, limegreen);" +
                                     "-fx-alignment: center;"
                     );
@@ -330,7 +330,7 @@ import javafx.scene.text.Text;
         private void applyListItemStyles() {
             String frameTexture = "ui_glue_dropdownmenuframe_terran.png";
             String frameSelectedTexture = "ui_glue_dropdownmenubutton_selected_terran.png";
-            double itemFontSize = UiScaleHelper.scaleY(16.0);
+            double itemFontSize = UiScaleHelper.scaleFont(11.2, 9.0);
             this.setCellFactory(param -> new ListCell<T>() {
                 @Override
                 protected void updateItem(T item, boolean empty) {
@@ -411,7 +411,7 @@ import javafx.scene.text.Text;
         }
 
         private void applyButtonCellStyle() {
-            final double buttonFontSize = UiScaleHelper.scaleY(16.0);
+            final double buttonFontSize = UiScaleHelper.scaleFont(11.2, 9.0);
             final double rightReserved = UiScaleHelper.SCREEN_WIDTH * (30.0 / 1920.0);
             final double leftReserved = UiScaleHelper.SCREEN_WIDTH * (40.0 / 1920.0);
             final double visualCenterShift = (leftReserved - rightReserved) / 2.0;

@@ -50,7 +50,7 @@ public class CustomAlternativeButton extends Button implements Disabable {
         double h = UiScaleHelper.scaleY(heightPxFullHD);
 
         // uniform font scaling with a safe floor so text never disappears
-        double fontPx = Math.max(fontPxFullHD * UiScaleHelper.UNIFORM_SCALE, 10.0);
+        double fontPx = UiScaleHelper.scaleFont(fontPxFullHD, 10.0);
 
         setMinSize(w, h);
         setPrefSize(w, h);

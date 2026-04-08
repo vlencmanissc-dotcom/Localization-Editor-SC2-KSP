@@ -32,6 +32,8 @@ final class SiliconFlowTranslationProvider {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static volatile String activeEndpoint = PRIMARY_CHAT_ENDPOINT;
     private static volatile String activeModel = DEFAULT_MODEL_ID;
+    private static volatile String runtimeModelOverride = "";
+    private static volatile boolean runtimeModelStrict = false;
 
     private SiliconFlowTranslationProvider() {
     }
@@ -215,6 +217,12 @@ final class SiliconFlowTranslationProvider {
         return activeModel;
     }
 
+    static void setRuntimeModelOverride(String modelId, boolean strictMode) {
+        String normalized = modelId == null ? "" : modelId.trim();
+        runtimeModelOverride = normalized;
+        runtimeModelStrict = strictMode && !normalized.isBlank();
+    }
+
     private static List<String> endpointOrder() {
         LinkedHashSet<String> endpoints = new LinkedHashSet<>();
         if (activeEndpoint != null && !activeEndpoint.isBlank()) {
@@ -226,7 +234,15 @@ final class SiliconFlowTranslationProvider {
     }
 
     private static List<String> modelOrder() {
+        String runtimeModel = runtimeModelOverride == null ? "" : runtimeModelOverride.trim();
+        if (!runtimeModel.isBlank() && runtimeModelStrict) {
+            return List.of(runtimeModel);
+        }
+
         LinkedHashSet<String> models = new LinkedHashSet<>();
+        if (!runtimeModel.isBlank()) {
+            models.add(runtimeModel);
+        }
         String preferred = resolvePreferredModel();
         if (!preferred.isBlank()) {
             models.add(preferred);
