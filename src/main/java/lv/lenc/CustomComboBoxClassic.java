@@ -14,7 +14,8 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
     private final double dropdownFontSize;
     private final double paddingTop;
     private final double paddingLeft;
-    private final double arrowRight;
+    private double arrowRight;
+    private double buttonCellRightPadding;
     private final double borderRadius;
     private final double cellHeight;
     private final double cellRadius;
@@ -43,6 +44,7 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
         this.paddingTop = UiScaleHelper.scaleY(-4);
         this.paddingLeft = UiScaleHelper.scaleX(25);
         this.arrowRight = UiScaleHelper.scaleX(20);
+        this.buttonCellRightPadding = this.arrowRight + UiScaleHelper.scaleX(26);
         this.borderRadius = UiScaleHelper.scaleY(8);
 
         this.cellHeight = UiScaleHelper.scaleY(cellHeightFullHD);
@@ -57,6 +59,8 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
         hideScrollBar();
         applyTextCells();
         applyBaseStyles();
+        UiSoundManager.bindBnetDropdown(this);
+        CustomCursorManager.applyDefaultCursor(this);
         this.disabledProperty().addListener((obs, wasDisabled, isNowDisabled) -> updateStyle());
         updateStyle();
 
@@ -69,8 +73,19 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
         updateStyle();
     }
 
+    public void setArrowRightFullHd(double arrowRightFullHd) {
+        this.arrowRight = UiScaleHelper.scaleX(arrowRightFullHd);
+        this.buttonCellRightPadding = this.arrowRight + UiScaleHelper.scaleX(26);
+        refreshVisualStyle();
+    }
+
     private void updateStyle() {
         applyControlStyle(isHover(), isPressed());
+    }
+
+    private void refreshVisualStyle() {
+        updateStyle();
+        applyButtonCellStyle(getButtonCell());
     }
 
     private void applyBaseStyles() {
@@ -111,6 +126,7 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
         if (!(listView instanceof Region region)) {
             return;
         }
+        CustomCursorManager.applyDefaultCursor(region);
 
         boolean popupGreenTheme = isGreen;
         String borderColor = popupGreenTheme
@@ -185,17 +201,8 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
                 }
 
                 setText(item.toString());
-                setStyle(
-                        "-fx-background-color: transparent;" +
-                                "-fx-font-family: 'Arial Black';" +
-                                "-fx-font-size: " + fontSize + "px;" +
-                                "-fx-text-fill: " + textGradNormal() + ";" +
-                                "-fx-alignment: center;" +
-                                "-fx-padding: 0 " + (arrowRight + UiScaleHelper.scaleX(26)) + " 0 0;" +
-                                "-fx-background-insets: 0;" +
-                                "-fx-border-insets: 0;" +
-                                "-fx-text-overrun: clip;"
-                );
+                CustomCursorManager.applyDefaultCursor(this);
+                applyButtonCellStyle(this);
             }
         });
 
@@ -217,9 +224,28 @@ public class CustomComboBoxClassic<T> extends ComboBox<T> implements Disabable {
                 }
 
                 setText(item.toString());
+                CustomCursorManager.applyDefaultCursor(this);
                 refreshPopupCellStyle(this);
             }
         });
+    }
+
+    private void applyButtonCellStyle(ListCell<T> cell) {
+        if (cell == null || cell.isEmpty() || cell.getItem() == null) {
+            return;
+        }
+
+        cell.setStyle(
+                "-fx-background-color: transparent;" +
+                        "-fx-font-family: 'Arial Black';" +
+                        "-fx-font-size: " + fontSize + "px;" +
+                        "-fx-text-fill: " + textGradNormal() + ";" +
+                        "-fx-alignment: center;" +
+                        "-fx-padding: 0 " + buttonCellRightPadding + " 0 0;" +
+                        "-fx-background-insets: 0;" +
+                        "-fx-border-insets: 0;" +
+                        "-fx-text-overrun: clip;"
+        );
     }
 
     private void refreshPopupCellStyle(ListCell<T> cell) {

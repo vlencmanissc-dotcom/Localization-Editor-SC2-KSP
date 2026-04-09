@@ -31,5 +31,6 @@ public class CustomCloseButton extends Button {
         // Behavior-only settings
         setFocusTraversable(false);
         setPickOnBounds(true);
+        UiSoundManager.bindBnetButton(this);
     }
 }

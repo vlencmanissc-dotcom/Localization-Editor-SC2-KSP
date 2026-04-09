@@ -5,8 +5,8 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
@@ -33,7 +33,7 @@ public class SquareDiscordURL extends StackPane {
     public SquareDiscordURL() {
 
         getStyleClass().add("square-discord-url");
-        setCursor(Cursor.HAND);
+        CustomCursorManager.applyHyperlinkCursor(this);
         setPickOnBounds(true);
 
         double sizeW = UiScaleHelper.SCREEN_WIDTH  * (76.0 / 1920.0);
@@ -105,6 +105,16 @@ public class SquareDiscordURL extends StackPane {
             if (wipeAnim == null) return;
             if (isNow) playForward();
             else playReverse();
+        });
+        addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
+            if (!isDisabled()) {
+                UiSoundManager.playNovaHover();
+            }
+        });
+        addEventHandler(MouseEvent.MOUSE_PRESSED, e -> {
+            if (!isDisabled() && e.getButton() == MouseButton.PRIMARY) {
+                UiSoundManager.playNovaClick();
+            }
         });
 
         setOnMouseClicked(e -> {

@@ -27,3 +27,24 @@
     -fx-background-image: url("/Assets/Textures/ui_nova_global_mediumbutton_yellow_disabled.png");
     -fx-opacity: 0.85;
 }
+
+.alt-button.theme-green-medium {
+    -fx-background-image: url("/Assets/Textures/ui_nova_global_mediumbutton_green_normal.png");
+    -fx-text-fill: linear-gradient(from 0% 0% to 20% 100%, white, #90EE90);
+}
+
+.alt-button.theme-green-medium:hover {
+    -fx-background-image: url("/Assets/Textures/ui_nova_global_mediumbutton_green_over.png");
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, white, #F0FFF0);
+}
+
+.alt-button.theme-green-medium:pressed {
+    -fx-background-image: url("/Assets/Textures/ui_nova_global_mediumbutton_green_down.png");
+    -fx-text-fill: linear-gradient(from 0% 0% to 100% 100%, white, #F0FFF0);
+}
+
+.alt-button.theme-green-medium:disabled {
+    -fx-background-image: url("/Assets/Textures/ui_nova_global_mediumbutton_green_disabled.png");
+    -fx-text-fill: linear-gradient(from 0% 0% to 20% 100%, rgba(255,255,255,0.5), rgba(144,238,144,0.5));
+    -fx-opacity: 1;
+}

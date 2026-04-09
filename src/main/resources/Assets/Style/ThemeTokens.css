@@ -1,0 +1,29 @@
+/*
+   Shared theme tokens for Nova / archive overlays.
+   These values deliberately live in a separate file so new screens can
+   reuse the same palette without copy-pasting large color/effect blocks.
+*/
+
+.root,
+.key-filter-root-pane,
+.table-search-popup,
+.archive-open-popup,
+.alert-root,
+.file-open-panel,
+.nova-progress-frame {
+    -app-panel-solid: rgba(0, 0, 0, 0.96);
+    -app-panel-soft: rgba(0, 0, 0, 0.98);
+    -app-panel-dim: rgba(0, 0, 0, 0.56);
+
+    -app-neon-green: #80d2a2;
+    -app-neon-green-soft: rgba(84, 255, 200, 0.26);
+    -app-neon-green-strong: rgba(84, 255, 200, 0.38);
+    -app-neon-green-bright: rgba(114, 255, 218, 0.45);
+
+    -app-warm-gold: #ffe3bc;
+    -app-warm-amber: #ffe7cb;
+    -app-muted-copy: #97b1ae;
+
+    -app-display-font: "Arial Black";
+    -app-body-font: "Segoe UI", "Arial", sans-serif;
+}

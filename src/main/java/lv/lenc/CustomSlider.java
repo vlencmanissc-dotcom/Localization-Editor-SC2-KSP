@@ -1,6 +1,7 @@
 package lv.lenc;
 
 import javafx.application.Platform;
+import javafx.scene.input.MouseButton;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
@@ -17,7 +18,8 @@ public class CustomSlider extends Slider {
         super(min, max, value);
 
         // Previously: setMaxWidth(scaleX(266)) — keep as base "current size"
-        double width = UiScaleHelper.scaleX(292);
+        UiSoundManager.bindSlider(this);
+        double width = UiScaleHelper.scaleX(304);
         setMaxWidth(width);
         setPrefWidth(width);
         setMinWidth(Region.USE_PREF_SIZE);
@@ -42,15 +44,15 @@ public class CustomSlider extends Slider {
 
 
 
-        track.setMinHeight(UiScaleHelper.scaleY(10));
-        track.setPrefHeight(UiScaleHelper.scaleY(10));
-        track.setMaxHeight(UiScaleHelper.scaleY(10));
+        track.setMinHeight(UiScaleHelper.scaleY(12));
+        track.setPrefHeight(UiScaleHelper.scaleY(12));
+        track.setMaxHeight(UiScaleHelper.scaleY(12));
 
-        thumb.setMinSize(UiScaleHelper.scaleY(22), UiScaleHelper.scaleY(22));
-        thumb.setPrefSize(UiScaleHelper.scaleY(22), UiScaleHelper.scaleY(22));
-        thumb.setMaxSize(UiScaleHelper.scaleY(22), UiScaleHelper.scaleY(22));
+        thumb.setMinSize(UiScaleHelper.scaleY(24), UiScaleHelper.scaleY(24));
+        thumb.setPrefSize(UiScaleHelper.scaleY(24), UiScaleHelper.scaleY(24));
+        thumb.setMaxSize(UiScaleHelper.scaleY(24), UiScaleHelper.scaleY(24));
 
-        double controlHeight = UiScaleHelper.scaleY(40);
+        double controlHeight = UiScaleHelper.scaleY(44);
         setMinHeight(controlHeight);
         setPrefHeight(controlHeight);
         setMaxHeight(controlHeight);
@@ -60,7 +62,7 @@ public class CustomSlider extends Slider {
 
         setPickOnBounds(true);
         // 2) Custom fill — fully scaled as well
-        fill.setHeight(UiScaleHelper.scaleY(7));
+        fill.setHeight(UiScaleHelper.scaleY(8));
         fill.setFill(Color.web("#ffb85c"));
         fill.setManaged(false);
         fill.setMouseTransparent(true);
@@ -75,8 +77,16 @@ public class CustomSlider extends Slider {
         track.layoutYProperty().addListener((o, a, b) -> updateFill());
         track.heightProperty().addListener((o, a, b) -> updateFill());
         widthProperty().addListener((o, a, b) -> updateFill());
-        setOnMousePressed(e -> updateValueFromMouse(e.getX()));
-        setOnMouseDragged(e -> updateValueFromMouse(e.getX()));
+        setOnMousePressed(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                updateValueFromMouse(e.getX());
+            }
+        });
+        setOnMouseDragged(e -> {
+            if (e.isPrimaryButtonDown()) {
+                updateValueFromMouse(e.getX());
+            }
+        });
         inited = true;
         updateFill();
     }

@@ -2,6 +2,9 @@ package lv.lenc;
 
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.stage.PopupWindow;
+import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.stage.Screen;
 
 public class UiScaleHelper {
@@ -30,10 +33,25 @@ public class UiScaleHelper {
             refreshFromPrimaryScreen();
             return;
         }
+        Window window = scene.getWindow();
+        // Ignore detached scenes: controls inside popups can get a Scene before
+        // the window is attached/shown. Using that temporary size shrinks global scale.
+        if (window == null || !window.isShowing()) {
+            return;
+        }
+        // Ignore popup scenes (e.g. search popup/combo popup), they must not
+        // redefine global app scale.
+        if (window instanceof PopupWindow) {
+            return;
+        }
+        // Only main stage should drive global scaling.
+        if (!(window instanceof Stage)) {
+            return;
+        }
         double w = scene.getWidth();
         double h = scene.getHeight();
         if (w <= 1.0 || h <= 1.0) {
-            refreshFromPrimaryScreen();
+            // Keep last valid scale if stage is not yet laid out.
             return;
         }
         applyScale(w, h);

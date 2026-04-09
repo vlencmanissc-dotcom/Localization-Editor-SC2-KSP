@@ -1,0 +1,154 @@
+.table-search-query {
+    -fx-font-size: 14px;
+}
+
+.table-search-popup {
+    -fx-background-color: rgba(0, 0, 0, 0.97);
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_normal.png");
+    -fx-border-image-slice: 14;
+    -fx-border-image-width: 8;
+    -fx-border-image-repeat: stretch;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.36), 16, 0.30, 0, 0);
+}
+
+.table-search-header {
+    -fx-alignment: center-left;
+    -fx-padding: 2 4 4 4;
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 0 0 10 0;
+    -fx-border-image-width: 0 0 4 0;
+    -fx-border-image-repeat: stretch;
+}
+
+.table-search-title {
+    -fx-font-family: -app-display-font;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-neon-green;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.35), 10, 0.26, 0, 0);
+}
+
+.table-search-status {
+    -fx-font-family: -app-display-font;
+    -fx-font-size: 12px;
+    -fx-text-fill: rgba(151, 216, 188, 0.92);
+}
+
+.table-search-placeholder {
+    -fx-font-family: -app-display-font;
+    -fx-font-size: 13px;
+    -fx-text-fill: rgba(128, 210, 162, 0.72);
+    -fx-padding: 12 10 12 10;
+    -fx-alignment: center;
+}
+
+.table-search-list {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: rgba(0, 0, 0, 0.95);
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 14;
+    -fx-border-image-width: 6;
+    -fx-border-image-repeat: stretch;
+    -fx-padding: 3;
+}
+
+.table-search-list .viewport,
+.table-search-list .content,
+.table-search-list .virtual-flow,
+.table-search-list .corner {
+    -fx-background-color: transparent;
+}
+
+.table-search-list .list-cell {
+    -fx-background-color: rgba(0, 0, 0, 0.94);
+    -fx-padding: 10 12 10 12;
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_normal.png");
+    -fx-border-image-slice: 12;
+    -fx-border-image-width: 5;
+    -fx-border-image-repeat: stretch;
+}
+
+.table-search-list .list-cell:filled:hover {
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_over.png");
+    -fx-background-color: rgba(5, 16, 12, 0.98);
+}
+
+.table-search-list .list-cell:filled:selected,
+.table-search-list .list-cell:filled:selected:hover {
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-background-color: rgba(18, 18, 10, 0.98);
+}
+
+.table-search-result-key {
+    -fx-font-family: -app-display-font;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffe3b0;
+}
+
+.table-search-result-preview {
+    -fx-font-size: 12px;
+    -fx-text-fill: -app-muted-copy;
+}
+
+.table-search-list .scroll-bar:vertical,
+.table-search-list .scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_global_scrollbar_bg.png");
+    -fx-border-image-slice: 14;
+    -fx-border-image-width: 5;
+    -fx-border-image-repeat: stretch;
+}
+
+.table-search-list .scroll-bar:vertical {
+    -fx-pref-width: 18px;
+}
+
+.table-search-list .scroll-bar:horizontal {
+    -fx-pref-height: 18px;
+}
+
+.table-search-list .scroll-bar .track,
+.table-search-list .scroll-bar .track-background {
+    -fx-background-color: rgba(7, 28, 22, 0.95);
+    -fx-background-insets: 2;
+    -fx-border-color: rgba(84, 180, 150, 0.55);
+    -fx-border-width: 1;
+}
+
+.table-search-list .scroll-bar .thumb {
+    -fx-background-color: rgba(98, 202, 162, 1);
+    -fx-background-radius: 0;
+    -fx-border-color: rgba(132, 222, 188, 1);
+    -fx-border-width: 1;
+    -fx-border-insets: 1;
+    -fx-min-height: 28px;
+    -fx-min-width: 28px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 168, 0.90), 12, 0.42, 0, 0),
+        dropshadow(gaussian, rgba(0, 182, 131, 0.70), 20, 0.30, 0, 0);
+}
+
+.table-search-list .scroll-bar .thumb:hover {
+    -fx-background-color: rgba(156, 255, 210, 1);
+    -fx-border-color: rgba(173, 255, 221, 1);
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 182, 1), 14, 0.5, 0, 0),
+        dropshadow(gaussian, rgba(0, 196, 142, 0.85), 24, 0.34, 0, 0);
+}
+
+.table-search-list .scroll-bar .increment-button,
+.table-search-list .scroll-bar .decrement-button {
+    -fx-padding: 0;
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+    -fx-pref-width: 0;
+    -fx-max-height: 0;
+    -fx-max-width: 0;
+    -fx-background-color: transparent;
+}

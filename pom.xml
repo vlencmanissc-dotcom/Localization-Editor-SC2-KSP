@@ -154,6 +154,7 @@
                     <include>**/*.properties</include>
                     <include>**/*.txt</include>
                     <include>**/*.csv</include>
+                    <include>**/*.wav</include>
                     <include>**/*.dll</include>
                     <include>**/*.so</include>
                     <include>**/*.dylib</include>

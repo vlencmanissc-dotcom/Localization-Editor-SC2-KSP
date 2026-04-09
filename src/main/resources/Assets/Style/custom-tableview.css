@@ -84,30 +84,26 @@
 
 /* Drag/reorder visuals */
 .table-view .column-drag-header {
-    -fx-background-color: rgba(12, 28, 24, 0.92);
-    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
-    -fx-border-image-slice: 12 fill;
-    -fx-border-image-width: 0.45em;
-    -fx-border-image-repeat: stretch;
-    -fx-effect: dropshadow(gaussian, rgba(64, 255, 190, 0.45), 12, 0.25, 0, 0);
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-image-source: none;
+    -fx-effect: null;
+    -fx-opacity: 0;
 }
 .table-view .column-drag-header .label {
-    -fx-text-fill: #d8fff0;
-    -fx-font-weight: bold;
+    -fx-text-fill: transparent;
 }
 .table-view .column-overlay {
-    -fx-background-color: linear-gradient(to bottom, rgba(18, 44, 38, 0.94), rgba(12, 32, 28, 0.96));
-    -fx-background-image: url("../Textures/ui_nova_archives_backgroundframe_scanlines.png");
-    -fx-background-repeat: repeat;
-    -fx-background-size: 9em 9em;
-    -fx-background-position: center center;
-    -fx-border-color: rgba(108, 255, 206, 0.92);
-    -fx-border-width: 0 0.08em 0 0.08em;
-    -fx-effect: dropshadow(gaussian, rgba(34, 225, 166, 0.52), 11, 0.32, 0, 0);
+    -fx-background-color: transparent;
+    -fx-background-image: none;
+    -fx-border-color: transparent;
+    -fx-effect: null;
+    -fx-opacity: 0;
 }
 .table-view .column-resize-line {
-    -fx-background-color: rgba(115, 255, 205, 0.95);
-    -fx-effect: dropshadow(gaussian, rgba(38, 255, 189, 0.60), 10, 0.35, 0, 0);
+    -fx-background-color: transparent;
+    -fx-effect: null;
+    -fx-opacity: 0;
 }
 
 .table-view .column-header .label {

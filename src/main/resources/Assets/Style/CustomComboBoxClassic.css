@@ -107,7 +107,6 @@
    AI backend combo accent
    ---------------------------- */
 .classic-combo.ai-backend-combo {
-    -fx-effect: dropshadow(gaussian, rgba(0,255,180,0.10), 8, 0.22, 0, 0);
     /* Keep texture border clean: avoid overlay border that can look shifted on narrow widths */
     -fx-border-color: transparent;
     -fx-border-width: 0;

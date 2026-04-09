@@ -96,9 +96,7 @@ public class CustomTableView extends TableView<LocalizationData> {
         // Styling
         //  this.applyScrollBarStyle();
         this.glossaryService = glossaryService;
-        this.getStylesheets().add(
-                getClass().getResource("/Assets/Style/custom-tableview.css").toExternalForm()
-        );
+        this.getStylesheets().add(UiAssets.css("custom-tableview.css"));
         try {
             this.langService = new LanguageDetectorService();
         } catch (LangDetectException e) {
@@ -108,7 +106,7 @@ public class CustomTableView extends TableView<LocalizationData> {
         Platform.runLater(() -> {
             Node resizeLine = this.lookup(".column-resize-line");
             if (resizeLine != null) {
-                resizeLine.setStyle("-fx-background-color: green;");
+                resizeLine.setStyle("-fx-background-color: transparent; -fx-opacity: 0;");
             }
         });
         //TRUMB
@@ -203,8 +201,8 @@ public class CustomTableView extends TableView<LocalizationData> {
         }
         keyColumn.setMinWidth(UiScaleHelper.scaleX(200));
         countColumn.setMaxWidth(UiScaleHelper.scaleX(150));
-        countColumn.setMinWidth(UiScaleHelper.scaleX(100));
-        countColumn.setPrefWidth(UiScaleHelper.scaleX(100));
+        countColumn.setMinWidth(UiScaleHelper.scaleX(110));
+        countColumn.setPrefWidth(UiScaleHelper.scaleX(110));
         hideHeaderSortedArrow();
         enableHeaderColumnSelectionHighlighting();
         Label placeholderLabel = new Label(this.localization.get("table.placeholder"));
@@ -214,6 +212,9 @@ public class CustomTableView extends TableView<LocalizationData> {
         // edit
         applyCustomCellStyleToAllColumns();
         this.addEventFilter(ScrollEvent.SCROLL, event -> {
+            if (isScrollBarTarget(event.getTarget())) {
+                return;
+            }
             if (!event.isControlDown()) {
                 return;
             }
@@ -348,18 +349,10 @@ public class CustomTableView extends TableView<LocalizationData> {
     }
 
     private double resolveCountCellFontSize(TableCell<LocalizationData, String> cell) {
-        double base = tableText(sff(14.2, 10.4)) * (TABLE_SPECIAL_COLUMNS_BOOST + 0.08);
-        if (cell == null || cell.getTableColumn() == null) {
-            return base;
-        }
-        double width = cell.getTableColumn().getWidth();
-        if (width < UiScaleHelper.scaleX(78)) {
-            return Math.max(base - 1.2, 9.2);
-        }
-        if (width < UiScaleHelper.scaleX(96)) {
-            return Math.max(base - 0.4, 9.8);
-        }
-        return base;
+        return Math.max(
+                tableText(sff(15.8, 12.2)) * (TABLE_SPECIAL_COLUMNS_BOOST + 0.12),
+                12.8
+        );
     }
 
     private void applyDynamicTypography() {
@@ -376,6 +369,26 @@ public class CustomTableView extends TableView<LocalizationData> {
                     node.setStyle("-fx-font-size: " + headerFont + "px; -fx-font-weight: bold;"));
         });
     }
+
+    private boolean isScrollBarTarget(Object target) {
+        if (!(target instanceof Node node)) {
+            return false;
+        }
+        Node current = node;
+        while (current != null) {
+            if (current instanceof ScrollBar) {
+                return true;
+            }
+            if (current.getStyleClass().contains("scroll-bar")
+                    || current.getStyleClass().contains("thumb")
+                    || current.getStyleClass().contains("track")) {
+                return true;
+            }
+            current = current.getParent();
+        }
+        return false;
+    }
+
     private void captureBaseColumnWidths() {
         //
         TableColumn<LocalizationData, ?> sampleLang = getColumns().stream()

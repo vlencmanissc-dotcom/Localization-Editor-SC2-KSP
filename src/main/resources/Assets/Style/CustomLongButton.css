@@ -25,11 +25,13 @@
 .button.long-btn.green:hover {
     /* Mouse hover state */
     -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largeover_ONE_UPSCALE_APS.png");
+    -fx-text-fill: white;
 }
 
 .button.long-btn.green:pressed {
     /* Mouse pressed state */
     -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largedown_ONE_UPSCALE_APS.png");
+    -fx-text-fill: white;
 }
 
 .button.long-btn.green:selected {
@@ -40,6 +42,7 @@
 .button.long-btn.green:disabled {
     /* Disabled state */
     -fx-background-image: url("../Textures/ui_battlenet_glues_greenbuttons_alternate_largedisabled_ONE_UPSCALE_APS.png");
+    -fx-text-fill: gray;
 }
 
 
@@ -56,11 +59,13 @@
 .button.long-btn.red:hover {
     /* Mouse hover state */
     -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largeover_ONE_UPSCALE_APS.png");
+    -fx-text-fill: white;
 }
 
 .button.long-btn.red:pressed {
     /* Mouse pressed state */
     -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largedown_ONE_UPSCALE_APS.png");
+    -fx-text-fill: white;
 }
 
 .button.long-btn.red:selected {
@@ -71,4 +76,5 @@
 .button.long-btn.red:disabled {
     /* Disabled state */
     -fx-background-image: url("../Textures/ui_battlenet_glues_redbuttons_alternate_largedisabled_ONE_UPSCALE_APS.png");
+    -fx-text-fill: gray;
 }

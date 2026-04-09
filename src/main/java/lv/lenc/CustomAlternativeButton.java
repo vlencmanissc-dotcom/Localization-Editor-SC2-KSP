@@ -42,6 +42,7 @@ public class CustomAlternativeButton extends Button implements Disabable {
 
         bindBehavior();
         bindScaleRefresh();
+        UiSoundManager.bindNovaButton(this);
     }
 
     private void applyScaledSizing() {

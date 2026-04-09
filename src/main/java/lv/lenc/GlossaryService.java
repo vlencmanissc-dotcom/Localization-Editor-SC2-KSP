@@ -541,11 +541,13 @@ public final class GlossaryService {
     }
 
     private static String normalizeKey(String key) {
-        return stripBom(key).trim().toLowerCase(Locale.ROOT);
+        String normalized = stripBom(key);
+        return normalized == null ? "" : normalized.trim().toLowerCase(Locale.ROOT);
     }
 
     public static String normalizeLang(String lang) {
-        return stripBom(lang).trim().toLowerCase(Locale.ROOT);
+        String normalized = stripBom(lang);
+        return normalized == null ? "" : normalized.trim().toLowerCase(Locale.ROOT);
     }
 
     private static String getCell(String[] row, Integer idx) {

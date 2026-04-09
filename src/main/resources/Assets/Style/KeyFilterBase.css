@@ -1,0 +1,285 @@
+.key-filter-overlay-dim {
+    -fx-background-color: -app-panel-dim;
+}
+
+.key-filter-root-pane {
+    -fx-background-color: transparent;
+}
+
+.key-filter-panel {
+    -fx-background-color: -app-panel-solid;
+}
+
+.key-filter-green-outline {
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_normal_cropped_52_boosted.png");
+    -fx-border-image-slice: 12;
+    -fx-border-image-width: 8;
+    -fx-border-image-repeat: stretch;
+    -fx-background-color: -app-panel-solid;
+    -fx-effect: dropshadow(gaussian, -app-neon-green-soft, 8, 0.22, 0, 0);
+}
+
+.key-filter-orange-outline {
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 12;
+    -fx-border-image-width: 8;
+    -fx-border-image-repeat: stretch;
+    -fx-background-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 92, 0.42), 12, 0.28, 0, 0);
+}
+
+.key-filter-title-wrap {
+    -fx-max-width: 320px;
+    -fx-pref-width: 320px;
+    -fx-min-width: 320px;
+}
+
+.key-filter-title-shell {
+    -fx-background-color: rgba(0, 0, 0, 0.98);
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_normal.png");
+    -fx-border-image-slice: 12;
+    -fx-border-image-width: 8;
+    -fx-border-image-repeat: stretch;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.34), 11, 0.30, 0, 0);
+}
+
+.key-filter-title-overhead {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_equipmentupgrades_carditemiconframe_orange_selectedbartop.png");
+    -fx-border-image-slice: 8 fill;
+    -fx-border-image-width: 8;
+    -fx-border-image-repeat: stretch;
+}
+
+.key-filter-title {
+    -fx-font-family: -app-display-font;
+    -fx-font-size: 28px;
+    -fx-text-fill: -app-neon-green;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.42), 10, 0.24, 0, 0);
+}
+
+.key-filter-header-row {
+    -fx-padding: 2 0 4 0;
+}
+
+.key-filter-editor-badge-wrap {
+    -fx-max-width: 330px;
+    -fx-pref-width: 330px;
+    -fx-min-width: 330px;
+}
+
+.key-filter-editor-badge-shell {
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.30), 9, 0.28, 0, 0);
+}
+
+.key-filter-editor-badge-title {
+    -fx-font-size: 19px;
+}
+
+.key-filter-section-title {
+    -fx-font-family: -app-display-font;
+    -fx-font-size: 15px;
+    -fx-text-fill: -app-neon-green;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.35), 10, 0.28, 0, 0);
+}
+
+.key-filter-selected-path {
+    -fx-background-color: rgba(0, 0, 0, 0.98);
+    -fx-text-fill: -app-neon-green;
+    -fx-prompt-text-fill: rgba(128, 210, 162, 0.70);
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 14;
+    -fx-border-image-width: 7;
+    -fx-border-image-repeat: stretch;
+    -fx-padding: 9 12;
+    -fx-highlight-fill: rgba(120, 62, 10, 0.65);
+    -fx-highlight-text-fill: #fff2df;
+    -fx-effect: dropshadow(gaussian, -app-neon-green-soft, 8, 0.24, 0, 0);
+}
+
+.key-filter-status {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-neon-green;
+    -fx-effect: dropshadow(gaussian, -app-neon-green-strong, 10, 0.28, 0, 0),
+        dropshadow(gaussian, rgba(36, 120, 90, 0.35), 16, 0.2, 0, 0);
+}
+
+.key-filter-empty-state {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: rgba(128, 210, 162, 0.85);
+    -fx-padding: 8 0 4 0;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.18), 6, 0.18, 0, 0);
+}
+
+.key-filter-lang-line {
+    -fx-alignment: center-left;
+}
+
+.key-filter-lang-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-neon-green;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.30), 8, 0.24, 0, 0);
+}
+
+.key-filter-lang-combo {
+    -fx-background-color: rgba(0, 0, 0, 0.95);
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 12;
+    -fx-border-image-width: 6;
+    -fx-border-image-repeat: stretch;
+    -fx-text-fill: -app-neon-green;
+    -fx-padding: 2 8;
+}
+
+.key-filter-lang-combo .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-neon-green;
+    -fx-font-weight: bold;
+}
+
+.key-filter-lang-combo .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.key-filter-lang-combo .arrow {
+    -fx-background-color: -app-neon-green;
+}
+
+.key-filter-lang-combo .list-view {
+    -fx-background-color: rgba(0, 0, 0, 0.98);
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 12;
+    -fx-border-image-width: 4;
+    -fx-border-image-repeat: stretch;
+    -fx-max-height: 220;
+}
+
+.key-filter-lang-combo .list-view .list-cell {
+    -fx-background-color: rgba(0, 0, 0, 0.98);
+    -fx-text-fill: -app-neon-green;
+    -fx-font-weight: bold;
+}
+
+.key-filter-lang-combo .list-view .list-cell:hover,
+.key-filter-lang-combo .list-view .list-cell:filled:selected {
+    -fx-background-color: rgba(24, 16, 10, 0.9);
+    -fx-text-fill: -app-neon-green;
+}
+
+.key-filter-root-pane .close-button {
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 100% 100%;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-background-image: url("/Assets/Textures/button_normal_YELLOW.png");
+}
+
+.key-filter-root-pane .close-button:hover {
+    -fx-background-image: url("/Assets/Textures/button_over_YELLOW.png");
+}
+
+.key-filter-root-pane .close-button:pressed {
+    -fx-background-image: url("/Assets/Textures/button_overpressed_YELLOW.png");
+}
+
+.key-filter-action-button.alt-button {
+    -fx-background-image: none;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_global_mediumbutton_green_normal.png");
+    -fx-border-image-slice: 14;
+    -fx-border-image-width: 9;
+    -fx-border-image-repeat: stretch;
+    -fx-text-fill: -app-neon-green;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.28), 8, 0.24, 0, 0);
+}
+
+.key-filter-action-button.alt-button:hover {
+    -fx-border-image-source: url("../Textures/ui_nova_global_mediumbutton_green_over.png");
+    -fx-text-fill: #ffe7c0;
+    -fx-font-size: 16px;
+    -fx-padding: 0;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.30), 8, 0.24, 0, 0);
+}
+
+.key-filter-action-button.alt-button:pressed {
+    -fx-border-image-source: url("../Textures/ui_nova_global_mediumbutton_green_down.png");
+    -fx-text-fill: #fff0c7;
+    -fx-font-size: 16px;
+    -fx-padding: 0;
+}
+
+.key-filter-table-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0 10;
+    -fx-alignment: center;
+    -fx-font-family: -app-display-font;
+    -fx-font-size: 1.3em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-neon-green;
+    -fx-border-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_normal.png");
+    -fx-border-image-slice: 14;
+    -fx-border-image-width: 7;
+    -fx-border-image-repeat: stretch;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 200, 0.32), 10, 0.28, 0, 0);
+}
+
+.key-filter-table-button:hover {
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_over.png");
+    -fx-text-fill: white;
+    -fx-font-size: 1.3em;
+    -fx-padding: 0 10;
+    -fx-effect: dropshadow(gaussian, -app-neon-green-bright, 12, 0.32, 0, 0);
+}
+
+.key-filter-table-button:pressed {
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-text-fill: -app-warm-amber;
+    -fx-font-size: 1.3em;
+    -fx-padding: 0 10;
+    -fx-effect: dropshadow(gaussian, -app-neon-green-strong, 12, 0.30, 0, 0),
+        dropshadow(gaussian, rgba(44, 148, 112, 0.44), 18, 0.24, 0, 0);
+}
+
+.key-filter-table-button:disabled {
+    -fx-opacity: 0.55;
+}
+
+.close-file-button {
+    -fx-font-size: 1.7em;
+    -fx-font-weight: 900;
+    -fx-padding: 0;
+}
+
+.close-file-button:hover {
+    -fx-font-size: 1.7em;
+    -fx-padding: 0;
+}
+
+.close-file-button:pressed {
+    -fx-font-size: 1.7em;
+    -fx-padding: 0;
+}

@@ -41,6 +41,8 @@ public class SettingBox {
     private static final double API_ROW_WIDTH = 238.0;
     private static final double API_FIELD_WIDTH = 184.0;
     private static final double API_ICON_SLOT_WIDTH = 48.0;
+    private static final double SETTINGS_WINDOW_OVERLAY_OFFSET_Y = 34.0;
+    private static final double SELECTED_MARK_LIFT_Y = 30.0;
 
     private static double effectiveSettingsScale() {
         double ui = UiScaleHelper.scale(1.0);
@@ -127,6 +129,8 @@ public class SettingBox {
     private static GlowingLabel uilabelFLASH;
     private static GlowingLabel uilabelPOINT;
     private static GlowingLabel uilabelGRIDE;
+    private static GlowingLabel soundLabel;
+    private static GlowingLabel soundDescription;
     private static GlowingLabel controlsLabel;
     private static GlowingLabel googleApiKeyLabel;
     private static GlowingLabel cloudflareServiceLabel;
@@ -134,12 +138,15 @@ public class SettingBox {
     private static GlowingLabel siliconFlowApiKeyLabel;
     private static GlowingLabel deepLApiKeyLabel;
     private static GlowingLabel otherDescrption;
+    private static GlowingLabel supportAuthorTitle;
+    private static GlowingLabel supportAuthorDescription;
 
     private static CustomAlternativeButton uiDEFAUTBUTTON;
     private static CustomAlternativeButton saveButton;
     private static CustomAlternativeButton saveApiKeysButton;
     private static CustomAlternativeButton apiGuideButton;
     private static CustomAlternativeButton discordURL;
+    private static CustomAlternativeButton supportAuthorButton;
     private static CustomAlternativeButton clearCacheButton;
 
     private static CustomLanguageButton[] menuButtons;
@@ -163,10 +170,16 @@ public class SettingBox {
     private static LabeledCheckRow backgroundLightCheckBox;
     private static LabeledCheckRow translationCachePersistRow;
     private static LabeledCheckRow useGpuDockerRow;
+    private static LabeledCheckRow uiSoundsEnabledRow;
+    private static LabeledCheckRow musicEnabledRow;
     private static LabeledCheckRow baseGlossaryRow;
     private static LabeledCheckRow unitsGlossaryRow;
     private static LabeledCheckRow weaponsGlossaryRow;
     private static LabeledCheckRow abilitiesGlossaryRow;
+    private static GlowingLabel uiSoundVolumeLabel;
+    private static GlowingLabel musicVolumeLabel;
+    private static CustomAlternativeButton saveAudioSettingsButton;
+    private static CustomAlternativeButton resetAudioSettingsButton;
     private static GlowingLabel dictionariesLabel;
     private static ApiHintIcon dictionariesHintIcon;
     private static TextField googleApiKeyField;
@@ -233,6 +246,44 @@ public class SettingBox {
             if (opt.nativeName.equals(nativeName)) return opt.code;
         }
         return "en";
+    }
+
+    private static double stableButtonHeight(CustomLanguageButton button) {
+        if (button == null) {
+            return sy(56);
+        }
+        double h = button.getHeight();
+        if (h > 1.0) {
+            return h;
+        }
+        h = button.getPrefHeight();
+        if (h > 1.0) {
+            return h;
+        }
+        h = button.minHeight(-1);
+        if (h > 1.0) {
+            return h;
+        }
+        return sy(56);
+    }
+
+    private static double stableMarkerHeight(ImageView marker) {
+        if (marker == null) {
+            return sy(24);
+        }
+        double h = marker.getLayoutBounds().getHeight();
+        if (h > 1.0) {
+            return h;
+        }
+        h = marker.getBoundsInLocal().getHeight();
+        if (h > 1.0) {
+            return h;
+        }
+        if (marker.getImage() != null && marker.getImage().getWidth() > 0) {
+            double fitW = marker.getFitWidth() > 1.0 ? marker.getFitWidth() : marker.getImage().getWidth();
+            return fitW * (marker.getImage().getHeight() / marker.getImage().getWidth());
+        }
+        return sy(24);
     }
 
     private static void tuneApiKeyField(TextField field, String promptText) {
@@ -305,7 +356,9 @@ public class SettingBox {
             windowHolder.getChildren().add(windowContent);
         }
 
-        ensureStylesheets(appRoot.getScene());
+        // Ensure settings window always applies the latest Y-offset
+        // when TranslationProgressOverlay is already visible.
+        syncOverlayOffset();
 
         ensureStylesheets(appRoot.getScene());
 
@@ -392,6 +445,9 @@ public class SettingBox {
         windowHolder = new StackPane();
         windowHolder.setPickOnBounds(false);
         StackPane.setAlignment(windowHolder, Pos.CENTER);
+        windowHolder.setTranslateY(TranslationProgressOverlay.isOverlayVisible()
+                ? sy(SETTINGS_WINDOW_OVERLAY_OFFSET_Y)
+                : 0.0);
 
         windowContent = buildWindowContent(localization, background, longButton, main, borderTable, tableView);
         windowHolder.getChildren().add(windowContent);
@@ -419,23 +475,7 @@ public class SettingBox {
     }
 
     private static void ensureStylesheets(Scene scene) {
-        if (scene == null) return;
-
-        String[] sheets = new String[]{
-                SettingBox.class.getResource("/Assets/Style/custom-checkbox.css").toExternalForm(),
-                SettingBox.class.getResource("/Assets/Style/CustomAlternativeButton.css").toExternalForm(),
-                SettingBox.class.getResource("/Assets/Style/CustomCloseButton.css").toExternalForm(),
-                SettingBox.class.getResource("/Assets/Style/CustomComboBoxClassic.css").toExternalForm(),
-                SettingBox.class.getResource("/Assets/Style/CustomLanguageButton.css").toExternalForm(),
-                SettingBox.class.getResource("/Assets/Style/CustomSlider.css").toExternalForm(),
-                SettingBox.class.getResource("/Assets/Style/GlowingLabel.css").toExternalForm()
-        };
-
-        for (String s : sheets) {
-            if (!scene.getStylesheets().contains(s)) {
-                scene.getStylesheets().add(s);
-            }
-        }
+        AppStyles.applySettings(scene);
     }
 
     private static void playOpenAnim(Pane content) {
@@ -471,9 +511,10 @@ public class SettingBox {
             CustomTableView tableView
     ) {
         final double WIDTH  = sx(500);
-        final double HEIGHT = sy(509);
+        final double PANEL_HEIGHT = sy(548);
+        final double HEIGHT = sy(574);
 
-        String texturePath = SettingBox.class.getResource("/Assets/Textures/").toExternalForm();
+        String texturePath = UiAssets.textureRoot();
 
         Image borderImage = new Image(texturePath + "ui_nova_archives_listitem_normal_cropped_52_boosted.png");
         Image highlightImage = new Image(texturePath + "ui_nova_archives_listitem_selected.png");
@@ -516,7 +557,9 @@ public class SettingBox {
 
         Region lefthighlightRegion = new Region();
         lefthighlightRegion.setMinWidth(sx(162));
-        lefthighlightRegion.setMinHeight(sy(484));
+        lefthighlightRegion.setMinHeight(PANEL_HEIGHT);
+        lefthighlightRegion.setPrefHeight(PANEL_HEIGHT);
+        lefthighlightRegion.setMaxHeight(PANEL_HEIGHT);
         StackPane.setAlignment(lefthighlightRegion, Pos.TOP_LEFT);
         lefthighlightRegion.setBorder(new Border(highlightBorder));
 
@@ -551,6 +594,7 @@ public class SettingBox {
 
         CustomComboBoxClassic<String> languageComboBox =
                 new CustomComboBoxClassic<>(texturePath, false, sv(260), sv(54), sv(11.9), sv(10.5), sv(28), 12);
+        languageComboBox.setArrowRightFullHd(32);
 
         languageComboBox.getItems().setAll(
                 LANGUAGE_OPTIONS.stream().map(o -> o.nativeName).toList()
@@ -582,20 +626,26 @@ public class SettingBox {
         // UI Settings Panel
         // -------------------------
         uiLabel = new GlowingLabel(localization.get("setting.box.ui.placeholder"));
-        tuneSettingLabel(uiLabel, 19);
-        VBox.setMargin(uiLabel, new Insets(0, 0, sy(10), 0));
+        tuneSettingLabel(uiLabel, 21);
+        VBox.setMargin(uiLabel, new Insets(0, 0, sy(12), 0));
 
         uilabelFLASH = new GlowingLabel(localization.get("setting.box.ui.flash"));
-        tuneSettingLabel(uilabelFLASH, 18);
+        tuneSettingLabel(uilabelFLASH, 19);
         CustomSlider sliderFlash = new CustomSlider(0, 100, background.getFlashAlpha() * 100);
+        sliderFlash.setPrefWidth(sx(300));
+        sliderFlash.setMaxWidth(sx(300));
 
         uilabelPOINT = new GlowingLabel(localization.get("setting.box.ui.point"));
-        tuneSettingLabel(uilabelPOINT, 18);
+        tuneSettingLabel(uilabelPOINT, 19);
         CustomSlider sliderPoint = new CustomSlider(0, 100, background.getPointAlpha() * 100);
+        sliderPoint.setPrefWidth(sx(300));
+        sliderPoint.setMaxWidth(sx(300));
 
         uilabelGRIDE = new GlowingLabel(localization.get("setting.box.ui.gride"));
-        tuneSettingLabel(uilabelGRIDE, 18);
+        tuneSettingLabel(uilabelGRIDE, 19);
         CustomSlider slideGRIDE = new CustomSlider(0, 12, background.getGridAlpha() * 100);
+        slideGRIDE.setPrefWidth(sx(300));
+        slideGRIDE.setMaxWidth(sx(300));
 
         sliderFlash.valueProperty().addListener((obs, oldVal, newVal) ->
                 background.setFlashAlpha(newVal.doubleValue() / 100.0)
@@ -676,13 +726,13 @@ public class SettingBox {
         HBox defaultSaveRow = new HBox(sx(8), uiDEFAUTBUTTON, saveButton);
         defaultSaveRow.setAlignment(Pos.CENTER);
         VBox.setMargin(defaultSaveRow, new Insets(sy(2), 0, 0, 0));
-        defaultSaveRow.setTranslateY(-sy(22));
+        defaultSaveRow.setTranslateY(-sy(20));
 
         Region uiBottomSpacer = new Region();
         VBox.setVgrow(uiBottomSpacer, Priority.ALWAYS);
 
         VBox uiBox = new VBox(
-                sy(10),
+                sy(12),
                 uiLabel,
                 uilabelFLASH, sliderFlash,
                 uilabelPOINT, sliderPoint,
@@ -695,6 +745,140 @@ public class SettingBox {
         );
         uiBox.setAlignment(Pos.TOP_CENTER);
         Pane uiView = new StackPane(uiBox);
+
+        // -------------------------
+        // Sound Panel
+        // -------------------------
+        soundLabel = new GlowingLabel(localization.get("setting.box.audio"));
+        tuneSettingLabel(soundLabel, 24);
+        VBox.setMargin(soundLabel, new Insets(0, 0, sy(10), 0));
+
+        soundDescription = new GlowingLabel(localizedOrFallback(
+                localization,
+                "setting.box.audio.description",
+                "Enable/disable UI sounds and adjust their volume."
+        ));
+        tuneSettingLabel(soundDescription, 14);
+        soundDescription.setWrapText(true);
+        soundDescription.setPrefWidth(sx(276));
+        soundDescription.setAlignment(Pos.CENTER);
+        soundDescription.setTextAlignment(TextAlignment.CENTER);
+
+        uiSoundsEnabledRow = new LabeledCheckRow(
+                localizedOrFallback(localization, "setting.box.audio.ui.enabled", "Enable UI sounds"),
+                UiSoundManager.isEnabled()
+        );
+        tuneSettingCheckRow(uiSoundsEnabledRow);
+        uiSoundsEnabledRow.setMaxWidth(sx(286));
+        uiSoundsEnabledRow.setAlignment(Pos.CENTER_LEFT);
+        uiSoundsEnabledRow.setPadding(new Insets(sy(2), sx(12), sy(2), sx(12)));
+
+        uiSoundVolumeLabel = new GlowingLabel(
+                localizedOrFallback(localization, "setting.box.audio.volume", "UI sounds volume")
+        );
+        tuneSettingLabel(uiSoundVolumeLabel, 16);
+        uiSoundVolumeLabel.setPrefWidth(sx(286));
+        uiSoundVolumeLabel.setAlignment(Pos.CENTER_LEFT);
+
+        CustomSlider uiSoundVolumeSlider = new CustomSlider(0, 100, UiSoundManager.currentVolume() * 100.0);
+        uiSoundVolumeSlider.setMinWidth(sx(220));
+        uiSoundVolumeSlider.setPrefWidth(sx(220));
+        uiSoundVolumeSlider.setMaxWidth(sx(220));
+
+        musicEnabledRow = new LabeledCheckRow(
+                localizedOrFallback(localization, "setting.box.audio.music.enabled", "Enable background music"),
+                UiSoundManager.isMusicEnabled()
+        );
+        tuneSettingCheckRow(musicEnabledRow);
+        musicEnabledRow.setMaxWidth(sx(286));
+        musicEnabledRow.setAlignment(Pos.CENTER_LEFT);
+        musicEnabledRow.setPadding(new Insets(sy(2), sx(12), sy(2), sx(12)));
+
+        musicVolumeLabel = new GlowingLabel(
+                localizedOrFallback(localization, "setting.box.audio.music.volume", "Background music volume")
+        );
+        tuneSettingLabel(musicVolumeLabel, 16);
+        musicVolumeLabel.setPrefWidth(sx(286));
+        musicVolumeLabel.setAlignment(Pos.CENTER_LEFT);
+
+        CustomSlider musicVolumeSlider = new CustomSlider(0, 100, UiSoundManager.currentMusicVolume() * 100.0);
+        musicVolumeSlider.setMinWidth(sx(220));
+        musicVolumeSlider.setPrefWidth(sx(220));
+        musicVolumeSlider.setMaxWidth(sx(220));
+
+        Runnable syncMusicControls = () -> {
+            boolean musicOn = musicEnabledRow.getCheckBox().isSelected();
+            musicVolumeLabel.setDisable(!musicOn);
+            musicVolumeSlider.setDisable(!musicOn);
+        };
+        musicEnabledRow.getCheckBox().selectedProperty().addListener((obs, oldVal, newVal) -> syncMusicControls.run());
+        syncMusicControls.run();
+
+        saveAudioSettingsButton = new CustomAlternativeButton(
+                localizedOrFallback(localization, "setting.box.audio.save", "Save audio settings"),
+                0.6, 0.8, sv(252.0), sv(52.0), sv(9.4)
+        );
+        saveAudioSettingsButton.setOnAction(e -> {
+            UiSoundManager.saveVolumeAndEnabled(
+                    uiSoundsEnabledRow.getCheckBox().isSelected(),
+                    uiSoundVolumeSlider.getValue() / 100.0
+            );
+            UiSoundManager.saveMusicSettings(
+                    musicEnabledRow.getCheckBox().isSelected(),
+                    musicVolumeSlider.getValue() / 100.0
+            );
+        });
+
+        resetAudioSettingsButton = new CustomAlternativeButton(
+                localizedOrFallback(localization, "setting.box.audio.reset", "Reset to default (10%)"),
+                0.6, 0.8, sv(252.0), sv(52.0), sv(9.4)
+        );
+        resetAudioSettingsButton.setOnAction(e -> {
+            UiSoundManager.resetToDefaults();
+            uiSoundsEnabledRow.getCheckBox().setSelected(true);
+            uiSoundVolumeSlider.setValue(UiSoundManager.DEFAULT_UI_VOLUME * 100.0);
+            musicEnabledRow.getCheckBox().setSelected(UiSoundManager.isMusicEnabled());
+            musicVolumeSlider.setValue(UiSoundManager.DEFAULT_MUSIC_VOLUME * 100.0);
+            syncMusicControls.run();
+        });
+
+        VBox soundControls = new VBox(
+                sy(12),
+                uiSoundsEnabledRow,
+                soundDescription,
+                uiSoundVolumeLabel,
+                uiSoundVolumeSlider,
+                musicEnabledRow,
+                musicVolumeLabel,
+                musicVolumeSlider
+        );
+        soundControls.setAlignment(Pos.TOP_CENTER);
+        soundControls.setPadding(new Insets(sy(8), sx(8), sy(8), sx(8)));
+        soundControls.setPrefWidth(sx(286));
+        soundControls.setMaxWidth(sx(286));
+        soundControls.setMinHeight(sy(220));
+
+        ScrollPane soundScroll = new ScrollPane(soundControls);
+        soundScroll.setFitToWidth(true);
+        soundScroll.setFitToHeight(false);
+        soundScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        soundScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        soundScroll.setPannable(true);
+        soundScroll.setPrefViewportHeight(sy(306));
+        soundScroll.setMinViewportHeight(sy(306));
+        soundScroll.setMaxWidth(sx(292));
+        soundScroll.getStyleClass().add("settings-api-services-scroll");
+        soundScroll.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
+
+        VBox saveAudioWrap = new VBox(sy(8), resetAudioSettingsButton, saveAudioSettingsButton);
+        saveAudioWrap.setAlignment(Pos.CENTER);
+        VBox.setMargin(saveAudioWrap, new Insets(sy(10), 0, 0, 0));
+        saveAudioWrap.setTranslateY(sy(6));
+
+        VBox soundBox = new VBox(sy(8), soundLabel, soundScroll, saveAudioWrap);
+        soundBox.setAlignment(Pos.TOP_CENTER);
+        soundBox.setPadding(new Insets(sy(10), sx(10), sy(10), sx(10)));
+        Pane soundView = new StackPane(soundBox);
 
         // -------------------------
         // Controls Panel (cache/GPU)
@@ -875,9 +1059,16 @@ public class SettingBox {
         );
         apiGuideButton.setOnAction(e -> {
             try {
-                java.awt.Desktop.getDesktop().browse(new java.net.URI(
-                        "https://github.com/VoVanRusLvSC2/Localization-Editor-SC2-KSP/blob/main/README_TRANSLATE.txt"
-                ));
+                java.nio.file.Path localGuide = java.nio.file.Paths.get("README_TRANSLATE.txt")
+                        .toAbsolutePath()
+                        .normalize();
+                if (java.nio.file.Files.exists(localGuide)) {
+                    java.awt.Desktop.getDesktop().open(localGuide.toFile());
+                } else {
+                    java.awt.Desktop.getDesktop().browse(new java.net.URI(
+                            "https://github.com/VoVanRusLvSC2/Localization-Editor-SC2-KSP/blob/main/README_TRANSLATE.txt"
+                    ));
+                }
             } catch (Exception ex) {
                 AppLog.exception(ex);
             }
@@ -1019,9 +1210,9 @@ public class SettingBox {
         apiServicesScroll.setPannable(true);
         apiServicesScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         apiServicesScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
-        apiServicesScroll.setPrefViewportHeight(sy(312));
-        apiServicesScroll.setMinViewportHeight(sy(312));
-        apiServicesScroll.setMaxHeight(sy(312));
+        apiServicesScroll.setPrefViewportHeight(sy(338));
+        apiServicesScroll.setMinViewportHeight(sy(338));
+        apiServicesScroll.setMaxHeight(sy(338));
         apiServicesScroll.setPrefWidth(sx(292));
         apiServicesScroll.setMaxWidth(sx(292));
         apiServicesScroll.getStyleClass().add("settings-api-services-scroll");
@@ -1030,8 +1221,8 @@ public class SettingBox {
         StackPane apiServicesPanel = new StackPane(apiServicesScroll);
         apiServicesPanel.setPrefWidth(sx(292));
         apiServicesPanel.setMaxWidth(sx(292));
-        apiServicesPanel.setPrefHeight(sy(336));
-        apiServicesPanel.setMaxHeight(sy(336));
+        apiServicesPanel.setPrefHeight(sy(364));
+        apiServicesPanel.setMaxHeight(sy(364));
         apiServicesPanel.setPadding(new Insets(sy(4), sx(4), sy(4), sx(4)));
         apiServicesPanel.setStyle(
                 "-fx-background-color: linear-gradient(to bottom, rgba(42, 13, 8, 0.97), rgba(28, 9, 7, 0.97));"
@@ -1055,17 +1246,20 @@ public class SettingBox {
         Pane apiView = new StackPane(apiBox);
 
         // -------------------------
-        // Other Panel (Discord only)
+        // Other Panel (Discord + Support)
         // -------------------------
         otherDescrption = new GlowingLabel(localization.get("setting.box.other.description"));
-        tuneSettingLabel(otherDescrption, 17);
-        VBox.setMargin(otherDescrption, new Insets(0, 0, sy(10), 0));
+        tuneSettingLabel(otherDescrption, 16.5);
+        VBox.setMargin(otherDescrption, new Insets(0, 0, sy(12), 0));
         otherDescrption.setWrapText(true);
-        otherDescrption.setPrefSize(sx(260), sy(100));
+        otherDescrption.setTextAlignment(TextAlignment.CENTER);
+        otherDescrption.setAlignment(Pos.CENTER);
+        otherDescrption.setPrefWidth(sx(250));
+        otherDescrption.setMinHeight(sy(96));
 
         discordURL = new CustomAlternativeButton(
                 localization.get("setting.box.other.join"),
-                0.6, 0.8, sv(200.0), sv(55.0), sv(12.0)
+                0.6, 0.8, sv(216.0), sv(56.0), sv(12.2)
         );
         discordURL.setOnAction(e -> {
             try {
@@ -1075,7 +1269,79 @@ public class SettingBox {
             }
         });
 
-        VBox otherBox = new VBox(sy(10), otherDescrption, discordURL);
+        VBox otherCardBody = new VBox(sy(10), otherDescrption, discordURL);
+        otherCardBody.setAlignment(Pos.TOP_CENTER);
+        otherCardBody.setPadding(new Insets(sy(14), sx(10), sy(14), sx(10)));
+
+        StackPane otherCard = new StackPane(otherCardBody);
+        otherCard.setPrefWidth(sx(292));
+        otherCard.setMaxWidth(sx(292));
+        otherCard.setPrefHeight(sy(236));
+        otherCard.setMaxHeight(sy(236));
+        otherCard.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, rgba(42, 13, 8, 0.96), rgba(28, 9, 7, 0.96));"
+                        + "-fx-border-color: transparent;"
+                        + "-fx-border-image-source: url('" + texturePath + "ui_nova_archives_listitem_selected.png');"
+                        + "-fx-border-image-slice: 14;"
+                        + "-fx-border-image-width: 8;"
+                        + "-fx-border-image-repeat: stretch;"
+                        + "-fx-effect: dropshadow(gaussian, rgba(255, 140, 54, 0.42), " + sy(14) + ", 0.32, 0, 0);"
+        );
+
+        supportAuthorTitle = new GlowingLabel(localizedOrFallback(
+                localization,
+                "setting.box.other.support.title",
+                "Вы можете поддержать автора"
+        ));
+        tuneSettingLabel(supportAuthorTitle, 17);
+        supportAuthorTitle.setWrapText(true);
+        supportAuthorTitle.setTextAlignment(TextAlignment.CENTER);
+        supportAuthorTitle.setAlignment(Pos.CENTER);
+        supportAuthorTitle.setPrefWidth(sx(250));
+
+        supportAuthorDescription = new GlowingLabel(localizedOrFallback(
+                localization,
+                "setting.box.other.support.description",
+                "Спасибо за поддержку проекта. Это помогает развитию редактора."
+        ));
+        tuneSettingLabel(supportAuthorDescription, 13.5);
+        supportAuthorDescription.setWrapText(true);
+        supportAuthorDescription.setTextAlignment(TextAlignment.CENTER);
+        supportAuthorDescription.setAlignment(Pos.CENTER);
+        supportAuthorDescription.setPrefWidth(sx(250));
+
+        supportAuthorButton = new CustomAlternativeButton(
+                localizedOrFallback(localization, "setting.box.other.support.button", "Поддержать на Boosty"),
+                0.6, 0.8, sv(228.0), sv(56.0), sv(11.2)
+        );
+        supportAuthorButton.setOnAction(e -> {
+            try {
+                java.awt.Desktop.getDesktop().browse(new java.net.URI("https://boosty.to/vovanruslvsc2/donate"));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        VBox supportCardBody = new VBox(sy(8), supportAuthorTitle, supportAuthorDescription, supportAuthorButton);
+        supportCardBody.setAlignment(Pos.TOP_CENTER);
+        supportCardBody.setPadding(new Insets(sy(12), sx(10), sy(12), sx(10)));
+
+        StackPane supportCard = new StackPane(supportCardBody);
+        supportCard.setPrefWidth(sx(292));
+        supportCard.setMaxWidth(sx(292));
+        supportCard.setPrefHeight(sy(208));
+        supportCard.setMaxHeight(sy(208));
+        supportCard.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, rgba(58, 34, 8, 0.97), rgba(34, 19, 7, 0.97));"
+                        + "-fx-border-color: transparent;"
+                        + "-fx-border-image-source: url('" + texturePath + "ui_nova_archives_listitem_selected.png');"
+                        + "-fx-border-image-slice: 14;"
+                        + "-fx-border-image-width: 8;"
+                        + "-fx-border-image-repeat: stretch;"
+                        + "-fx-effect: dropshadow(gaussian, rgba(255, 212, 110, 0.52), " + sy(16) + ", 0.34, 0, 0);"
+        );
+
+        VBox otherBox = new VBox(sy(12), otherCard, supportCard);
         otherBox.setAlignment(Pos.TOP_CENTER);
         Pane otherView = new StackPane(otherBox);
 
@@ -1083,23 +1349,25 @@ public class SettingBox {
         Map<Integer, Pane> viewMap = new HashMap<>();
         viewMap.put(0, languageView);
         viewMap.put(1, uiView);
-        viewMap.put(2, dictionariesView);
-        viewMap.put(3, controlsView);
-        viewMap.put(4, apiView);
-        viewMap.put(5, otherView);
+        viewMap.put(2, soundView);
+        viewMap.put(3, dictionariesView);
+        viewMap.put(4, controlsView);
+        viewMap.put(5, apiView);
+        viewMap.put(6, otherView);
 
         // Configure right panel
         languageView.setVisible(false);
         uiView.setVisible(false);
+        soundView.setVisible(false);
         dictionariesView.setVisible(false);
         controlsView.setVisible(false);
         apiView.setVisible(false);
         otherView.setVisible(false);
 
-        StackPane rightPanel = new StackPane(languageView, uiView, dictionariesView, controlsView, apiView, otherView);
-        rightPanel.setMinSize(sx(316), sy(484));
-        rightPanel.setMaxSize(sx(316), sy(484));
-        rightPanel.setPrefSize(sx(316), sy(484));
+        StackPane rightPanel = new StackPane(languageView, uiView, soundView, dictionariesView, controlsView, apiView, otherView);
+        rightPanel.setMinSize(sx(316), PANEL_HEIGHT);
+        rightPanel.setMaxSize(sx(316), PANEL_HEIGHT);
+        rightPanel.setPrefSize(sx(316), PANEL_HEIGHT);
         rightPanel.setBorder(new Border(highlightBorder));
         rightPanel.setAlignment(Pos.TOP_CENTER);
         rightPanel.setPadding(new Insets(sy(10), sx(10), sy(10), sx(10)));
@@ -1108,20 +1376,22 @@ public class SettingBox {
         String[] keys = {
                 localization.get("setting.box.language"),
                 localization.get("setting.box.ui"),
+                localization.get("setting.box.audio"),
                 localization.get("setting.box.dictionaries"),
                 localization.get("setting.box.controls"),
                 localization.get("setting.box.api"),
                 localization.get("setting.box.other"),
         };
 
-        languageView.setMinSize(sx(306), sy(484));
-        uiView.setMinSize(sx(306), sy(484));
-        dictionariesView.setMinSize(sx(306), sy(484));
-        controlsView.setMinSize(sx(306), sy(484));
-        apiView.setMinSize(sx(306), sy(484));
-        otherView.setMinSize(sx(306), sy(484));
+        languageView.setMinSize(sx(306), PANEL_HEIGHT);
+        uiView.setMinSize(sx(306), PANEL_HEIGHT);
+        soundView.setMinSize(sx(306), PANEL_HEIGHT);
+        dictionariesView.setMinSize(sx(306), PANEL_HEIGHT);
+        controlsView.setMinSize(sx(306), PANEL_HEIGHT);
+        apiView.setMinSize(sx(306), PANEL_HEIGHT);
+        otherView.setMinSize(sx(306), PANEL_HEIGHT);
 
-        menuButtons = new CustomLanguageButton[6];
+        menuButtons = new CustomLanguageButton[7];
 
         for (int i = 0; i < keys.length; i++) {
             String key = keys[i];
@@ -1139,7 +1409,7 @@ public class SettingBox {
                 if (pane != null) pane.setVisible(true);
 
                 int buttonIndex = buttonBox.getChildren().indexOf(button);
-                double buttonHeight = button.getHeight();
+                double buttonHeight = stableButtonHeight(button);
                 double spacing = sy(20);
                 double paddingTop = leftMenuTopPadding;
 
@@ -1147,12 +1417,13 @@ public class SettingBox {
                         + buttonIndex * (buttonHeight + spacing)
                         + buttonHeight / 2.0;
 
-                double markerHeight = selectionMarkImage.getBoundsInParent().getHeight();
+                selectionMarkImage.setTranslateY(0);
+                double markerHeight = stableMarkerHeight(selectionMarkImage);
                 double baseOffset = sy(36);
                 double scaleFactor = UiScaleHelper.scale(1);
 
                 double hdLift = (scaleFactor < 1.0) ? sy(6) : 0.0;
-                double adjustedY = centerY - markerHeight / 2.0 + baseOffset - hdLift;
+                double adjustedY = centerY - markerHeight / 2.0 + baseOffset - hdLift - sy(SELECTED_MARK_LIFT_Y);
 
                 selectionMarkImage.setLayoutY(adjustedY);
                 selectionMarkImage.setLayoutX(-sx(25));
@@ -1162,7 +1433,7 @@ public class SettingBox {
 
                 double startTranslate = sy(-6);
                 double fromY = sy(-9);
-                double toY = sy(3);
+                double toY = -sy(1.5);
 
                 double animLift = (scaleFactor < 1.0) ? sy(2) : 0.0;
 
@@ -1185,10 +1456,6 @@ public class SettingBox {
                 ParallelTransition pt = new ParallelTransition(fade, moveDown);
                 pt.playFromStart();
             });
-
-            if (index == 2) {
-                // Dictionaries tab is active (previously Audio was disabled here)
-            }
 
             buttonBox.getChildren().add(menuButtons[i]);
         }
@@ -1221,8 +1488,14 @@ public class SettingBox {
         Platform.runLater(() -> {
             javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(Duration.millis(120));
             delay.setOnFinished(e -> {
+                root.applyCss();
+                root.layout();
                 if (menuButtons != null && menuButtons.length > 0 && menuButtons[0] != null) {
-                    menuButtons[0].fire();
+                    Platform.runLater(() -> {
+                        root.applyCss();
+                        root.layout();
+                        menuButtons[0].fire();
+                    });
                 }
             });
             delay.play();
@@ -1237,6 +1510,30 @@ public class SettingBox {
         if (uilabelFLASH != null) uilabelFLASH.setText(localization.get("setting.box.ui.flash"));
         if (uilabelPOINT != null) uilabelPOINT.setText(localization.get("setting.box.ui.point"));
         if (uilabelGRIDE != null) uilabelGRIDE.setText(localization.get("setting.box.ui.gride"));
+        if (soundLabel != null) soundLabel.setText(localization.get("setting.box.audio"));
+        if (soundDescription != null) soundDescription.setText(localizedOrFallback(
+                localization,
+                "setting.box.audio.description",
+                "Enable/disable UI sounds and adjust their volume."
+        ));
+        if (uiSoundsEnabledRow != null) uiSoundsEnabledRow.setLabel(
+                localizedOrFallback(localization, "setting.box.audio.ui.enabled", "Enable UI sounds")
+        );
+        if (uiSoundVolumeLabel != null) uiSoundVolumeLabel.setText(
+                localizedOrFallback(localization, "setting.box.audio.volume", "UI sounds volume")
+        );
+        if (musicEnabledRow != null) musicEnabledRow.setLabel(
+                localizedOrFallback(localization, "setting.box.audio.music.enabled", "Enable background music")
+        );
+        if (musicVolumeLabel != null) musicVolumeLabel.setText(
+                localizedOrFallback(localization, "setting.box.audio.music.volume", "Background music volume")
+        );
+        if (saveAudioSettingsButton != null) saveAudioSettingsButton.setText(
+                localizedOrFallback(localization, "setting.box.audio.save", "Save audio settings")
+        );
+        if (resetAudioSettingsButton != null) resetAudioSettingsButton.setText(
+                localizedOrFallback(localization, "setting.box.audio.reset", "Reset to default (10%)")
+        );
         if (uiDEFAUTBUTTON != null) uiDEFAUTBUTTON.setText(localization.get("setting.box.ui.defaut"));
         if (saveButton != null) saveButton.setText(localization.get("button.save"));
         if (saveApiKeysButton != null) saveApiKeysButton.setText(localization.get("button.save"));
@@ -1244,6 +1541,21 @@ public class SettingBox {
         if (controlsLabel != null) controlsLabel.setText(localization.get("setting.box.controls"));
         if (otherDescrption != null) otherDescrption.setText(localization.get("setting.box.other.description"));
         if (discordURL != null) discordURL.setText(localization.get("setting.box.other.join"));
+        if (supportAuthorTitle != null) supportAuthorTitle.setText(localizedOrFallback(
+                localization,
+                "setting.box.other.support.title",
+                "Вы можете поддержать автора"
+        ));
+        if (supportAuthorDescription != null) supportAuthorDescription.setText(localizedOrFallback(
+                localization,
+                "setting.box.other.support.description",
+                "Спасибо за поддержку проекта. Это помогает развитию редактора."
+        ));
+        if (supportAuthorButton != null) supportAuthorButton.setText(localizedOrFallback(
+                localization,
+                "setting.box.other.support.button",
+                "Поддержать на Boosty"
+        ));
         if (dictionariesLabel != null) dictionariesLabel.setText(localization.get("setting.box.dictionaries"));
         if (baseGlossaryRow != null) baseGlossaryRow.setLabel(localization.get("setting.box.dictionaries.baseGlossary"));
         if (unitsGlossaryRow != null) unitsGlossaryRow.setLabel(localization.get("setting.box.dictionaries.unitsDictionary"));
@@ -1282,6 +1594,7 @@ public class SettingBox {
             String[] keys = {
                     localization.get("setting.box.language"),
                     localization.get("setting.box.ui"),
+                    localization.get("setting.box.audio"),
                     localization.get("setting.box.dictionaries"),
                     localization.get("setting.box.controls"),
                     localization.get("setting.box.api"),
@@ -1306,6 +1619,16 @@ public class SettingBox {
 
     public static boolean isOverlayVisible() {
         return overlayRoot != null && overlayRoot.isVisible() && !overlayRoot.isMouseTransparent();
+    }
+
+    public static void syncOverlayOffset() {
+        if (windowHolder == null) {
+            return;
+        }
+        double targetY = TranslationProgressOverlay.isOverlayVisible()
+                ? sy(SETTINGS_WINDOW_OVERLAY_OFFSET_Y)
+                : 0.0;
+        windowHolder.setTranslateY(targetY);
     }
 
     public static void addVisibilityListener(Consumer<Boolean> listener) {

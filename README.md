@@ -318,13 +318,13 @@ http://127.0.0.1:5000/languages
 From the project root directory (where `pom.xml` is located), run:
 
 ```bash
-mvn clean javafx:run
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-app.ps1
 ```
 
 If needed:
 
 ```bash
-mvn exec:java -Dexec.mainClass=lv.lenc.AppLauncher
+mvn -DskipTests javafx:run
 ```
 
 ---

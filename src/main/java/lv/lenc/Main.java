@@ -10,7 +10,6 @@ import java.util.function.Function;
 
 import javafx.animation.PauseTransition;
 import javafx.animation.FadeTransition;
-import javafx.animation.ScaleTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.Transition;
 import javafx.application.Application;
@@ -23,16 +22,15 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -40,9 +38,9 @@ public class Main extends Application {
 
     public static final String RU = "RU";
     public static final String EN = "EN";
+    private static final String TEXTURE_ROOT = UiAssets.textureRoot();
     private static final String LIBRE_TRANSLATE_LABEL = "LibreTranslate AI";
     private static final String SILICONFLOW_DEEPSEEK_LABEL = "SiliconFlow AI (DeepSeek-V3.2)";
-    private static final String SILICONFLOW_M2M100_LABEL = "SiliconFlow AI (M2M100)";
     private static final int STARTUP_ANIMATION_GRACE_MS = 3000;
 
     // UI / state
@@ -157,6 +155,7 @@ public class Main extends Application {
         setWindowIcon(primaryStage);
         
         buildScene(primaryStage, tableView);
+        UiSoundManager.ensureBackgroundMusicPlayback();
 
         //    applyInitialDisabledState();
         glossaryService.loadGlossariesAsyncFromResources();
@@ -176,7 +175,7 @@ public class Main extends Application {
 
     private CustomTableView createTableView() {
         CustomTableView tableView = new CustomTableView(
-                getClass().getResource("/Assets/Textures/").toString(),
+                TEXTURE_ROOT,
                 localization,
                 (UiScaleHelper.SCREEN_WIDTH * 0.786),
                 (UiScaleHelper.SCREEN_HEIGHT * 0.37),
@@ -197,7 +196,7 @@ public class Main extends Application {
 
         translate = new TranslateCancelSaveButton(
                 localization,
-                getClass().getResource("/Assets/Textures/").toExternalForm(),
+                TEXTURE_ROOT,
                 true,
                 0.25,
                 0.3
@@ -206,14 +205,14 @@ public class Main extends Application {
 
         translateChooseAll = UIElementFactory.createCustomLongAlternativeButton(
                 localization.get("button.chooseAll"),
-                getClass().getResource("/Assets/Textures/").toExternalForm(),
+                TEXTURE_ROOT,
                 0.6,
                 0.8
         );
 
         quitButton = UIElementFactory.createCustomQuitButton(
                 localization.get("button.quit"),
-                getClass().getResource("/Assets/Textures/").toExternalForm()
+                TEXTURE_ROOT
         );
         quitButton.setTranslateY(UiScaleHelper.scaleY(-80));
         quitButton.setTranslateX(UiScaleHelper.scaleX(-450));
@@ -230,7 +229,7 @@ public class Main extends Application {
         BoxAlertDescription = new GlowingLabel(localization.get("label.ExitConfirmationDescription"));
 
         languageDropdown = new CustomComboBoxTexture<>(
-                getClass().getResource("/Assets/Textures/").toExternalForm(),
+                TEXTURE_ROOT,
                 165,
                 58
         );
@@ -239,7 +238,7 @@ public class Main extends Application {
         languageDropdown.setValue(valueKey[2]);
 
         translateType = new CustomComboBoxClassic<>(
-                getClass().getResource("/Assets/Textures/").toExternalForm(),
+                TEXTURE_ROOT,
                 true,
                 343,
                 54,
@@ -449,8 +448,6 @@ public class Main extends Application {
                     tableView.showOnly(sourceUi, languageDropdown.getValue());
                 }
 
-                Platform.runLater(this::playTranslateTypeUnlockPulse);
-
             } else {
                 fileOpened.set(false);
                 chooseAllMode.set(false);
@@ -534,6 +531,7 @@ public class Main extends Application {
         translate.setErrorHandler(error -> {
             Throwable cause = (error != null && error.getCause() != null) ? error.getCause() : error;
             AppLog.exception(cause);
+            UiSoundManager.playError();
             progressWin.showError(
                     localization.get("translating.error.title"),
                     buildTranslateErrorLine1(cause),
@@ -623,34 +621,37 @@ public class Main extends Application {
             }
         });
 
-        TranslationService.requestTranslationPerformanceMode();
-
-        if (!TranslationService.ensureSelectedBackendAvailable()) {
-            throw new IllegalStateException(TranslationService.selectedBackendLabel() + " is not available");
-        }
-
-        stopBackgroundWarmup();
-
-        if (!readyForImmediateTranslate) {
-            runOnFxThreadAndWait(() -> {
-                if (localServerBackend) {
-                    progressWin.update(
-                            0.05,
-                            localization.get("translating.server.ready"),
-                            TranslationService.describeSelectedBackend()
-                    );
-                } else {
-                    progressWin.update(
-                            0.05,
-                            srcUi + " -> " + targetUi,
-                            TranslationService.describeSelectedBackend()
-                    );
-                }
-            });
-        }
-
         boolean completed = false;
+        Throwable perfFailure = null;
+        String perfStage = "startup";
         try {
+            TranslationService.requestTranslationPerformanceMode();
+
+            perfStage = "availability-check";
+            if (!TranslationService.ensureSelectedBackendAvailable()) {
+                throw new IllegalStateException(TranslationService.selectedBackendLabel() + " is not available");
+            }
+
+            stopBackgroundWarmup();
+
+            if (!readyForImmediateTranslate) {
+                runOnFxThreadAndWait(() -> {
+                    if (localServerBackend) {
+                        progressWin.update(
+                                0.05,
+                                localization.get("translating.server.ready"),
+                                TranslationService.describeSelectedBackend()
+                        );
+                    } else {
+                        progressWin.update(
+                                0.05,
+                                srcUi + " -> " + targetUi,
+                                TranslationService.describeSelectedBackend()
+                        );
+                    }
+                });
+            }
+
             if (geminiBackend) {
                 String started = "[GEMINI] translation start " + srcUi + " -> " + (translateToAll ? "all" : targetUi)
                         + ", endpoint=" + GeminiTranslationProvider.activeEndpointForLogs()
@@ -659,6 +660,7 @@ public class Main extends Application {
                 System.out.println(started);
             }
             if (translateToAll) {
+                perfStage = "translate-all";
                 tableView.translateFromColumnToOthers(
                         TranslationService.api,
                         srcUi,
@@ -678,6 +680,7 @@ public class Main extends Application {
                         )
                 );
 
+                perfStage = "translate-single";
                 tableView.translateFromSourceToTarget(
                         TranslationService.api,
                         srcUi,
@@ -691,10 +694,15 @@ public class Main extends Application {
                 runOnFxThreadAndWait(() -> progressWin.update(1.0, srcUi + " -> " + targetUi, tookText));
             }
             completed = true;
+        } catch (Throwable ex) {
+            perfFailure = ex;
+            throw ex;
         } finally {
             long tookMs = Math.max(0L, (System.nanoTime() - startedAtNanos) / 1_000_000L);
             String mode = translateToAll ? "all" : targetUi;
-            String status = completed ? "completed" : (translate.isCancelRequested() ? "cancelled" : "stopped");
+            String status = completed
+                    ? "completed"
+                    : (translate.isCancelRequested() ? "cancelled" : (perfFailure != null ? "failed" : "stopped"));
             String provider = TranslationService.selectedBackendLabel();
             String endpoint;
             String service;
@@ -736,6 +744,8 @@ public class Main extends Application {
                     + ", model=" + model
                     + ", backend=" + backendMode
                     + ", endpoint=" + endpoint
+                    + ", stage=" + perfStage
+                    + (perfFailure == null ? "" : ", reason=" + summarizePerfFailure(perfFailure))
                     + ", " + TranslationService.runCharSummaryForPerf();
             AppLog.info(perfMessage);
             System.out.println(perfMessage);
@@ -809,18 +819,36 @@ public class Main extends Application {
         return localization.get("translating.error.hint.generic");
     }
 
+    private static String summarizePerfFailure(Throwable error) {
+        if (error == null) {
+            return "-";
+        }
+        Throwable root = error;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        String message = root.getMessage();
+        if (message == null || message.isBlank()) {
+            message = root.getClass().getSimpleName();
+        }
+        message = message.replace('\r', ' ').replace('\n', ' ').trim();
+        if (message.length() > 160) {
+            message = message.substring(0, 157) + "...";
+        }
+        return message;
+    }
+
     private TranslationService.TranslationBackend selectedTranslationBackend() {
         int selectedIndex = translateType == null ? 0 : translateType.getSelectionModel().getSelectedIndex();
         return switch (selectedIndex) {
             case 1 -> TranslationService.TranslationBackend.GOOGLE_CLOUD;
             case 2 -> TranslationService.TranslationBackend.CLOUDFLARE_M2M100;
-            case 3 -> TranslationService.TranslationBackend.GOOGLE_WEB_FREE;
-            case 4 -> TranslationService.TranslationBackend.GEMINI;
-            case 5 -> TranslationService.TranslationBackend.SILICONFLOW;
-            case 6 -> TranslationService.TranslationBackend.SILICONFLOW_DEEPSEEK_V3;
-            case 7 -> TranslationService.TranslationBackend.SILICONFLOW_M2M100;
-            case 8 -> TranslationService.TranslationBackend.DEEPL_FREE;
-            default -> TranslationService.TranslationBackend.LIBRE_TRANSLATE;
+            case 3 -> TranslationService.TranslationBackend.GEMINI;
+            case 4 -> TranslationService.TranslationBackend.SILICONFLOW;
+            case 5 -> TranslationService.TranslationBackend.SILICONFLOW_DEEPSEEK_V3;
+            case 6 -> TranslationService.TranslationBackend.DEEPL_FREE;
+            case 7 -> TranslationService.TranslationBackend.LIBRE_TRANSLATE;
+            default -> TranslationService.TranslationBackend.GOOGLE_WEB_FREE;
         };
     }
 
@@ -829,31 +857,31 @@ public class Main extends Application {
         try {
             return TranslationService.TranslationBackend.valueOf(backendName);
         } catch (IllegalArgumentException ex) {
-            return TranslationService.TranslationBackend.LIBRE_TRANSLATE;
+            return TranslationService.TranslationBackend.GOOGLE_WEB_FREE;
         }
     }
 
     private void refreshTranslateBackendItems(TranslationService.TranslationBackend selectedBackend) {
         translateType.getItems().setAll(
-                LIBRE_TRANSLATE_LABEL,
+                localization.get("combox.googlefree"),
                 localization.get("combox.google"),
                 localization.get("combox.cloudflare"),
-                localization.get("combox.googlefree"),
                 localization.get("combox.gemini"),
                 localization.get("combox.siliconflow"),
                 SILICONFLOW_DEEPSEEK_LABEL,
-                SILICONFLOW_M2M100_LABEL,
-                localization.get("combox.deepl")
+                localization.get("combox.deepl"),
+                LIBRE_TRANSLATE_LABEL
         );
         int selectedIndex = switch (selectedBackend) {
+            case GOOGLE_WEB_FREE -> 0;
             case GOOGLE_CLOUD -> 1;
             case CLOUDFLARE_M2M100 -> 2;
-            case GOOGLE_WEB_FREE -> 3;
-            case GEMINI -> 4;
-            case SILICONFLOW -> 5;
-            case SILICONFLOW_DEEPSEEK_V3 -> 6;
-            case SILICONFLOW_M2M100 -> 7;
-            case DEEPL_FREE -> 8;
+            case GEMINI -> 3;
+            case SILICONFLOW -> 4;
+            case SILICONFLOW_DEEPSEEK_V3 -> 5;
+            case SILICONFLOW_M2M100 -> 2;
+            case DEEPL_FREE -> 6;
+            case LIBRE_TRANSLATE -> 7;
             default -> 0;
         };
         translateType.getSelectionModel().select(selectedIndex);
@@ -1092,33 +1120,6 @@ public class Main extends Application {
         }
     }
 
-    private void playTranslateTypeUnlockPulse() {
-        if (translateType == null || translateType.isDisable()) {
-            return;
-        }
-
-        DropShadow glow = new DropShadow();
-        glow.setRadius(UiScaleHelper.scale(22));
-        glow.setSpread(0.36);
-        glow.setColor(Color.web("#67ffd8"));
-        translateType.setEffect(glow);
-
-        ScaleTransition pulse = new ScaleTransition(Duration.millis(250), translateType);
-        pulse.setFromX(1.0);
-        pulse.setFromY(1.0);
-        pulse.setToX(1.05);
-        pulse.setToY(1.05);
-        pulse.setCycleCount(2);
-        pulse.setAutoReverse(true);
-        pulse.setInterpolator(Interpolator.EASE_BOTH);
-        pulse.setOnFinished(e -> {
-            translateType.setScaleX(1.0);
-            translateType.setScaleY(1.0);
-            translateType.setEffect(null);
-        });
-        pulse.playFromStart();
-    }
-
     private void applyTableFullscreenMode(CustomTableView tableView) {
         boolean expanded = tableFullscreenMode;
 
@@ -1306,23 +1307,9 @@ public class Main extends Application {
         viewportRoot.setStyle("-fx-background-color: rgba(0, 0, 0, 1);");
 
         mainScene = new Scene(viewportRoot, UiScaleHelper.REAL_SCREEN_WIDTH, UiScaleHelper.REAL_SCREEN_HEIGHT);
+        CustomCursorManager.install(mainScene);
 
-        mainScene.getStylesheets().add(
-                TranslationProgressOverlay.class
-                        .getResource("/Assets/Style/translation-progress.css")
-                        .toExternalForm()
-        );
-
-        mainScene.getStylesheets().addAll(
-                SettingBox.class.getResource("/Assets/Style/CustomComboBoxClassic.css").toExternalForm(),
-                getClass().getResource("/Assets/Style/CustomFileChooser.css").toExternalForm(),
-                getClass().getResource("/Assets/Style/CustomLongButton.css").toExternalForm(),
-                getClass().getResource("/Assets/Style/GlowingLabel.css").toExternalForm(),
-                getClass().getResource("/Assets/Style/GlowingLabelBorder.css").toExternalForm(),
-                getClass().getResource("/Assets/Style/HeaderFlashOverlay.css").toExternalForm(),
-                getClass().getResource("/Assets/Style/KeyFilter.css").toExternalForm(),
-                getClass().getResource("/Assets/Style/SquareDiscordURL.css").toExternalForm()
-        );
+        AppStyles.applyMainScene(mainScene);
 
         layout.setTop(topControlsContainer);
         layout.setBottom(bottomControlsContainer);
@@ -1644,7 +1631,6 @@ public class Main extends Application {
         openErrorLabel.setWrapText(true);
         openErrorLabel.setVisible(false);
         openErrorLabel.setManaged(false);
-
         Label fileLabel = new Label(fileLabelText);
         fileLabel.getStyleClass().add("key-filter-lang-label");
         fileLabel.getStyleClass().add("archive-open-label");
@@ -1725,17 +1711,23 @@ public class Main extends Application {
 
         CustomAlternativeButton okButton = new CustomAlternativeButton(
                 isRussianUi() ? "\u041e\u0442\u043a\u0440\u044b\u0442\u044c" : "Open",
-                0.22, 0.30, 188, 54, 16
+                0.30, 0.62, 188, 54, 16
         );
         okButton.getStyleClass().add("key-filter-action-button");
         okButton.getStyleClass().add("archive-open-action-button");
         CustomAlternativeButton cancelButton = new CustomAlternativeButton(
                 isRussianUi() ? "\u041e\u0442\u043c\u0435\u043d\u0430" : "Cancel",
-                0.22, 0.30, 150, 54, 15
+                0.30, 0.62, 150, 54, 15
         );
         cancelButton.getStyleClass().add("key-filter-action-button");
-        cancelButton.getStyleClass().add("archive-open-action-button");
-
+        cancelButton.getStyleClass().add("archive-open-action-button");        final Runnable syncActionState = () -> {
+            boolean hasLang = !mainLangCombo.getItems().isEmpty();
+            okButton.setDisable(!hasLang);
+            cancelButton.setDisable(false);
+            fileCombo.setDisable(false);
+            mainLangCombo.setDisable(mainLangCombo.getItems().size() <= 1);
+            openErrorLabel.setVisible(openErrorLabel.isManaged());
+        };
         Runnable refreshMainLanguages = () -> {
             String selectedFileOption = fileCombo.getValue();
             List<String> availableLanguages = plan.getMainLanguages(selectedFileOption);
@@ -1743,12 +1735,9 @@ public class Main extends Application {
             mainLangCombo.setVisibleRowCount(Math.max(1, Math.min(4, availableLanguages.size())));
             if (availableLanguages.isEmpty()) {
                 mainLangCombo.setValue(null);
-                mainLangCombo.setDisable(true);
-                okButton.setDisable(true);
+                syncActionState.run();
                 return;
             }
-            mainLangCombo.setDisable(availableLanguages.size() <= 1);
-            okButton.setDisable(false);
 
             String currentLang = mainLangCombo.getValue();
             String nextLang = currentLang;
@@ -1759,6 +1748,7 @@ public class Main extends Application {
                 nextLang = availableLanguages.contains("enUS") ? "enUS" : availableLanguages.get(0);
             }
             mainLangCombo.setValue(nextLang);
+            syncActionState.run();
         };
         mainLangCombo.setOnShowing(e -> {
             if (mainLangCombo.getItems().size() <= 1) {
@@ -1771,7 +1761,15 @@ public class Main extends Application {
         HBox buttons = new HBox(UiScaleHelper.scaleX(10), okButton, cancelButton);
         buttons.setAlignment(Pos.CENTER_RIGHT);
 
-        VBox panel = new VBox(UiScaleHelper.scaleY(12), titleBadge, flavorBar, selectedLabel, openErrorLabel, fileRow, langRow, buttons);
+        VBox panel = new VBox(
+                UiScaleHelper.scaleY(12),
+                titleBadge,
+                flavorBar,
+                selectedLabel,
+                openErrorLabel,                fileRow,
+                langRow,
+                buttons
+        );
         panel.setAlignment(Pos.TOP_LEFT);
         panel.getStyleClass().add("table-search-popup");
         panel.getStyleClass().add("archive-open-popup");
@@ -1856,6 +1854,7 @@ public class Main extends Application {
 
         root.getChildren().add(overlay);
         overlay.toFront();
+        syncActionState.run();
         Platform.runLater(() -> {
             overlay.requestFocus();
             fileCombo.requestFocus();
@@ -1923,3 +1922,5 @@ public class Main extends Application {
         AppLog.info("[UI] current file closed and table cleared");
     }
 }
+
+

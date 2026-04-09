@@ -52,6 +52,7 @@ public class CustomLongButton extends MyButton {
 
         setupHandlers();
         glow.setLevel(strengthGlow);
+        UiSoundManager.bindBnetButton(this);
     }
 
     private void setupHandlers() {

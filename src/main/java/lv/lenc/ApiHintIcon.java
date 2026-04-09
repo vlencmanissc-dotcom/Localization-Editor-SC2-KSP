@@ -4,7 +4,6 @@ import javafx.animation.PauseTransition;
 import javafx.geometry.Bounds;
 import javafx.geometry.Rectangle2D;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -23,7 +22,7 @@ public final class ApiHintIcon extends StackPane {
         double iconSize = Math.max(12.0, iconSizePx);
 
         setAlignment(Pos.CENTER);
-        setCursor(Cursor.HAND);
+        CustomCursorManager.applyHyperlinkCursor(this);
         setPickOnBounds(true);
         setPrefSize(iconSize, iconSize);
         setMinSize(iconSize, iconSize);

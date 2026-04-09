@@ -17,6 +17,7 @@ import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
 public final class TranslationProgressOverlay extends StackPane {
+    private static final double SETTINGS_OPEN_LIFT_Y = 84.0;
 
     private final LocalizationManager localization;
 
@@ -25,10 +26,7 @@ public final class TranslationProgressOverlay extends StackPane {
     private final Label line2 = new Label();
     private final Label percent = new Label("0%");
     private final ProgressBar bar = new ProgressBar(0);
-    private final String progressStylesheet =
-            TranslationProgressOverlay.class.getResource("/Assets/Style/translation-progress.css").toExternalForm();
-    private final String texturePath =
-            TranslationProgressOverlay.class.getResource("/Assets/Textures/").toExternalForm();
+    private final String texturePath = UiAssets.textureRoot();
     private final VBox content;
     private final VBox inner;
     private final VBox frame;
@@ -103,6 +101,20 @@ public final class TranslationProgressOverlay extends StackPane {
         });
 
         SettingBox.addVisibilityListener(visible -> Platform.runLater(() -> updateAnchorPosition(true)));
+    }
+
+    public boolean overlayVisible() {
+        return isVisible() && !isMouseTransparent();
+    }
+
+    public static boolean isOverlayVisible() {
+        return overlayVisibleStatic;
+    }
+
+    private static boolean overlayVisibleStatic;
+
+    private static void setOverlayVisibleStatic(boolean visible) {
+        overlayVisibleStatic = visible;
     }
 
     private double sf(double fullHdPx, double minPx) {
@@ -180,9 +192,7 @@ public final class TranslationProgressOverlay extends StackPane {
     }
 
     private void ensureProgressStylesheet(Scene scene) {
-        if (scene != null && !scene.getStylesheets().contains(progressStylesheet)) {
-            scene.getStylesheets().add(progressStylesheet);
-        }
+        AppStyles.applyProgressStyles(scene);
     }
 
     // If an external/user-agent style forces white bar, restore the legacy SC2 look.
@@ -222,7 +232,7 @@ public final class TranslationProgressOverlay extends StackPane {
     }
 
     private void updateAnchorPosition(boolean animated) {
-        double targetY = SettingBox.isOverlayVisible() ? -sf(56, 30) : 0.0;
+        double targetY = SettingBox.isOverlayVisible() ? -sf(SETTINGS_OPEN_LIFT_Y, 44) : 0.0;
         if (!animated) {
             frame.setTranslateY(targetY);
             return;
@@ -253,6 +263,8 @@ public final class TranslationProgressOverlay extends StackPane {
             setMouseTransparent(false);
             setManaged(true);
             setVisible(true);
+            setOverlayVisibleStatic(true);
+            SettingBox.syncOverlayOffset();
             toFront();
         };
 
@@ -275,6 +287,8 @@ public final class TranslationProgressOverlay extends StackPane {
             setMouseTransparent(false);
             setManaged(true);
             setVisible(true);
+            setOverlayVisibleStatic(true);
+            SettingBox.syncOverlayOffset();
             toFront();
         };
 
@@ -301,11 +315,15 @@ public final class TranslationProgressOverlay extends StackPane {
             setMouseTransparent(true);
             setVisible(false);
             setManaged(false);
+            setOverlayVisibleStatic(false);
+            SettingBox.syncOverlayOffset();
         } else {
             Platform.runLater(() -> {
                 setMouseTransparent(true);
                 setVisible(false);
                 setManaged(false);
+                setOverlayVisibleStatic(false);
+                SettingBox.syncOverlayOffset();
             });
         }
     }
@@ -326,6 +344,8 @@ public final class TranslationProgressOverlay extends StackPane {
             setMouseTransparent(true);
             setManaged(true);
             setVisible(true);
+            setOverlayVisibleStatic(true);
+            SettingBox.syncOverlayOffset();
             toFront();
         };
 

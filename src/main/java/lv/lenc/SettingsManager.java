@@ -47,7 +47,7 @@ public class SettingsManager {
     public static final String SILICONFLOW_MODEL_KEY = "siliconflow.model";
     public static final String DEEPL_API_KEY_KEY = "deepl.api.key";
     public static final String TRANSLATION_BACKEND_KEY = "translation.backend";
-    public static final String DEFAULT_TRANSLATION_BACKEND = "LIBRE_TRANSLATE";
+    public static final String DEFAULT_TRANSLATION_BACKEND = "GOOGLE_WEB_FREE";
 
     public static void saveLanguage(String langCode) {
         saveProperty(LANGUAGE_KEY, langCode);
@@ -340,6 +340,11 @@ public class SettingsManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static String loadProperty(String key, String defaultValue) {
+        Properties props = loadAllProperties();
+        return props.getProperty(key, defaultValue);
     }
 
     private static String trimToNull(String value) {

@@ -22,6 +22,7 @@ public class LabeledCheckRow extends HBox {
 
         this.checkBox = new CheckBox();
         this.checkBox.setSelected(initialChecked);
+        UiSoundManager.bindToggle(this.checkBox);
 
 
         Region spacer = new Region();

@@ -17,6 +17,7 @@ public class CustomLanguageButton extends Button implements Disabable {
         // CSS class
         getStyleClass().add("lang-btn");
         setStyle("-fx-font-size: " + fontSize + "px;");
+        UiSoundManager.bindBnetButton(this);
     }
 
     @Override

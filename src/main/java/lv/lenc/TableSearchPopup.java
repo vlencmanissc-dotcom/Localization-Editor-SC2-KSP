@@ -10,7 +10,6 @@ import javafx.beans.binding.Bindings;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -68,9 +67,9 @@ public final class TableSearchPopup {
     public TableSearchPopup(LocalizationManager localization, CustomTableView tableView) {
         this.localization = localization;
         this.tableView = tableView;
-        this.openButton = createActionButton(localize("tablesearch.open", "Open row"), 166.0);
-        this.clearButton = createActionButton(localize("tablesearch.clear", "Clear"), 138.0);
-        this.closeButton = createActionButton(localize("tablesearch.close", "Close"), 138.0);
+        this.openButton = createActionButton(localize("tablesearch.open", "Open row"), 196.0);
+        this.clearButton = createActionButton(localize("tablesearch.clear", "Clear"), 176.0);
+        this.closeButton = createActionButton(localize("tablesearch.close", "Close"), 176.0);
 
         buildUi();
         wireEvents();
@@ -122,8 +121,7 @@ public final class TableSearchPopup {
     }
 
     private void buildUi() {
-        String stylesheet = TableSearchPopup.class.getResource("/Assets/Style/KeyFilter.css").toExternalForm();
-        root.getStylesheets().add(stylesheet);
+        AppStyles.applyTableSearchStyles(root);
         root.getStyleClass().add("table-search-popup");
         root.setPadding(new Insets(UiScaleHelper.scaleY(14), UiScaleHelper.scaleX(14), UiScaleHelper.scaleY(14), UiScaleHelper.scaleX(14)));
         root.setPrefWidth(UiScaleHelper.scaleX(620));
@@ -132,7 +130,7 @@ public final class TableSearchPopup {
         root.setPrefHeight(UiScaleHelper.scaleY(500));
 
         headerBar.getStyleClass().add("table-search-header");
-        headerBar.setCursor(Cursor.MOVE);
+        CustomCursorManager.applyDragGripCursor(headerBar);
         Region headerSpacer = new Region();
         HBox.setHgrow(headerSpacer, Priority.ALWAYS);
 
@@ -152,7 +150,8 @@ public final class TableSearchPopup {
         resultsList.setCellFactory(list -> new SearchResultCell());
         VBox.setVgrow(resultsList, Priority.ALWAYS);
 
-        HBox footer = new HBox(UiScaleHelper.scaleX(8));
+        HBox footer = new HBox(UiScaleHelper.scaleX(10));
+        footer.setAlignment(javafx.geometry.Pos.CENTER_RIGHT);
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         footer.getChildren().addAll(clearButton, spacer, openButton, closeButton);
@@ -444,10 +443,48 @@ public final class TableSearchPopup {
                 0.6,
                 0.8,
                 widthPx,
-                52.0,
-                14.0
+                58.0,
+                13.8
         );
+        double scaledWidth = UiScaleHelper.scaleX(widthPx);
+        double scaledHeight = UiScaleHelper.scaleY(58.0);
+        button.setMinSize(scaledWidth, scaledHeight);
+        button.setPrefSize(scaledWidth, scaledHeight);
+        button.setMaxSize(scaledWidth, scaledHeight);
+        button.setWrapText(false);
+        button.setMnemonicParsing(false);
         button.getStyleClass().add("key-filter-action-button");
+        button.setStyle("-fx-font-size: " + UiScaleHelper.scaleFont(14.2, 12.0) + "px;");
+
+        final boolean[] pressed = {false};
+        button.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
+            if (!button.isDisabled() && !pressed[0]) {
+                button.setScaleX(1.02);
+                button.setScaleY(1.02);
+            }
+        });
+        button.addEventHandler(MouseEvent.MOUSE_EXITED, e -> {
+            pressed[0] = false;
+            button.setScaleX(1.0);
+            button.setScaleY(1.0);
+        });
+        button.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> {
+            if (button.isDisabled() || e.getButton() != MouseButton.PRIMARY) {
+                return;
+            }
+            pressed[0] = true;
+            button.setScaleX(0.985);
+            button.setScaleY(0.985);
+        });
+        button.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
+            if (button.isDisabled() || e.getButton() != MouseButton.PRIMARY) {
+                return;
+            }
+            pressed[0] = false;
+            boolean inside = button.contains(button.sceneToLocal(e.getSceneX(), e.getSceneY()));
+            button.setScaleX(inside ? 1.02 : 1.0);
+            button.setScaleY(inside ? 1.02 : 1.0);
+        });
         return button;
     }
 

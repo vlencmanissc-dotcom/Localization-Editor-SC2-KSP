@@ -18,7 +18,6 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -725,9 +724,11 @@ public final class KeyFilterWindow {
         previewScroll.setMouseTransparent(true);
         previewScroll.setVisible(false);
         previewScroll.setManaged(false);
+        previewScroll.setCursor(CustomCursorManager.defaultCursor());
 
         TextArea area = new TextArea();
         area.getStyleClass().add("key-filter-edit-area");
+        area.setCursor(CustomCursorManager.defaultCursor());
         area.setWrapText(true);
         area.setMinHeight(UiScaleHelper.scaleY(96));
         area.setPrefHeight(editorValueHeight);
@@ -766,7 +767,7 @@ public final class KeyFilterWindow {
 
         Label resizeGrip = new Label("///");
         resizeGrip.getStyleClass().add("key-filter-resize-grip");
-        resizeGrip.setCursor(Cursor.SE_RESIZE);
+        resizeGrip.setCursor(CustomCursorManager.dragFrameCursor());
         resizeGrip.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         resizeGrip.setPickOnBounds(true);
         resizeGrip.setFocusTraversable(false);
@@ -790,7 +791,7 @@ public final class KeyFilterWindow {
             boolean nearBottomRight =
                     e.getX() >= Math.max(0, editStack.getWidth() - resizeBandX) &&
                     e.getY() >= Math.max(0, editStack.getHeight() - resizeBandY);
-            editStack.setCursor(nearBottomRight ? Cursor.SE_RESIZE : Cursor.TEXT);
+            editStack.setCursor(nearBottomRight ? CustomCursorManager.dragFrameCursor() : CustomCursorManager.defaultCursor());
         });
         editStack.setOnMousePressed(e -> {
             boolean nearBottomRight =

@@ -37,6 +37,7 @@ public class CustomFileChooser extends StackPane implements Disabable {
         button = new Button();
         button.getStyleClass().add("file-chooser-btn");
         button.setFocusTraversable(false);
+        UiSoundManager.bindBnetButton(button);
 
         button.setOnAction(e -> {
             Platform.runLater(() -> {

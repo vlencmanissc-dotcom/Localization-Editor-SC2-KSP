@@ -3,16 +3,11 @@ package lv.lenc;
 import javafx.scene.Parent;
 
 final class FileOpenDialogStyle {
-    private static final String STYLESHEET =
-            FileOpenDialogStyle.class.getResource("/Assets/Style/FileOpenDialog.css").toExternalForm();
-
     private FileOpenDialogStyle() {
     }
 
     static void ensureStylesheet(Parent root) {
-        if (root != null && !root.getStylesheets().contains(STYLESHEET)) {
-            root.getStylesheets().add(STYLESHEET);
-        }
+        AppStyles.applyFileDialogStyles(root);
     }
 
     static String overlayDimStyle() {

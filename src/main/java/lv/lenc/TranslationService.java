@@ -137,7 +137,7 @@ public final class TranslationService {
     private static volatile Path lastLtStartupLogPath;
     private static volatile String cachedPythonProbeSummary = "";
     private static volatile PythonProbeResult cachedPythonProbeResult;
-    private static volatile TranslationBackend selectedBackend = TranslationBackend.LIBRE_TRANSLATE;
+    private static volatile TranslationBackend selectedBackend = TranslationBackend.GOOGLE_WEB_FREE;
     public static final String SILICONFLOW_DEEPSEEK_MODEL_ID = SiliconFlowDeepSeekV3TranslationProvider.MODEL_ID;
     public static final String SILICONFLOW_M2M100_MODEL_ID = SiliconFlowM2M100TranslationProvider.MODEL_ID;
 
@@ -162,7 +162,7 @@ public final class TranslationService {
         try {
             selectedBackend = parseTranslationBackend(SettingsManager.loadTranslationBackendName());
         } catch (Exception ignored) {
-            selectedBackend = TranslationBackend.LIBRE_TRANSLATE;
+            selectedBackend = TranslationBackend.GOOGLE_WEB_FREE;
         }
         applySiliconFlowModelSelection(selectedBackend);
 
@@ -203,7 +203,7 @@ public final class TranslationService {
     }
 
     public static synchronized void setSelectedBackend(TranslationBackend backend) {
-        selectedBackend = (backend == null) ? TranslationBackend.LIBRE_TRANSLATE : backend;
+        selectedBackend = (backend == null) ? TranslationBackend.GOOGLE_WEB_FREE : backend;
         applySiliconFlowModelSelection(selectedBackend);
         try {
             SettingsManager.saveTranslationBackendName(selectedBackend.name());
@@ -509,16 +509,19 @@ public final class TranslationService {
     private static TranslationBackend parseTranslationBackend(String backendName) {
         String normalized = backendName == null ? "" : backendName.trim();
         if (normalized.isEmpty()) {
-            return TranslationBackend.LIBRE_TRANSLATE;
+            return TranslationBackend.GOOGLE_WEB_FREE;
         }
         try {
             String upper = normalized.toUpperCase(Locale.ROOT);
             if ("GOOGLE_FRAME_S2S100".equals(upper)) {
                 return TranslationBackend.CLOUDFLARE_M2M100;
             }
+            if ("SILICONFLOW_M2M100".equals(upper)) {
+                return TranslationBackend.CLOUDFLARE_M2M100;
+            }
             return TranslationBackend.valueOf(upper);
         } catch (IllegalArgumentException ex) {
-            return TranslationBackend.LIBRE_TRANSLATE;
+            return TranslationBackend.GOOGLE_WEB_FREE;
         }
     }
 

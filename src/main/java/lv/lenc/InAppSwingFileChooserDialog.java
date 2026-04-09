@@ -828,6 +828,37 @@ final class InAppSwingFileChooserDialog {
         if (!button.getStyleClass().contains("file-open-button")) {
             button.getStyleClass().add("file-open-button");
         }
+        UiSoundManager.bindNovaButton(button);
+
+        final boolean[] pressed = {false};
+        button.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
+            if (!button.isDisabled() && !pressed[0]) {
+                button.setScaleX(1.02);
+                button.setScaleY(1.02);
+            }
+        });
+        button.addEventHandler(MouseEvent.MOUSE_EXITED, e -> {
+            pressed[0] = false;
+            button.setScaleX(1.0);
+            button.setScaleY(1.0);
+        });
+        button.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> {
+            if (button.isDisabled() || e.getButton() != MouseButton.PRIMARY) {
+                return;
+            }
+            pressed[0] = true;
+            button.setScaleX(0.985);
+            button.setScaleY(0.985);
+        });
+        button.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
+            if (button.isDisabled() || e.getButton() != MouseButton.PRIMARY) {
+                return;
+            }
+            pressed[0] = false;
+            boolean inside = button.contains(button.sceneToLocal(e.getSceneX(), e.getSceneY()));
+            button.setScaleX(inside ? 1.02 : 1.0);
+            button.setScaleY(inside ? 1.02 : 1.0);
+        });
     }
 
     private void applyTableHeaderScale() {
@@ -985,6 +1016,7 @@ final class InAppSwingFileChooserDialog {
     }
 
     private void enableDragging(Node dragHandle) {
+        CustomCursorManager.applyDragGripCursor(dragHandle);
         dragHandle.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
             if (event.getButton() != MouseButton.PRIMARY) {
                 return;

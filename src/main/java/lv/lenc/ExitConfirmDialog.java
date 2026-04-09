@@ -115,7 +115,7 @@ public class ExitConfirmDialog {
             LocalizationManager localization,
             Consumer<Boolean> onResult
     ) {
-        String texturePath = mustResource("/Assets/Textures/").toExternalForm();
+        String texturePath = UiAssets.textureRoot();
 
         double windowWidth = UiScaleHelper.scaleX(825);
         double windowHeight = UiScaleHelper.scaleY(750);
@@ -257,30 +257,10 @@ public class ExitConfirmDialog {
     }
 
     private static void ensureStylesheet(Scene scene) {
-        if (scene == null) return;
-
-        URL cssUrl = ExitConfirmDialog.class.getResource("/Assets/Style/alert-box.css");
-        if (cssUrl == null) {
-            AppLog.warn("[AlertBox] CSS not found: /Assets/Style/alert-box.css");
-            return;
-        }
-
-        String css = cssUrl.toExternalForm();
-        if (!scene.getStylesheets().contains(css)) {
-            scene.getStylesheets().add(css);
-        }
+        AppStyles.applyAlertStyles(scene);
     }
 
     // ========= HELPERS =========
-
-    private static URL mustResource(String resourcePath) {
-        URL url = ExitConfirmDialog.class.getResource(resourcePath);
-        if (url == null) {
-            throw new IllegalStateException("Resource not found: " + resourcePath +
-                    " (check src/main/resources path + exact folder/file case)");
-        }
-        return url;
-    }
 
     private static ImageView createHexImage(String texturePath, double width, boolean rotated) {
         ImageView hex = new ImageView(new Image(texturePath + "ui_battlenet_glues_pageassets_dialog_hexpattern.png"));

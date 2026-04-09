@@ -27,8 +27,8 @@ final class SiliconFlowTranslationProvider {
             DEFAULT_MODEL_ID,
             "Qwen/Qwen3-8B"
     );
-    private static final String PRIMARY_CHAT_ENDPOINT = "https://api.siliconflow.cn/v1/chat/completions";
-    private static final String SECONDARY_CHAT_ENDPOINT = "https://api.siliconflow.com/v1/chat/completions";
+    private static final String PRIMARY_CHAT_ENDPOINT = "https://api.siliconflow.com/v1/chat/completions";
+    private static final String SECONDARY_CHAT_ENDPOINT = "https://api.siliconflow.cn/v1/chat/completions";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static volatile String activeEndpoint = PRIMARY_CHAT_ENDPOINT;
     private static volatile String activeModel = DEFAULT_MODEL_ID;
@@ -52,6 +52,7 @@ final class SiliconFlowTranslationProvider {
         OkHttpClient probeHttp = availabilityHttp(http);
 
         String lastFailure = "";
+        String authFailure = "";
         for (String modelId : modelOrder()) {
             for (String endpoint : endpointOrder()) {
                 Request request = buildProbeRequest(endpoint, apiKey, modelId);
@@ -67,8 +68,9 @@ final class SiliconFlowTranslationProvider {
                         continue;
                     }
                     if (isAuthError(response.code())) {
-                        return "SiliconFlow access denied (HTTP " + response.code()
+                        authFailure = "SiliconFlow access denied (HTTP " + response.code()
                                 + "). Check API key, account verification, and regenerate key if needed.";
+                        continue;
                     }
                     if (response.code() == 402) {
                         return "SiliconFlow insufficient balance/permission (HTTP 402). Choose a free model or top up.";
@@ -82,6 +84,9 @@ final class SiliconFlowTranslationProvider {
                     lastFailure = "SiliconFlow check failed via " + endpoint + ": " + ex.getMessage();
                 }
             }
+        }
+        if (!authFailure.isBlank()) {
+            return authFailure;
         }
         return lastFailure.isBlank() ? "SiliconFlow availability check failed." : lastFailure;
     }
@@ -103,7 +108,8 @@ final class SiliconFlowTranslationProvider {
         OkHttpClient requestHttp = translationHttp(http);
 
         IOException ioFailure = null;
-        String httpFailure = "";
+        String retryableHttpFailure = "";
+        String authFailure = "";
         for (String modelId : modelOrder()) {
             JsonObject payload = buildTranslationPayload(uncachedInputs, source, target, modelId);
             for (String endpoint : endpointOrder()) {
@@ -116,14 +122,16 @@ final class SiliconFlowTranslationProvider {
                 try (Response response = requestHttp.newCall(request).execute()) {
                     String responseText = response.body() == null ? "" : response.body().string();
                     if (!response.isSuccessful()) {
-                        httpFailure = formatHttpFailure(response.code(), responseText, modelId);
+                        String currentFailure = formatHttpFailure(response.code(), responseText, modelId);
                         if (isAuthError(response.code())) {
-                            throw new IOException("[NON_RETRYABLE] " + httpFailure);
-                        }
-                        if (response.code() == 404 || response.code() == 429 || response.code() >= 500) {
+                            authFailure = currentFailure;
                             continue;
                         }
-                        throw new IOException(httpFailure);
+                        if (response.code() == 404 || response.code() == 429 || response.code() >= 500) {
+                            retryableHttpFailure = currentFailure;
+                            continue;
+                        }
+                        throw new IOException(currentFailure);
                     }
                     List<String> translated = parseTranslationArray(responseText, uncachedInputs.size());
                     if (translated.size() != uncachedInputs.size()) {
@@ -144,7 +152,13 @@ final class SiliconFlowTranslationProvider {
         if (ioFailure != null) {
             throw ioFailure;
         }
-        throw new IOException(httpFailure.isBlank() ? "[SiliconFlow] translation request failed" : httpFailure);
+        if (!retryableHttpFailure.isBlank()) {
+            throw new IOException(retryableHttpFailure);
+        }
+        if (!authFailure.isBlank()) {
+            throw new IOException("[NON_RETRYABLE] " + authFailure);
+        }
+        throw new IOException("[SiliconFlow] translation request failed");
     }
 
     static List<String> inflectGlossaryPlaceholders(
@@ -166,7 +180,8 @@ final class SiliconFlowTranslationProvider {
         OkHttpClient requestHttp = translationHttp(http);
 
         IOException ioFailure = null;
-        String httpFailure = "";
+        String retryableHttpFailure = "";
+        String authFailure = "";
         for (String modelId : modelOrder()) {
             JsonObject payload = buildInflectionPayload(textsWithTokens, tokenMaps, targetLang, modelId);
             for (String endpoint : endpointOrder()) {
@@ -179,14 +194,16 @@ final class SiliconFlowTranslationProvider {
                 try (Response response = requestHttp.newCall(request).execute()) {
                     String responseText = response.body() == null ? "" : response.body().string();
                     if (!response.isSuccessful()) {
-                        httpFailure = formatHttpFailure(response.code(), responseText, modelId);
+                        String currentFailure = formatHttpFailure(response.code(), responseText, modelId);
                         if (isAuthError(response.code())) {
-                            throw new IOException("[NON_RETRYABLE] " + httpFailure);
-                        }
-                        if (response.code() == 404 || response.code() == 429 || response.code() >= 500) {
+                            authFailure = currentFailure;
                             continue;
                         }
-                        throw new IOException(httpFailure);
+                        if (response.code() == 404 || response.code() == 429 || response.code() >= 500) {
+                            retryableHttpFailure = currentFailure;
+                            continue;
+                        }
+                        throw new IOException(currentFailure);
                     }
                     List<String> resolved = parseTranslationArray(responseText, textsWithTokens.size());
                     if (resolved.size() != textsWithTokens.size()) {
@@ -206,7 +223,13 @@ final class SiliconFlowTranslationProvider {
         if (ioFailure != null) {
             throw ioFailure;
         }
-        throw new IOException(httpFailure.isBlank() ? "[SiliconFlow] inflection request failed" : httpFailure);
+        if (!retryableHttpFailure.isBlank()) {
+            throw new IOException(retryableHttpFailure);
+        }
+        if (!authFailure.isBlank()) {
+            throw new IOException("[NON_RETRYABLE] " + authFailure);
+        }
+        throw new IOException("[SiliconFlow] inflection request failed");
     }
 
     static String activeEndpointForLogs() {
@@ -566,9 +589,9 @@ final class SiliconFlowTranslationProvider {
     private static OkHttpClient translationHttp(OkHttpClient base) {
         return base.newBuilder()
                 .connectTimeout(Duration.ofSeconds(8))
-                .readTimeout(Duration.ofSeconds(25))
-                .writeTimeout(Duration.ofSeconds(25))
-                .callTimeout(Duration.ofSeconds(35))
+                .readTimeout(Duration.ofSeconds(60))
+                .writeTimeout(Duration.ofSeconds(60))
+                .callTimeout(Duration.ofSeconds(75))
                 .build();
     }
 

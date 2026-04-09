@@ -58,6 +58,8 @@ import javafx.scene.text.Text;
             applyTrackAndThumbStyles();
             applyListItemStyles();
             applyButtonCellStyle();
+            UiSoundManager.bindBnetDropdown(this);
+            CustomCursorManager.applyDefaultCursor(this);
             this.disabledProperty().addListener((obs, wasDisabled, isNowDisabled) -> updateStyle());
             updateStyle();
         }
@@ -120,6 +122,7 @@ import javafx.scene.text.Text;
             Platform.runLater(() -> {
                 Node listView = this.lookup(".list-view");
                 if (listView instanceof Region) {
+                    CustomCursorManager.applyDefaultCursor(listView);
                     double borderWidth = UiScaleHelper.SCREEN_WIDTH * (2.0 / 1920.0);
                     ((Region) listView).setPrefHeight(UiScaleHelper.SCREEN_HEIGHT * (180.0 / 1080.0));
                     ((Region) listView).setMaxHeight(UiScaleHelper.SCREEN_HEIGHT * (180.0 / 1080.0));
@@ -201,6 +204,7 @@ import javafx.scene.text.Text;
 
             this.setOnShown(e -> Platform.runLater(() -> {
                 this.lookupAll(".list-cell").forEach(cell -> {
+                    CustomCursorManager.applyDefaultCursor(cell);
                     cell.setStyle(
                             "-fx-background-color: transparent;" +
                                     "-fx-background-size: stretch;" +
@@ -342,6 +346,7 @@ import javafx.scene.text.Text;
                     } else {
                         // Reduce cell height by 40%
                         setText(item.toString()); // Set the text of the item
+                        CustomCursorManager.applyDefaultCursor(this);
                         String currentStyle = getStyle(); // Retrieve the current style
                         setStyle(
                                 currentStyle + "; " +
@@ -467,6 +472,7 @@ import javafx.scene.text.Text;
                     stableLabel.setText(item.toString());
                     setText(null);
                     setGraphic(labelHolder);
+                    CustomCursorManager.applyDefaultCursor(this);
                     setStyle(
                             "-fx-background-color: transparent;" +
                                     "-fx-padding: 0;" +
