@@ -1,5 +1,5 @@
 README_TRANSLATE.txt
-Last updated: 2026-04-09
+Last updated: 2026-04-10
 
 # Translation Backends Guide
 
@@ -11,6 +11,7 @@ Important notes:
 - Prices, free tiers, and limits may change over time. Always double-check the official provider pages before paying.
 - Backend names in this file match the names shown in the application UI.
 - LibreTranslate in this app is local-only. Hosted or cloud LibreTranslate endpoints are not supported by the current in-app integration.
+- Editable glossary files are loaded from `%LOCALAPPDATA%\\Localization Editor SC2 KSP\\glossary` first when present.
 
 ## Backends available in the app
 
@@ -38,7 +39,7 @@ Important notes:
 
 ### What it is
 
-`LibreTranslate AI` in this application is a local backend. It is designed to run on your machine, typically through Docker or a local Python setup.
+`LibreTranslate AI` in this application is a local backend. It is designed to run on your machine, typically through a local Python setup.
 
 This app does **not** currently support hosted or cloud LibreTranslate accounts as a built-in remote translation backend. In other words:
 
@@ -84,7 +85,7 @@ Again, those hosted plans are not directly integrated into this app.
 
 1. Select `LibreTranslate AI`
 2. Let the app launch the local service
-3. If available, Docker and GPU mode can improve local startup/runtime behavior
+3. GPU mode can improve local startup/runtime behavior
 
 ### Best use case
 
