@@ -61,6 +61,12 @@ import okhttp3.OkHttpClient;
 public final class GlossaryService {
 
     private static final String WORD_GLOSSARY_FILE = "sc2_word_glossary_KSP.txt";
+    private static final String[] EDITABLE_GLOSSARY_FILES = {
+            WORD_GLOSSARY_FILE,
+            "Addition_UnitNames_Detailed_KSP.txt",
+            "Addition_Weapons_Detailed_KSP.txt",
+            "Addition_Abilities_Detailed_KSP.txt"
+    };
 
     public enum Category {
         UNIT, BUTTON, ABILITY
@@ -1356,6 +1362,7 @@ public final class GlossaryService {
             @Override
             protected Void call() throws Exception {
                 clear();
+                ensureEditableGlossariesAvailableExternally();
                 if (SettingsManager.loadCheckboxState(SettingsManager.BASE_GLOSSARY_KEY, SettingsManager.DEFAULT_BASE_GLOSSARY)) {
                     if (!loadTxtGlossaryFromExternalIfPresent(WORD_GLOSSARY_FILE)) {
                         loadTxtFromResource("/glossary/" + WORD_GLOSSARY_FILE);
@@ -1425,13 +1432,59 @@ public final class GlossaryService {
         }
     }
 
-    private static Path resolveExternalGlossaryDir() {
+    private void ensureEditableGlossariesAvailableExternally() {
+        Path dir = resolvePreferredExternalGlossaryDir();
+        if (dir == null) {
+            return;
+        }
+
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException ex) {
+            AppLog.warn("[Glossary] Failed to create editable glossary dir " + dir.toAbsolutePath() + ": " + ex.getMessage());
+            return;
+        }
+
+        for (String fileName : EDITABLE_GLOSSARY_FILES) {
+            Path target = dir.resolve(fileName);
+            if (Files.exists(target)) {
+                continue;
+            }
+            try (InputStream is = GlossaryService.class.getResourceAsStream("/glossary/" + fileName)) {
+                if (is == null) {
+                    AppLog.warn("[Glossary] Editable glossary resource not found: " + fileName);
+                    continue;
+                }
+                Files.copy(is, target);
+                AppLog.info("[Glossary] Seeded editable glossary: " + target.toAbsolutePath());
+            } catch (Exception ex) {
+                AppLog.warn("[Glossary] Failed to seed editable glossary " + target.toAbsolutePath() + ": " + ex.getMessage());
+            }
+        }
+    }
+
+    private static Path resolvePreferredExternalGlossaryDir() {
         String configured = System.getProperty("glossary.dir");
         if (configured != null && !configured.isBlank()) {
-            Path p = Path.of(configured.trim());
-            if (Files.isDirectory(p)) {
-                return p;
-            }
+            return Path.of(configured.trim());
+        }
+
+        String localAppData = System.getenv("LOCALAPPDATA");
+        if (localAppData != null && !localAppData.isBlank()) {
+            return Path.of(localAppData, "Localization Editor SC2 KSP", "glossary");
+        }
+
+        String userHome = System.getProperty("user.home");
+        if (userHome != null && !userHome.isBlank()) {
+            return Path.of(userHome, ".Localization_Editor_SC2_KSP", "glossary");
+        }
+        return null;
+    }
+
+    private static Path resolveExternalGlossaryDir() {
+        Path preferredDir = resolvePreferredExternalGlossaryDir();
+        if (preferredDir != null && Files.isDirectory(preferredDir)) {
+            return preferredDir;
         }
 
         try {

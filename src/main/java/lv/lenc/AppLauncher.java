@@ -33,6 +33,7 @@ public class AppLauncher {
         // On Windows, request "High Performance" GPU profile for java/javaw executables.
         // This writes per-user preference and does not require admin rights.
         configureWindowsHighPerformanceGpuPreference();
+        requestHighPriorityForCurrentProcess();
 
         Main.main(args);
     }
@@ -118,6 +119,30 @@ public class AppLauncher {
             AppLog.warn("[GPU] Unable to configure Windows GPU preference: interrupted");
         } catch (IOException ex) {
             AppLog.warn("[GPU] Unable to configure Windows GPU preference: " + ex.getMessage());
+        }
+    }
+
+    private static void requestHighPriorityForCurrentProcess() {
+        String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
+        if (!os.contains("win")) {
+            return;
+        }
+
+        long pid = ProcessHandle.current().pid();
+        if (pid <= 0) {
+            return;
+        }
+
+        String ps = "$p=Get-Process -Id " + pid
+                + " -ErrorAction SilentlyContinue; "
+                + "if($p){$p.PriorityClass='High'}";
+        try {
+            new ProcessBuilder("powershell", "-NoProfile", "-Command", ps)
+                    .redirectErrorStream(true)
+                    .start();
+            AppLog.info("[APP] High priority requested for pid=" + pid);
+        } catch (IOException ex) {
+            AppLog.warn("[APP] Unable to request high process priority: " + ex.getMessage());
         }
     }
 

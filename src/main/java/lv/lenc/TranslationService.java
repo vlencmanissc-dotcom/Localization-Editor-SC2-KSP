@@ -2363,21 +2363,11 @@ public final class TranslationService {
         }
     }
     private static boolean isDockerUsable() {
-        refreshCapabilityCache(false);
-        return cachedDockerUsable;
+        return false;
     }
 
     private static boolean isDockerUsableRaw() {
-        try {
-            Process p = new ProcessBuilder("docker", "version")
-                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-                    .redirectError(ProcessBuilder.Redirect.DISCARD)
-                    .start();
-
-            return p.waitFor() == 0;
-        } catch (Exception e) {
-            return false;
-        }
+        return false;
     }
 
     private static Process startGpuDockerProcess() throws IOException {
@@ -3286,7 +3276,7 @@ public final class TranslationService {
         } catch (Exception ex) {
             AppLog.warn("[LT] failed to delete translation cache file: " + ex.getMessage());
         }
-        persistentCacheLoaded = false;
+        persistentCacheLoaded = true;
     }
 
     private static void ensurePersistentCacheLoaded() {

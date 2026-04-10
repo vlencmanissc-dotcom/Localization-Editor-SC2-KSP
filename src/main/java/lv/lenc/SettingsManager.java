@@ -9,6 +9,11 @@ import java.util.Properties;
 public class SettingsManager {
     private static final String SETTINGS_FILE = "settings.properties";
     private static final String LANGUAGE_KEY = "language";
+    public static final String DEFAULT_LANGUAGE = "en";
+    private static final String[] SUPPORTED_LANGUAGE_CODES = {
+            "ru", "de", "en", "es-MX", "es-ES",
+            "fr", "it", "pl", "pt-BR", "ko", "zh-CN", "zh-TW"
+    };
     private static final String GRID_ALPHA_KEY = "gridAlpha";
     private static final String POINT_ALPHA_KEY = "pointAlpha";
     private static final String FLASH_ALPHA_KEY = "flashAlpha";
@@ -50,7 +55,7 @@ public class SettingsManager {
     public static final String DEFAULT_TRANSLATION_BACKEND = "GOOGLE_WEB_FREE";
 
     public static void saveLanguage(String langCode) {
-        saveProperty(LANGUAGE_KEY, langCode);
+        saveProperty(LANGUAGE_KEY, normalizeLanguageCode(langCode));
     }
 
     public static String loadLanguage() {
@@ -62,9 +67,20 @@ public class SettingsManager {
             return "en"; // if file does not exist — use EN
         }
     }
+    public static String loadPreferredLanguage() {
+        Properties props = loadAllProperties();
+        String rawValue = props.getProperty(LANGUAGE_KEY);
+        String normalized = normalizeLanguageCode(rawValue);
+        if (rawValue == null || !rawValue.equals(normalized)) {
+            props.setProperty(LANGUAGE_KEY, normalized);
+            storeProperties(props);
+        }
+        return normalized;
+    }
+
     public static void saveAlphaValues(double grid, double point, double flash) {
         Properties props = new Properties();
-        props.setProperty(LANGUAGE_KEY, loadLanguage()); // also save current language
+        props.setProperty(LANGUAGE_KEY, loadPreferredLanguage()); // also save current language
         props.setProperty(GRID_ALPHA_KEY, String.valueOf(grid));
         props.setProperty(POINT_ALPHA_KEY, String.valueOf(point));
         props.setProperty(FLASH_ALPHA_KEY, String.valueOf(flash));
@@ -285,6 +301,14 @@ public class SettingsManager {
         return props;
     }
 
+    private static void storeProperties(Properties props) {
+        try (FileOutputStream out = new FileOutputStream(SETTINGS_FILE)) {
+            props.store(out, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void saveAllSettings(
 
             double gridAlpha,
@@ -361,6 +385,29 @@ public class SettingsManager {
             return DEFAULT_TRANSLATION_BACKEND;
         }
         return normalized.toUpperCase(Locale.ROOT);
+    }
+
+    private static String normalizeLanguageCode(String languageCode) {
+        String normalized = trimToNull(languageCode);
+        if (normalized == null) {
+            return DEFAULT_LANGUAGE;
+        }
+
+        normalized = normalized.replace('_', '-');
+        for (String supported : SUPPORTED_LANGUAGE_CODES) {
+            if (supported.equalsIgnoreCase(normalized)) {
+                return supported;
+            }
+        }
+
+        return switch (normalized.toLowerCase(Locale.ROOT)) {
+            case "esmx" -> "es-MX";
+            case "eses" -> "es-ES";
+            case "ptbr" -> "pt-BR";
+            case "zhcn" -> "zh-CN";
+            case "zhtw" -> "zh-TW";
+            default -> DEFAULT_LANGUAGE;
+        };
     }
 
     private static void migrateGlossaryToggleDefaultsIfNeeded(Properties props) {

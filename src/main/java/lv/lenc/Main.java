@@ -144,7 +144,7 @@ public class Main extends Application {
         // OPTIMIZED: Load translation models in background during app startup
         // Users will see progress window while GPU models initialize
         if (TranslationService.selectedBackendRequiresLocalServer()) {
-            scheduleTranslationServerWarmup("ruRU", null, "app-start");
+            scheduleTranslationServerWarmup("enUS", null, "app-start");
         }
         progressOverlay = new TranslationProgressOverlay(localization);
         CustomTableView tableView = createTableView();
@@ -167,7 +167,7 @@ public class Main extends Application {
     // ---------------------------
 
     private void initLocalization() {
-        String savedLanguage = SettingsManager.loadLanguage();
+        String savedLanguage = SettingsManager.loadPreferredLanguage();
         localization = new LocalizationManager(savedLanguage);
 
         valueKey = new String[]{"ruRU", "deDE", "enUS", "esMX", "esES", "frFR", "itIT", "plPL", "ptBR", "koKR", "zhCN", "zhTW"};
@@ -296,6 +296,7 @@ public class Main extends Application {
         closeFileButton.getStyleClass().add("key-filter-table-button");
         closeFileButton.getStyleClass().add("close-file-button");
         closeFileButton.setFocusTraversable(false);
+        applyCloseFileButtonGraphic();
 
         tableSearchPopup = new TableSearchPopup(localization, tableView);
 
@@ -511,7 +512,7 @@ public class Main extends Application {
             TranslationService.TranslationBackend backend = selectedTranslationBackend();
             TranslationService.setSelectedBackend(backend);
             if (backend == TranslationService.TranslationBackend.LIBRE_TRANSLATE) {
-                scheduleTranslationServerWarmup("ruRU", null, "backend-switch");
+                scheduleTranslationServerWarmup("enUS", null, "backend-switch");
             } else {
                 stopBackgroundWarmup();
             }
@@ -944,10 +945,10 @@ public class Main extends Application {
         backgroundLayer.setAnimationEnabled(false);
         backgroundLayer.shimmerContainer.setVisible(false);
         backgroundLayer.blurredLights.setVisible(false);
-        backgroundLayer.setVisible(false);
+        backgroundLayer.setVisible(translationVisualState.backgroundVisible);
         backgroundLayer.setFlashAlpha(0.0);
-        backgroundLayer.setGridAlpha(Math.min(translationVisualState.gridAlpha, 0.015));
-        backgroundLayer.setPointAlpha(Math.min(translationVisualState.pointAlpha, 0.08));
+        backgroundLayer.setGridAlpha(translationVisualState.gridAlpha);
+        backgroundLayer.setPointAlpha(translationVisualState.pointAlpha);
 
         borderTable.setAnimationEnabled(false);
         borderTable.setTableLightingVisible(false);
@@ -1045,6 +1046,11 @@ public class Main extends Application {
     }
 
     private String localizedTableFullscreenText() {
+        if (isRussianUi()) {
+            return tableFullscreenMode
+                    ? "\u041e\u0431\u044b\u0447\u043d\u044b\u0439 \u0432\u0438\u0434"
+                    : "\u0424\u043e\u043a\u0443\u0441 \u0442\u0430\u0431\u043b\u0438\u0446\u044b";
+        }
         return localization.get(tableFullscreenMode ? "button.tableWindowed" : "button.tableFullscreen");
     }
 
@@ -1298,7 +1304,9 @@ public class Main extends Application {
         appFullscreenButton.getStyleClass().add("key-filter-table-button");
         appFullscreenButton.setFocusTraversable(false);
 
-        windowModeBar.getChildren().addAll(windowedModeButton, appFullscreenButton);
+        windowedModeButton.setManaged(false);
+        windowedModeButton.setVisible(false);
+        windowModeBar.getChildren().add(appFullscreenButton);
         StackPane.setAlignment(windowModeBar, Pos.TOP_RIGHT);
         root.getChildren().add(windowModeBar);
 
@@ -1373,9 +1381,8 @@ public class Main extends Application {
         if (keyFilterButton != null) keyFilterButton.setText(localizedFilterText());
         if (tableFullscreenButton != null) tableFullscreenButton.setText(localizedTableFullscreenText());
         if (tableSearchButton != null) tableSearchButton.setText(localizedSearchText());
-        if (closeFileButton != null) closeFileButton.setText("\u2716");
-        if (windowedModeButton != null) windowedModeButton.setText(localizedWindowedModeText());
-        if (appFullscreenButton != null) appFullscreenButton.setText(localizedAppFullscreenText());
+        if (closeFileButton != null) applyCloseFileButtonGraphic();
+        updateWindowModeButtonTexts();
         if (tableSearchPopup != null) tableSearchPopup.updateTexts();
 
         TranslationService.TranslationBackend selectedBackend = selectedTranslationBackend();
@@ -1427,11 +1434,11 @@ public class Main extends Application {
         }
     }
     private void setWindowIcon(Stage primaryStage) {
-        // JavaFX Å Ć¦Å Ā¾Å Ā´Å Ā´Å ĀµÅā‚¬Å Ā¶Å ĆøÅ Ā²Å Ā°Å ĀµÅā€: PNG, JPEG, GIF, BMP (Å ĀÆÅ ā€¢ Å Ć¦Å Ā¾Å Ā´Å Ā´Å ĀµÅā‚¬Å Ā¶Å ĆøÅ Ā²Å Ā°Å ĀµÅā€ ICO)
-        // Å ĀÅā€¹Åā€Å Ā°Å ĀµÅ Ā¼ÅĀÅĀø Å Ā·Å Ā°Å Ā³Åā‚¬ÅĀÅ Ā·Å ĆøÅā€ÅĀ Icon.png, Å ĀµÅĀÅ Ā»Å Ćø Å Ā½Å Āµ Å Ā½Å Ā°Å Ā¹Å Ā´Å ĀµÅ Ā½Å Ā° - Å ĆøÅĀÅ Ć¦Å Ā¾Å Ā»ÅĀÅ Ā·ÅĀÅ ĀµÅ Ā¼ Discord.png
+        // JavaFX Ć…Ā Ä†Ā¦Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā´Ć…Ā Ä€Ā´Ć…Ā Ä€ĀµĆ…ĀÄā€Ā¬Ć…Ā Ä€Ā¶Ć…Ā Ä†ĆøĆ…Ā Ä€Ā²Ć…Ā Ä€Ā°Ć…Ā Ä€ĀµĆ…ĀÄā‚¬Ā: PNG, JPEG, GIF, BMP (Ć…Ā Ä€Ć†Ć…Ā Äā‚¬Ā¢ Ć…Ā Ä†Ā¦Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā´Ć…Ā Ä€Ā´Ć…Ā Ä€ĀµĆ…ĀÄā€Ā¬Ć…Ā Ä€Ā¶Ć…Ā Ä†ĆøĆ…Ā Ä€Ā²Ć…Ā Ä€Ā°Ć…Ā Ä€ĀµĆ…ĀÄā‚¬Ā ICO)
+        // Ć…Ā Ä€ĀĆ…ĀÄā‚¬Ā¹Ć…ĀÄā‚¬ĀĆ…Ā Ä€Ā°Ć…Ā Ä€ĀµĆ…Ā Ä€Ā¼Ć…ĀÄ€ĀĆ…ĀÄ€Ćø Ć…Ā Ä€Ā·Ć…Ā Ä€Ā°Ć…Ā Ä€Ā³Ć…ĀÄā€Ā¬Ć…ĀÄ€ĀĆ…Ā Ä€Ā·Ć…Ā Ä†ĆøĆ…ĀÄā‚¬ĀĆ…ĀÄ€Ā Icon.png, Ć…Ā Ä€ĀµĆ…ĀÄ€ĀĆ…Ā Ä€Ā»Ć…Ā Ä†Ćø Ć…Ā Ä€Ā½Ć…Ā Ä€Āµ Ć…Ā Ä€Ā½Ć…Ā Ä€Ā°Ć…Ā Ä€Ā¹Ć…Ā Ä€Ā´Ć…Ā Ä€ĀµĆ…Ā Ä€Ā½Ć…Ā Ä€Ā° - Ć…Ā Ä†ĆøĆ…ĀÄ€ĀĆ…Ā Ä†Ā¦Ć…Ā Ä€Ā¾Ć…Ā Ä€Ā»Ć…ĀÄ€ĀĆ…Ā Ä€Ā·Ć…ĀÄ€ĀĆ…Ā Ä€ĀµĆ…Ā Ä€Ā¼ Discord.png
         try {
             String[] iconPaths = {
-                "Assets/Textures/Icon.png",    // Å ĀÅā‚¬Å ĆøÅ Ā¾Åā‚¬Å ĆøÅā€Å ĀµÅā€ 1: Icon Å Ā² Åā€˛Å Ā¾Åā‚¬Å Ā¼Å Ā°Åā€Å Āµ PNG
+                "Assets/Textures/Icon.png",    // Ć…Ā Ä€ĀĆ…ĀÄā€Ā¬Ć…Ā Ä†ĆøĆ…Ā Ä€Ā¾Ć…ĀÄā€Ā¬Ć…Ā Ä†ĆøĆ…ĀÄā‚¬ĀĆ…Ā Ä€ĀµĆ…ĀÄā‚¬Ā 1: Icon Ć…Ā Ä€Ā² Ć…ĀÄā‚¬Ė›Ć…Ā Ä€Ā¾Ć…ĀÄā€Ā¬Ć…Ā Ä€Ā¼Ć…Ā Ä€Ā°Ć…ĀÄā‚¬ĀĆ…Ā Ä€Āµ PNG
                 "Assets/Textures/Icon.ico"     // fallback if PNG is missing
             };
             
@@ -1466,15 +1473,15 @@ public class Main extends Application {
     }
 
     private String localizedWindowedModeText() {
-        return localizedTextWithFallback("button.windowedMode", "\u041e\u043a\u043e\u043d\u043d\u044b\u0439 \u0440\u0435\u0436\u0438\u043c", "Windowed");
+        return localizedTextWithFallback("button.windowedMode", "\u0412 \u043e\u043a\u043d\u043e", "Windowed");
     }
 
     private String localizedAppFullscreenText() {
-        return localizedTextWithFallback("button.appFullScreen", "\u041d\u0430 \u0432\u0435\u0441\u044c \u044d\u043a\u0440\u0430\u043d", "Fullscreen");
+        return localizedTextWithFallback("button.appFullScreen", "\u041f\u043e\u043b\u043d\u044b\u0439 \u044d\u043a\u0440\u0430\u043d", "Fullscreen");
     }
 
     private String localizedExitFullscreenText() {
-        return localizedTextWithFallback("button.exitFullScreen", "\u0412\u044b\u0439\u0442\u0438 \u0438\u0437 fullscreen", "Exit fullscreen");
+        return localizedTextWithFallback("button.exitFullScreen", "\u0412 \u043e\u043a\u043d\u043e", "Exit fullscreen");
     }
 
     private String localizedTextWithFallback(String key, String ruFallback, String enFallback) {
@@ -1606,6 +1613,17 @@ public class Main extends Application {
         String sourceLabelText = isRussianUi()
                 ? "MAIN \u044f\u0437\u044b\u043a \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0430:"
                 : "Main source language:";
+        double rootW = root.getWidth() > 1.0 ? root.getWidth() : UiScaleHelper.SCREEN_WIDTH;
+        double rootH = root.getHeight() > 1.0 ? root.getHeight() : UiScaleHelper.SCREEN_HEIGHT;
+        double panelWidth = Math.max(
+                UiScaleHelper.scaleX(640),
+                Math.min(UiScaleHelper.scaleX(840), rootW * 0.92)
+        );
+        double panelHeight = Math.max(
+                UiScaleHelper.scaleY(360),
+                Math.min(UiScaleHelper.scaleY(470), rootH * 0.88)
+        );
+        double comboWidth = Math.max(UiScaleHelper.scaleX(430), panelWidth - UiScaleHelper.scaleX(34));
 
         Region dim = new Region();
         dim.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
@@ -1642,12 +1660,15 @@ public class Main extends Application {
         fileCombo.getStyleClass().add("key-filter-lang-combo");
         fileCombo.getStyleClass().add("archive-open-combo");
         fileCombo.getStyleClass().add("archive-open-textured-combo");
-        fileCombo.setVisibleRowCount(Math.max(1, Math.min(4, fileCombo.getItems().size())));
-        fileCombo.setMinWidth(UiScaleHelper.scaleX(610));
-        fileCombo.setPrefWidth(UiScaleHelper.scaleX(610));
+        fileCombo.setVisibleRowCount(Math.max(1, Math.min(7, fileCombo.getItems().size())));
+        fileCombo.setMinWidth(comboWidth);
+        fileCombo.setPrefWidth(comboWidth);
         fileCombo.setMaxWidth(Double.MAX_VALUE);
-        fileCombo.setOnShowing(e ->
-                fileCombo.setVisibleRowCount(Math.max(1, Math.min(4, fileCombo.getItems().size()))));
+        fileCombo.setOnShowing(e -> {
+            int rows = Math.max(1, Math.min(7, fileCombo.getItems().size()));
+            fileCombo.setVisibleRowCount(rows);
+            Platform.runLater(() -> tuneArchiveComboPopup(fileCombo, rows));
+        });
         fileCombo.setCellFactory(cb -> new javafx.scene.control.ListCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -1657,6 +1678,9 @@ public class Main extends Application {
                 } else {
                     setText(item);
                 }
+                setGraphic(null);
+                setContentDisplay(javafx.scene.control.ContentDisplay.TEXT_ONLY);
+                setStyle("-fx-font-size: " + UiScaleHelper.scaleY(16) + "px; -fx-padding: 0 12 0 12;");
             }
         });
         fileCombo.setButtonCell(new javafx.scene.control.ListCell<>() {
@@ -1668,6 +1692,9 @@ public class Main extends Application {
                 } else {
                     setText(item);
                 }
+                setGraphic(null);
+                setContentDisplay(javafx.scene.control.ContentDisplay.TEXT_ONLY);
+                setStyle("-fx-font-size: " + UiScaleHelper.scaleY(16) + "px; -fx-padding: 0 12 0 12;");
             }
         });
 
@@ -1680,15 +1707,18 @@ public class Main extends Application {
         mainLangCombo.getStyleClass().add("key-filter-lang-combo");
         mainLangCombo.getStyleClass().add("archive-open-combo");
         mainLangCombo.getStyleClass().add("archive-open-textured-combo");
-        mainLangCombo.setVisibleRowCount(4);
-        mainLangCombo.setMinWidth(UiScaleHelper.scaleX(610));
-        mainLangCombo.setPrefWidth(UiScaleHelper.scaleX(610));
+        mainLangCombo.setVisibleRowCount(7);
+        mainLangCombo.setMinWidth(comboWidth);
+        mainLangCombo.setPrefWidth(comboWidth);
         mainLangCombo.setMaxWidth(Double.MAX_VALUE);
         mainLangCombo.setCellFactory(cb -> new javafx.scene.control.ListCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item);
+                setGraphic(null);
+                setContentDisplay(javafx.scene.control.ContentDisplay.TEXT_ONLY);
+                setStyle("-fx-font-size: " + UiScaleHelper.scaleY(16) + "px; -fx-padding: 0 12 0 12;");
             }
         });
         mainLangCombo.setButtonCell(new javafx.scene.control.ListCell<>() {
@@ -1696,6 +1726,9 @@ public class Main extends Application {
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item);
+                setGraphic(null);
+                setContentDisplay(javafx.scene.control.ContentDisplay.TEXT_ONLY);
+                setStyle("-fx-font-size: " + UiScaleHelper.scaleY(16) + "px; -fx-padding: 0 12 0 12;");
             }
         });
 
@@ -1720,7 +1753,8 @@ public class Main extends Application {
                 0.30, 0.62, 150, 54, 15
         );
         cancelButton.getStyleClass().add("key-filter-action-button");
-        cancelButton.getStyleClass().add("archive-open-action-button");        final Runnable syncActionState = () -> {
+        cancelButton.getStyleClass().add("archive-open-action-button");
+        final Runnable syncActionState = () -> {
             boolean hasLang = !mainLangCombo.getItems().isEmpty();
             okButton.setDisable(!hasLang);
             cancelButton.setDisable(false);
@@ -1732,7 +1766,7 @@ public class Main extends Application {
             String selectedFileOption = fileCombo.getValue();
             List<String> availableLanguages = plan.getMainLanguages(selectedFileOption);
             mainLangCombo.getItems().setAll(availableLanguages);
-            mainLangCombo.setVisibleRowCount(Math.max(1, Math.min(4, availableLanguages.size())));
+            mainLangCombo.setVisibleRowCount(Math.max(1, Math.min(7, availableLanguages.size())));
             if (availableLanguages.isEmpty()) {
                 mainLangCombo.setValue(null);
                 syncActionState.run();
@@ -1753,7 +1787,11 @@ public class Main extends Application {
         mainLangCombo.setOnShowing(e -> {
             if (mainLangCombo.getItems().size() <= 1) {
                 Platform.runLater(mainLangCombo::hide);
+                return;
             }
+            int rows = Math.max(1, Math.min(7, mainLangCombo.getItems().size()));
+            mainLangCombo.setVisibleRowCount(rows);
+            Platform.runLater(() -> tuneArchiveComboPopup(mainLangCombo, rows));
         });
         refreshMainLanguages.run();
         fileCombo.valueProperty().addListener((obs, oldValue, newValue) -> refreshMainLanguages.run());
@@ -1779,11 +1817,9 @@ public class Main extends Application {
                 UiScaleHelper.scaleY(16),
                 UiScaleHelper.scaleX(16)
         ));
-        double panelWidth = UiScaleHelper.scaleX(840);
         panel.setMinWidth(panelWidth);
         panel.setPrefWidth(panelWidth);
         panel.setMaxWidth(panelWidth);
-        double panelHeight = UiScaleHelper.scaleY(470);
         panel.setMinHeight(panelHeight);
         panel.setPrefHeight(panelHeight);
         panel.setMaxHeight(panelHeight);
@@ -1832,7 +1868,7 @@ public class Main extends Application {
                 return;
             }
             String failText = isRussianUi()
-                    ? "Выбранный файл не удалось распаковать. Выберите другой файл."
+                    ? "\u0412\u044b\u0431\u0440\u0430\u043d\u043d\u044b\u0439 \u0444\u0430\u0439\u043b \u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0440\u0430\u0441\u043f\u0430\u043a\u043e\u0432\u0430\u0442\u044c. \u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0434\u0440\u0443\u0433\u043e\u0439 \u0444\u0430\u0439\u043b."
                     : "Selected file cannot be extracted. Choose another file.";
             openErrorLabel.setText(failText);
             openErrorLabel.setManaged(true);
@@ -1857,8 +1893,46 @@ public class Main extends Application {
         syncActionState.run();
         Platform.runLater(() -> {
             overlay.requestFocus();
+            tuneArchiveComboPopup(fileCombo, fileCombo.getVisibleRowCount());
+            tuneArchiveComboPopup(mainLangCombo, mainLangCombo.getVisibleRowCount());
             fileCombo.requestFocus();
         });
+    }
+
+    private void applyCloseFileButtonGraphic() {
+        if (closeFileButton == null) {
+            return;
+        }
+        Label glyph = new Label("\u2716");
+        glyph.setMouseTransparent(true);
+        glyph.setStyle(
+                "-fx-font-family: 'Arial Black';" +
+                "-fx-font-size: " + UiScaleHelper.scaleFont(22.0, 18.0) + "px;" +
+                "-fx-font-weight: 900;" +
+                "-fx-text-fill: #d9fff1;" +
+                "-fx-alignment: center;"
+        );
+        glyph.setTranslateY(-UiScaleHelper.scaleY(1.0));
+        closeFileButton.setText("");
+        closeFileButton.setGraphic(glyph);
+        closeFileButton.setContentDisplay(javafx.scene.control.ContentDisplay.GRAPHIC_ONLY);
+        closeFileButton.setAlignment(Pos.CENTER);
+    }
+
+    private void tuneArchiveComboPopup(ComboBox<String> combo, int visibleRows) {
+        if (combo == null) {
+            return;
+        }
+        Node node = combo.lookup(".list-view");
+        if (!(node instanceof javafx.scene.control.ListView<?> listView)) {
+            return;
+        }
+        double cell = UiScaleHelper.scaleY(44);
+        int rows = Math.max(1, visibleRows);
+        listView.setFixedCellSize(cell);
+        listView.setMinHeight(UiScaleHelper.scaleY(80));
+        listView.setPrefHeight(Math.min(UiScaleHelper.scaleY(440), cell * rows + UiScaleHelper.scaleY(14)));
+        listView.setMaxHeight(UiScaleHelper.scaleY(440));
     }
 
     private void removeArchivePopupOverlays() {
@@ -1922,5 +1996,6 @@ public class Main extends Application {
         AppLog.info("[UI] current file closed and table cleared");
     }
 }
+
 
 

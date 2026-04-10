@@ -8,20 +8,32 @@ import java.util.function.Consumer;
 
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
+import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Labeled;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputControl;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderImage;
 import javafx.scene.layout.BorderRepeat;
@@ -32,6 +44,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
@@ -43,7 +57,9 @@ public class SettingBox {
     private static final double API_ICON_SLOT_WIDTH = 48.0;
     private static final double SETTINGS_WINDOW_OVERLAY_OFFSET_Y = 34.0;
     private static final double SELECTED_MARK_LIFT_Y = 30.0;
-
+    private static final Interpolator PROMO_FAST_OUT = Interpolator.SPLINE(0.0, 0.0, 0.15, 1.0);
+    private static final Interpolator PROMO_FAST_IN = Interpolator.SPLINE(0.85, 0.0, 1.0, 1.0);
+    private static Image yellowPromoStripeImage;
     private static double effectiveSettingsScale() {
         double ui = UiScaleHelper.scale(1.0);
         if (ui >= 1.0) {
@@ -196,6 +212,7 @@ public class SettingBox {
 
     // --- overlay instance (kept between openings) ---
     private static StackPane overlayRoot;     // full-screen dim layer
+    private static Region overlayDim;
     private static StackPane windowHolder;    // centers the window
     private static Pane windowContent;        // actual settings window (your old root)
     private static final List<Consumer<Boolean>> visibilityListeners = new CopyOnWriteArrayList<>();
@@ -271,19 +288,36 @@ public class SettingBox {
         if (marker == null) {
             return sy(24);
         }
-        double h = marker.getLayoutBounds().getHeight();
-        if (h > 1.0) {
-            return h;
-        }
-        h = marker.getBoundsInLocal().getHeight();
-        if (h > 1.0) {
-            return h;
-        }
         if (marker.getImage() != null && marker.getImage().getWidth() > 0) {
             double fitW = marker.getFitWidth() > 1.0 ? marker.getFitWidth() : marker.getImage().getWidth();
-            return fitW * (marker.getImage().getHeight() / marker.getImage().getWidth());
+            double imageRatioHeight = fitW * (marker.getImage().getHeight() / marker.getImage().getWidth());
+            return Math.max(sy(18), imageRatioHeight);
+        }
+        double h = marker.prefHeight(-1);
+        if (h > 1.0) {
+            return h;
         }
         return sy(24);
+    }
+
+    private static void positionSelectionMarker(ImageView marker,
+                                                CustomLanguageButton button,
+                                                Pane leftPanel) {
+        if (marker == null || button == null || leftPanel == null) {
+            return;
+        }
+
+        leftPanel.applyCss();
+        leftPanel.layout();
+
+        javafx.geometry.Bounds buttonBounds = button.getBoundsInParent();
+        double markerHeight = stableMarkerHeight(marker);
+        double markerCenterY = buttonBounds.getMinY() + buttonBounds.getHeight() / 2.0;
+
+        marker.setLayoutX(-sx(25));
+        marker.setLayoutY(markerCenterY - markerHeight / 2.0);
+        marker.setTranslateY(0.0);
+        marker.setVisible(true);
     }
 
     private static void tuneApiKeyField(TextField field, String promptText) {
@@ -304,6 +338,223 @@ public class SettingBox {
                         + "-fx-border-radius: 6;"
                         + "-fx-font-size: " + sy(14) + "px;"
         );
+    }
+
+    private static void freezeSettingButtonScale(CustomAlternativeButton button) {
+        if (button == null) return;
+        if (button.getPrefWidth() >= sx(150) && button.getPrefHeight() >= sy(48)) {
+            button.getProperties().put("lv.lenc.fontScaleBoost", 1.08);
+            button.refreshScaledSizingNow();
+        }
+        button.getProperties().put("lv.lenc.freezeScale", true);
+        button.setFocusTraversable(false);
+    }
+
+    private static void freezeSettingButtonScale(CustomLanguageButton button) {
+        if (button == null) return;
+        button.getProperties().put("lv.lenc.freezeScale", true);
+        button.setFocusTraversable(false);
+    }
+
+    private static StackPane createPromoButtonShell(CustomAlternativeButton button) {
+        StackPane shell = new StackPane();
+        shell.setAlignment(Pos.CENTER);
+        shell.setPickOnBounds(false);
+
+        StackPane wipeLayer = new StackPane();
+        wipeLayer.setMouseTransparent(true);
+        wipeLayer.setPickOnBounds(false);
+        wipeLayer.toFront();
+
+        ImageView wipe = new ImageView(yellowPromoStripe());
+        wipe.setManaged(false);
+        wipe.setMouseTransparent(true);
+        wipe.setOpacity(0.0);
+        wipe.setPreserveRatio(false);
+
+        Rectangle wipeClip = new Rectangle();
+        wipeClip.widthProperty().bind(wipeLayer.widthProperty());
+        wipeClip.heightProperty().bind(wipeLayer.heightProperty());
+        wipeLayer.setClip(wipeClip);
+        wipeLayer.getChildren().add(wipe);
+
+        shell.getChildren().addAll(button, wipeLayer);
+
+        Runnable layoutWipe = () -> {
+            double hostW = shell.getWidth() > 1.0 ? shell.getWidth() : button.prefWidth(-1);
+            double hostH = shell.getHeight() > 1.0 ? shell.getHeight() : button.prefHeight(-1);
+            double insetX = Math.max(sx(18), hostW * 0.11);
+            double stripeH = Math.max(sy(14.2), 12.0);
+            double stripeW = Math.max(0.0, hostW - insetX * 2.0);
+            wipe.setFitWidth(stripeW);
+            wipe.setFitHeight(stripeH);
+            wipe.relocate(insetX, (hostH - stripeH) * 0.5);
+        };
+
+        shell.widthProperty().addListener((obs, oldVal, newVal) -> layoutWipe.run());
+        shell.heightProperty().addListener((obs, oldVal, newVal) -> layoutWipe.run());
+        button.layoutBoundsProperty().addListener((obs, oldVal, newVal) -> layoutWipe.run());
+        Platform.runLater(layoutWipe);
+
+        final Timeline[] sweepHolder = new Timeline[1];
+
+        button.hoverProperty().addListener((obs, wasHover, isHover) -> {
+            layoutWipe.run();
+            double hostH = shell.getHeight() > 1.0 ? shell.getHeight() : button.prefHeight(-1);
+            double wipeH = wipe.getFitHeight() > 1.0 ? wipe.getFitHeight() : Math.max(sy(14.2), 12.0);
+            double insetY = hostH * 0.18;
+            double startY = -(hostH / 2.0) - (wipeH / 2.0) + insetY;
+            double endY = (hostH / 2.0) + (wipeH / 2.0) - insetY;
+            Timeline sweep = sweepHolder[0];
+            if (sweep == null) {
+                sweep = new Timeline();
+                sweepHolder[0] = sweep;
+            }
+            sweep.stop();
+            sweep.getKeyFrames().setAll(
+                    new KeyFrame(Duration.seconds(0.00),
+                            new KeyValue(wipe.translateYProperty(), startY, PROMO_FAST_OUT),
+                            new KeyValue(wipe.opacityProperty(), 0.0, PROMO_FAST_OUT)
+                    ),
+                    new KeyFrame(Duration.seconds(0.03),
+                            new KeyValue(wipe.opacityProperty(), 20.0 / 255.0, PROMO_FAST_OUT)
+                    ),
+                    new KeyFrame(Duration.seconds(0.28),
+                            new KeyValue(wipe.opacityProperty(), 124.0 / 255.0, PROMO_FAST_OUT)
+                    ),
+                    new KeyFrame(Duration.seconds(0.64),
+                            new KeyValue(wipe.opacityProperty(), 246.0 / 255.0, PROMO_FAST_OUT)
+                    ),
+                    new KeyFrame(Duration.seconds(1.04),
+                            new KeyValue(wipe.translateYProperty(), endY, PROMO_FAST_IN),
+                            new KeyValue(wipe.opacityProperty(), 0.0, PROMO_FAST_IN)
+                    )
+            );
+            if (isHover) {
+                wipe.setTranslateY(startY);
+                wipe.setOpacity(0.0);
+                sweep.setRate(1.0);
+                sweep.playFromStart();
+            } else {
+                if (sweep.getCurrentTime().greaterThan(Duration.ZERO)) {
+                    sweep.setRate(-1.0);
+                    sweep.play();
+                } else {
+                    wipe.setOpacity(0.0);
+                    wipe.setTranslateY(startY);
+                }
+            }
+        });
+
+        return shell;
+    }
+
+    private static Image yellowPromoStripe() {
+        if (yellowPromoStripeImage != null) {
+            return yellowPromoStripeImage;
+        }
+        Image src = new Image(UiAssets.resource("/Assets/Textures/buttonswipesmall.png").toExternalForm());
+        int w = (int) Math.max(1, Math.round(src.getWidth()));
+        int h = (int) Math.max(1, Math.round(src.getHeight()));
+        WritableImage out = new WritableImage(w, h);
+        PixelReader reader = src.getPixelReader();
+        PixelWriter writer = out.getPixelWriter();
+        Color tint = Color.rgb(255, 231, 140);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                Color px = reader.getColor(x, y);
+                if (px.getOpacity() <= 0.0) {
+                    continue;
+                }
+                writer.setColor(x, y, new Color(
+                        tint.getRed(),
+                        tint.getGreen(),
+                        tint.getBlue(),
+                        px.getOpacity()
+                ));
+            }
+        }
+        yellowPromoStripeImage = out;
+        return yellowPromoStripeImage;
+    }
+
+    private static void installSupportSpotlight(CustomAlternativeButton trigger) {
+        if (trigger == null) return;
+        trigger.hoverProperty().addListener((obs, wasHover, isHover) -> {
+            Timeline previous = (Timeline) trigger.getProperties().get("lv.lenc.settingboxGlobalPromoTimeline");
+            if (previous != null) {
+                previous.stop();
+            }
+
+            double targetBlur = isHover ? sy(10.8) : sy(10.0);
+            double targetDim = isHover ? 0.57 : 0.55;
+
+            Timeline timeline = new Timeline(
+                    new KeyFrame(Duration.ZERO,
+                            new KeyValue(blurEffect.radiusProperty(), blurEffect.getRadius()),
+                            new KeyValue(overlayDim.opacityProperty(), overlayDim.getOpacity())
+                    ),
+                    new KeyFrame(Duration.millis(isHover ? 360 : 300),
+                            new KeyValue(blurEffect.radiusProperty(), targetBlur, Interpolator.SPLINE(0.22, 0.0, 0.18, 1.0)),
+                            new KeyValue(overlayDim.opacityProperty(), targetDim, Interpolator.SPLINE(0.22, 0.0, 0.18, 1.0))
+                    )
+            );
+            trigger.getProperties().put("lv.lenc.settingboxGlobalPromoTimeline", timeline);
+            timeline.play();
+        });
+    }
+
+    private static String appendInlineStyle(String currentStyle, String declaration) {
+        String base = currentStyle == null ? "" : currentStyle.trim();
+        if (!base.isEmpty() && !base.endsWith(";")) {
+            base += ";";
+        }
+        return base + declaration;
+    }
+
+    private static void stabilizeTypography(Node node) {
+        if (node == null) return;
+        if (Boolean.TRUE.equals(node.getProperties().get("lv.lenc.settingboxTypographyLocked"))) {
+            return;
+        }
+
+        if (node instanceof Labeled labeled && labeled.getFont() != null) {
+            double fontSize = labeled.getFont().getSize();
+            labeled.setStyle(appendInlineStyle(labeled.getStyle(), "-fx-font-size: " + fontSize + "px;"));
+        } else if (node instanceof TextInputControl input && input.getFont() != null) {
+            double fontSize = input.getFont().getSize();
+            input.setStyle(appendInlineStyle(input.getStyle(), "-fx-font-size: " + fontSize + "px;"));
+        }
+
+        node.getProperties().put("lv.lenc.settingboxTypographyLocked", true);
+
+        if (node instanceof Parent parent) {
+            for (Node child : parent.getChildrenUnmodifiable()) {
+                stabilizeTypography(child);
+            }
+        }
+    }
+
+    private static void installTypographyGuard(Node node) {
+        if (node == null) {
+            return;
+        }
+        node.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, javafx.event.Event::consume);
+        node.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+            if (event.getButton() == MouseButton.SECONDARY) {
+                event.consume();
+            }
+        });
+        node.addEventFilter(MouseEvent.MOUSE_RELEASED, event -> {
+            if (event.getButton() == MouseButton.SECONDARY) {
+                event.consume();
+            }
+        });
+        node.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            if (event.getButton() == MouseButton.SECONDARY) {
+                event.consume();
+            }
+        });
     }
 
     private static HBox createApiFieldRow(TextField field, Node hintIcon) {
@@ -378,6 +629,7 @@ public class SettingBox {
         Platform.runLater(() -> {
             overlayRoot.applyCss();
             overlayRoot.layout();
+            stabilizeTypography(windowContent);
 
             overlayRoot.setOpacity(1);
             overlayRoot.requestFocus();
@@ -438,8 +690,10 @@ public class SettingBox {
         // Dim background (clicking outside closes)
         Region dim = new Region();
         dim.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+        dim.setOpacity(0.55);
         dim.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
         dim.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        overlayDim = dim;
 
         // holder to center the window
         windowHolder = new StackPane();
@@ -615,7 +869,7 @@ public class SettingBox {
             });
         });
 
-        String currentLang = SettingsManager.loadLanguage();
+        String currentLang = SettingsManager.loadPreferredLanguage();
         languageComboBox.setValue(findNativeNameByCode(currentLang));
 
         VBox languageBox = new VBox(sy(10), languageLabel, languageComboBox);
@@ -687,6 +941,7 @@ public class SettingBox {
                 localization.get("setting.box.ui.defaut"),
                 0.6, 0.8, sv(148.0), sv(50), sv(10.6)
         );
+        freezeSettingButtonScale(uiDEFAUTBUTTON);
         uiDEFAUTBUTTON.setOnAction(e -> {
             background.setFlashAlpha(SettingsManager.DEFAULT_FLASH_ALPHA);
             background.setGridAlpha(SettingsManager.DEFAULT_GRID_ALPHA);
@@ -705,6 +960,7 @@ public class SettingBox {
                 localization.get("button.save"),
                 0.6, 0.8, sv(148.0), sv(50), sv(10.6)
         );
+        freezeSettingButtonScale(saveButton);
         saveButton.setOnAction(e -> {
             SettingsManager.saveAllSettings(
                     background.getGridAlpha(),
@@ -818,6 +1074,7 @@ public class SettingBox {
                 localizedOrFallback(localization, "setting.box.audio.save", "Save audio settings"),
                 0.6, 0.8, sv(252.0), sv(52.0), sv(9.4)
         );
+        freezeSettingButtonScale(saveAudioSettingsButton);
         saveAudioSettingsButton.setOnAction(e -> {
             UiSoundManager.saveVolumeAndEnabled(
                     uiSoundsEnabledRow.getCheckBox().isSelected(),
@@ -833,6 +1090,7 @@ public class SettingBox {
                 localizedOrFallback(localization, "setting.box.audio.reset", "Reset to default (10%)"),
                 0.6, 0.8, sv(252.0), sv(52.0), sv(9.4)
         );
+        freezeSettingButtonScale(resetAudioSettingsButton);
         resetAudioSettingsButton.setOnAction(e -> {
             UiSoundManager.resetToDefaults();
             uiSoundsEnabledRow.getCheckBox().setSelected(true);
@@ -910,6 +1168,7 @@ public class SettingBox {
                 localization.get("setting.box.other.clearCache"),
                 0.6, 0.8, sv(250.0), sv(62.0), sv(10.6)
         );
+        freezeSettingButtonScale(clearCacheButton);
         clearCacheButton.setOnAction(e -> TranslationService.clearTranslationCache());
 
         translationCachePersistRow.setMaxWidth(sx(286));
@@ -1048,6 +1307,7 @@ public class SettingBox {
                 localization.get("button.save"),
                 0.6, 0.8, sv(186.0), sv(48.0), sv(10.4)
         );
+        freezeSettingButtonScale(saveApiKeysButton);
         saveApiKeysButton.setOnAction(e -> persistApiKeys());
 
         HBox saveApiKeysWrap = new HBox(saveApiKeysButton);
@@ -1057,6 +1317,7 @@ public class SettingBox {
                 localization.get("setting.box.api.guide"),
                 0.6, 0.8, sv(286.0), sv(46.0), sv(10.4)
         );
+        freezeSettingButtonScale(apiGuideButton);
         apiGuideButton.setOnAction(e -> {
             try {
                 java.nio.file.Path localGuide = java.nio.file.Paths.get("README_TRANSLATE.txt")
@@ -1261,6 +1522,7 @@ public class SettingBox {
                 localization.get("setting.box.other.join"),
                 0.6, 0.8, sv(216.0), sv(56.0), sv(12.2)
         );
+        freezeSettingButtonScale(discordURL);
         discordURL.setOnAction(e -> {
             try {
                 java.awt.Desktop.getDesktop().browse(new java.net.URI("https://discord.com/invite/UKYgsB6Zrx"));
@@ -1269,7 +1531,9 @@ public class SettingBox {
             }
         });
 
-        VBox otherCardBody = new VBox(sy(10), otherDescrption, discordURL);
+        StackPane discordPromoButton = createPromoButtonShell(discordURL);
+
+        VBox otherCardBody = new VBox(sy(10), otherDescrption, discordPromoButton);
         otherCardBody.setAlignment(Pos.TOP_CENTER);
         otherCardBody.setPadding(new Insets(sy(14), sx(10), sy(14), sx(10)));
 
@@ -1314,6 +1578,7 @@ public class SettingBox {
                 localizedOrFallback(localization, "setting.box.other.support.button", "Поддержать на Boosty"),
                 0.6, 0.8, sv(228.0), sv(56.0), sv(11.2)
         );
+        freezeSettingButtonScale(supportAuthorButton);
         supportAuthorButton.setOnAction(e -> {
             try {
                 java.awt.Desktop.getDesktop().browse(new java.net.URI("https://boosty.to/vovanruslvsc2/donate"));
@@ -1322,7 +1587,13 @@ public class SettingBox {
             }
         });
 
-        VBox supportCardBody = new VBox(sy(8), supportAuthorTitle, supportAuthorDescription, supportAuthorButton);
+        VBox supportTextBlock = new VBox(sy(8), supportAuthorTitle, supportAuthorDescription);
+        supportTextBlock.setAlignment(Pos.TOP_CENTER);
+
+        StackPane supportPromoButton = createPromoButtonShell(supportAuthorButton);
+        installSupportSpotlight(supportAuthorButton);
+
+        VBox supportCardBody = new VBox(sy(8), supportTextBlock, supportPromoButton);
         supportCardBody.setAlignment(Pos.TOP_CENTER);
         supportCardBody.setPadding(new Insets(sy(12), sx(10), sy(12), sx(10)));
 
@@ -1396,6 +1667,7 @@ public class SettingBox {
         for (int i = 0; i < keys.length; i++) {
             String key = keys[i];
             menuButtons[i] = new CustomLanguageButton(key, sv(136), sv(56), sv(10.5));
+            freezeSettingButtonScale(menuButtons[i]);
 
             VBox.setMargin(menuButtons[i], new Insets(0, 0, 0, sx(-1)));
 
@@ -1408,27 +1680,8 @@ public class SettingBox {
                 Pane pane = viewMap.get(index);
                 if (pane != null) pane.setVisible(true);
 
-                int buttonIndex = buttonBox.getChildren().indexOf(button);
-                double buttonHeight = stableButtonHeight(button);
-                double spacing = sy(20);
-                double paddingTop = leftMenuTopPadding;
-
-                double centerY = paddingTop
-                        + buttonIndex * (buttonHeight + spacing)
-                        + buttonHeight / 2.0;
-
-                selectionMarkImage.setTranslateY(0);
-                double markerHeight = stableMarkerHeight(selectionMarkImage);
-                double baseOffset = sy(36);
+                positionSelectionMarker(selectionMarkImage, button, leftPanel);
                 double scaleFactor = UiScaleHelper.scale(1);
-
-                double hdLift = (scaleFactor < 1.0) ? sy(6) : 0.0;
-                double adjustedY = centerY - markerHeight / 2.0 + baseOffset - hdLift - sy(SELECTED_MARK_LIFT_Y);
-
-                selectionMarkImage.setLayoutY(adjustedY);
-                selectionMarkImage.setLayoutX(-sx(25));
-                selectionMarkImage.setVisible(true);
-
                 selectionMarkImage.setOpacity(0);
 
                 double startTranslate = sy(-6);
@@ -1476,6 +1729,7 @@ public class SettingBox {
         root.setMaxSize(WIDTH, HEIGHT);
 
         root.getChildren().addAll(frame, contentLayout, closeButton);
+        installTypographyGuard(root);
 
         // place close button after layout
         root.layoutBoundsProperty().addListener((obs, oldVal, newVal) -> {

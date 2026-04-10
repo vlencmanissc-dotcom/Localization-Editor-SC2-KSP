@@ -22,6 +22,7 @@ import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -73,6 +74,9 @@ final class InAppSwingFileChooserDialog {
     private final TableView<FileEntry> filesTable = new TableView<>();
     private final ComboBox<FilterOption> filterCombo = new ComboBox<>();
     private final Label statusLabel = new Label();
+    private final Label titleLabel = new Label();
+    private final Label fileNameLabel = new Label();
+    private final Label filterLabel = new Label();
     private final Button upButton = new Button();
     private final Button openButton = new Button();
     private final Button cancelButton = new Button();
@@ -89,6 +93,18 @@ final class InAppSwingFileChooserDialog {
     private final List<GaussianBlur> activeBlurEffects = new ArrayList<>();
     private final List<Node> blurredNodes = new ArrayList<>();
     private final Map<Node, Effect> previousEffects = new IdentityHashMap<>();
+    private SplitPane activeSplitPane;
+    private final ChangeListener<Number> hostResizeListener = (obs, oldValue, newValue) -> {
+        if (activeSplitPane == null || overlay.getParent() == null) {
+            return;
+        }
+        Platform.runLater(() -> {
+            applyResponsiveLayout(activeSplitPane);
+            applyTypographyScale();
+            applyFilterComboMetrics();
+            applyTableHeaderScale();
+        });
+    };
 
     private static final class LocationEntry {
         final String label;
@@ -193,13 +209,13 @@ final class InAppSwingFileChooserDialog {
         dim.setStyle(FileOpenDialogStyle.overlayDimStyle());
         FileOpenDialogStyle.ensureStylesheet(overlay);
 
-        Label title = new Label(text("\u041e\u0442\u043a\u0440\u044b\u0442\u044c", "Open"));
-        title.setStyle(FileOpenDialogStyle.titleStyle(sf(18, 13)));
+        titleLabel.setText(text("\u041e\u0442\u043a\u0440\u044b\u0442\u044c", "Open"));
+        titleLabel.setStyle(FileOpenDialogStyle.titleStyle(sf(18, 13)));
 
         statusLabel.setWrapText(true);
         statusLabel.setStyle(FileOpenDialogStyle.statusStyle(sf(12, 10)));
 
-        HBox titleBar = new HBox(title);
+        HBox titleBar = new HBox(titleLabel);
         titleBar.setAlignment(Pos.CENTER_LEFT);
         enableDragging(titleBar);
 
@@ -209,19 +225,20 @@ final class InAppSwingFileChooserDialog {
         searchField.setPrefWidth(Math.max(sfx(240, 180), sfx(180, 140)));
 
         SplitPane splitPane = new SplitPane(placesList, filesTable);
+        activeSplitPane = splitPane;
         splitPane.getStyleClass().add("file-open-split");
         splitPane.setDividerPositions(0.24);
         splitPane.setPrefHeight(sf(380, 260));
         VBox.setVgrow(splitPane, Priority.ALWAYS);
         splitPane.setStyle("-fx-background-color: transparent;");
 
-        Label fileNameLabel = new Label(text("\u0418\u043c\u044f \u0444\u0430\u0439\u043b\u0430:", "File name:"));
+        fileNameLabel.setText(text("\u0418\u043c\u044f \u0444\u0430\u0439\u043b\u0430:", "File name:"));
         styleFormLabel(fileNameLabel);
         HBox fileRow = new HBox(sfx(8, 6), fileNameLabel, fileNameField);
         fileRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(fileNameField, Priority.ALWAYS);
 
-        Label filterLabel = new Label(text("\u0422\u0438\u043f:", "Filter:"));
+        filterLabel.setText(text("\u0422\u0438\u043f:", "Filter:"));
         styleFormLabel(filterLabel);
         Region buttonSpacer = new Region();
         HBox.setHgrow(buttonSpacer, Priority.ALWAYS);
@@ -246,11 +263,7 @@ final class InAppSwingFileChooserDialog {
                 sf(14, 10),
                 sfx(14, 10)
         ));
-        double panelW = Math.max(sfx(920, 720), sfx(720, 560));
-        double panelH = Math.max(sf(590, 470), sf(470, 360));
-        panel.setMinSize(panelW, panelH);
-        panel.setPrefSize(panelW, panelH);
-        panel.setMaxSize(panelW, panelH);
+        applyResponsiveLayout(splitPane);
         panel.setStyle(FileOpenDialogStyle.panelStyle());
 
         overlay.getChildren().setAll(dim, panel);
@@ -267,11 +280,20 @@ final class InAppSwingFileChooserDialog {
         dim.setOnMouseClicked(event -> event.consume());
 
         applyBackgroundBlur();
+        host.widthProperty().addListener(hostResizeListener);
+        host.heightProperty().addListener(hostResizeListener);
         host.getChildren().add(overlay);
         overlay.toFront();
+        applyTypographyScale();
         applyTableHeaderScale();
+        applyFilterComboMetrics();
         playOpenAnimation();
-        Platform.runLater(pathField::requestFocus);
+        Platform.runLater(() -> {
+            applyResponsiveLayout(splitPane);
+            applyTypographyScale();
+            applyFilterComboMetrics();
+            pathField.requestFocus();
+        });
     }
 
     private void configureButtons() {
@@ -280,8 +302,8 @@ final class InAppSwingFileChooserDialog {
         cancelButton.setText(text("\u041e\u0442\u043c\u0435\u043d\u0430", "Cancel"));
 
         styleButton(upButton, 110);
-        styleButton(openButton, 150);
-        styleButton(cancelButton, 150);
+        styleButton(openButton, 176);
+        styleButton(cancelButton, 176);
         upButton.getStyleClass().add("file-open-button-compact");
 
         upButton.setOnAction(event -> navigateUp());
@@ -298,6 +320,7 @@ final class InAppSwingFileChooserDialog {
             protected void updateItem(LocationEntry item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item.label);
+                setGraphic(null);
             }
         });
         placesList.setFixedCellSize(sf(30, 22));
@@ -343,6 +366,7 @@ final class InAppSwingFileChooserDialog {
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item);
+                setGraphic(null);
                 setAlignment(Pos.CENTER);
             }
         });
@@ -390,11 +414,16 @@ final class InAppSwingFileChooserDialog {
         filterCombo.getItems().setAll(localizationFilter, txtFilter, archiveFilter, allFiles);
         filterCombo.getStyleClass().add("file-open-filter");
         filterCombo.setValue(localizationFilter);
+        filterCombo.setVisibleRowCount(6);
         filterCombo.setCellFactory(list -> new ListCell<>() {
             @Override
             protected void updateItem(FilterOption item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item.label);
+                setGraphic(null);
+                setMinHeight(sf(34, 26));
+                setPrefHeight(sf(34, 26));
+                setStyle("-fx-font-size: " + sf(13, 11) + "px; -fx-padding: 0 " + sfx(10, 8) + " 0 " + sfx(10, 8) + ";");
             }
         });
         filterCombo.setButtonCell(new ListCell<>() {
@@ -402,6 +431,10 @@ final class InAppSwingFileChooserDialog {
             protected void updateItem(FilterOption item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item.label);
+                setGraphic(null);
+                setMinHeight(sf(34, 26));
+                setPrefHeight(sf(34, 26));
+                setStyle("-fx-font-size: " + sf(13, 11) + "px; -fx-padding: 0 " + sfx(10, 8) + " 0 " + sfx(10, 8) + ";");
             }
         });
         filterCombo.setPrefWidth(sfx(350, 240));
@@ -813,6 +846,101 @@ final class InAppSwingFileChooserDialog {
         return dot >= 0 ? file.getName().substring(dot + 1).toUpperCase(Locale.ROOT) : text("\u0424\u0430\u0439\u043b", "File");
     }
 
+    private void applyResponsiveLayout(SplitPane splitPane) {
+        double hostW = host != null && host.getWidth() > 1.0 ? host.getWidth() : UiScaleHelper.SCREEN_WIDTH;
+        double hostH = host != null && host.getHeight() > 1.0 ? host.getHeight() : UiScaleHelper.SCREEN_HEIGHT;
+
+        double desiredW = Math.max(sfx(920, 720), sfx(720, 560));
+        double desiredH = Math.max(sf(660, 520), sf(520, 390));
+
+        double panelW = clamp(desiredW, sfx(560, 460), Math.max(sfx(560, 460), hostW * 0.94));
+        double panelH = clamp(desiredH, sf(460, 360), Math.max(sf(460, 360), hostH * 0.92));
+
+        panel.setMinSize(panelW, panelH);
+        panel.setPrefSize(panelW, panelH);
+        panel.setMaxSize(panelW, panelH);
+
+        double searchWidth = clamp(panelW * 0.30, sfx(170, 130), sfx(360, 260));
+        searchField.setPrefWidth(searchWidth);
+        searchField.setMinWidth(searchWidth);
+        double textControlHeight = clamp(panelH * 0.060, sf(30, 24), sf(46, 34));
+        double actionButtonHeight = clamp(panelH * 0.072, sf(34, 28), sf(54, 40));
+        pathField.setMinHeight(textControlHeight);
+        pathField.setPrefHeight(textControlHeight);
+        searchField.setMinHeight(textControlHeight);
+        searchField.setPrefHeight(textControlHeight);
+        fileNameField.setMinHeight(textControlHeight);
+        fileNameField.setPrefHeight(textControlHeight);
+
+        double placesWidth = clamp(panelW * 0.24, sfx(150, 120), sfx(260, 200));
+        placesList.setMinWidth(placesWidth);
+        placesList.setPrefWidth(placesWidth);
+        placesList.setFixedCellSize(clamp(panelH * 0.050, sf(28, 22), sf(40, 30)));
+
+        double splitHeight = clamp(panelH - sf(282, 220), sf(176, 138), sf(430, 320));
+        splitPane.setMinHeight(splitHeight);
+        splitPane.setPrefHeight(splitHeight);
+        filesTable.setFixedCellSize(clamp(panelH * 0.050, sf(28, 22), sf(40, 30)));
+
+        double filterWidth = clamp(panelW * 0.38, sfx(220, 180), sfx(360, 260));
+        filterCombo.setMinWidth(filterWidth);
+        filterCombo.setPrefWidth(filterWidth);
+        filterCombo.setMinHeight(textControlHeight);
+        filterCombo.setPrefHeight(textControlHeight);
+        filterCombo.setMaxHeight(textControlHeight);
+        upButton.setMinHeight(actionButtonHeight);
+        upButton.setPrefHeight(actionButtonHeight);
+        openButton.setMinHeight(actionButtonHeight);
+        openButton.setPrefHeight(actionButtonHeight);
+        cancelButton.setMinHeight(actionButtonHeight);
+        cancelButton.setPrefHeight(actionButtonHeight);
+        applyFilterComboMetrics();
+    }
+
+    private void applyTypographyScale() {
+        double titleFont = sf(18, 13);
+        double statusFont = sf(12, 10);
+        double formFont = sf(12, 10);
+        double fieldFont = sf(13, 11);
+
+        titleLabel.setStyle(FileOpenDialogStyle.titleStyle(titleFont));
+        statusLabel.setStyle(FileOpenDialogStyle.statusStyle(statusFont));
+        styleFormLabel(fileNameLabel);
+        styleFormLabel(filterLabel);
+
+        String fieldStyle = FileOpenDialogStyle.fieldStyle(fieldFont);
+        pathField.setStyle(fieldStyle);
+        searchField.setStyle(fieldStyle);
+        fileNameField.setStyle(fieldStyle);
+        filterCombo.setStyle(FileOpenDialogStyle.fieldStyle(fieldFont));
+        placesList.setStyle(FileOpenDialogStyle.listSurfaceStyle(fieldFont));
+        filesTable.setStyle(FileOpenDialogStyle.tableSurfaceStyle(fieldFont));
+
+        styleButton(upButton, 110);
+        styleButton(openButton, 176);
+        styleButton(cancelButton, 176);
+        applyTableHeaderScale();
+    }
+
+    private void applyFilterComboMetrics() {
+        double fontSize = sf(13, 11);
+        double controlHeight = sf(34, 28);
+        filterCombo.lookupAll(".list-cell").forEach(node ->
+                node.setStyle("-fx-font-size: " + fontSize + "px; -fx-padding: 0 " + sfx(10, 8) + " 0 " + sfx(10, 8) + ";"));
+        Node arrowButton = filterCombo.lookup(".arrow-button");
+        if (arrowButton instanceof Region region) {
+            region.setMinHeight(controlHeight);
+            region.setPrefHeight(controlHeight);
+            region.setMaxHeight(controlHeight);
+            region.setMinWidth(sfx(44, 34));
+            region.setPrefWidth(sfx(44, 34));
+        }
+    }
+
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     private void styleButton(Button button, double width) {
         button.setMinWidth(sfx(width, width * 0.72));
         button.setPrefWidth(sfx(width, width * 0.72));
@@ -850,12 +978,20 @@ final class InAppSwingFileChooserDialog {
             button.setScaleX(0.985);
             button.setScaleY(0.985);
         });
+        button.addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
+            if (button.isDisabled() || !pressed[0]) {
+                return;
+            }
+            boolean inside = button.localToScene(button.getBoundsInLocal()).contains(e.getSceneX(), e.getSceneY());
+            button.setScaleX(inside ? 0.99 : 1.0);
+            button.setScaleY(inside ? 0.99 : 1.0);
+        });
         button.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
             if (button.isDisabled() || e.getButton() != MouseButton.PRIMARY) {
                 return;
             }
             pressed[0] = false;
-            boolean inside = button.contains(button.sceneToLocal(e.getSceneX(), e.getSceneY()));
+            boolean inside = button.localToScene(button.getBoundsInLocal()).contains(e.getSceneX(), e.getSceneY());
             button.setScaleX(inside ? 1.02 : 1.0);
             button.setScaleY(inside ? 1.02 : 1.0);
         });
@@ -881,6 +1017,7 @@ final class InAppSwingFileChooserDialog {
         }
         closing = true;
         if (shouldSkipAnimations()) {
+            detachHostResizeListeners();
             host.getChildren().remove(overlay);
             clearBackgroundBlur();
             closing = false;
@@ -894,6 +1031,7 @@ final class InAppSwingFileChooserDialog {
                 buildBlurTransition(false)
         );
         transition.setOnFinished(event -> {
+            detachHostResizeListeners();
             host.getChildren().remove(overlay);
             clearBackgroundBlur();
             closing = false;
@@ -1013,6 +1151,12 @@ final class InAppSwingFileChooserDialog {
         activeBlurEffects.clear();
         blurredNodes.clear();
         previousEffects.clear();
+    }
+
+    private void detachHostResizeListeners() {
+        host.widthProperty().removeListener(hostResizeListener);
+        host.heightProperty().removeListener(hostResizeListener);
+        activeSplitPane = null;
     }
 
     private void enableDragging(Node dragHandle) {
