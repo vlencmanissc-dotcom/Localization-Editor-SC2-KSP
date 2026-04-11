@@ -1464,11 +1464,46 @@ public final class GlossaryService {
     }
 
     private static Path resolvePreferredExternalGlossaryDir() {
+        Path configuredDir = resolveConfiguredGlossaryDir();
+        if (configuredDir != null) {
+            return configuredDir;
+        }
+
+        Path installedGlossaryDir = firstExistingDirectory(resolveAppGlossaryCandidates());
+        if (installedGlossaryDir != null) {
+            return installedGlossaryDir;
+        }
+
+        return resolveLegacyGlossaryDir();
+    }
+
+    private static Path resolveExternalGlossaryDir() {
+        Path configuredDir = resolveConfiguredGlossaryDir();
+        if (configuredDir != null && Files.isDirectory(configuredDir)) {
+            return configuredDir;
+        }
+
+        Path installedGlossaryDir = firstExistingDirectory(resolveAppGlossaryCandidates());
+        if (installedGlossaryDir != null) {
+            return installedGlossaryDir;
+        }
+
+        Path legacyDir = resolveLegacyGlossaryDir();
+        if (legacyDir != null && Files.isDirectory(legacyDir)) {
+            return legacyDir;
+        }
+        return null;
+    }
+
+    private static Path resolveConfiguredGlossaryDir() {
         String configured = System.getProperty("glossary.dir");
         if (configured != null && !configured.isBlank()) {
             return Path.of(configured.trim());
         }
+        return null;
+    }
 
+    private static Path resolveLegacyGlossaryDir() {
         String localAppData = System.getenv("LOCALAPPDATA");
         if (localAppData != null && !localAppData.isBlank()) {
             return Path.of(localAppData, "Localization Editor SC2 KSP", "glossary");
@@ -1481,29 +1516,34 @@ public final class GlossaryService {
         return null;
     }
 
-    private static Path resolveExternalGlossaryDir() {
-        Path preferredDir = resolvePreferredExternalGlossaryDir();
-        if (preferredDir != null && Files.isDirectory(preferredDir)) {
-            return preferredDir;
-        }
+    private static List<Path> resolveAppGlossaryCandidates() {
+        LinkedHashSet<Path> candidates = new LinkedHashSet<>();
 
         try {
             Path appLocation = Path.of(Objects.requireNonNull(
                     GlossaryService.class.getProtectionDomain().getCodeSource().getLocation().toURI()));
             Path appDir = Files.isDirectory(appLocation) ? appLocation : appLocation.getParent();
             if (appDir != null) {
-                Path glossaryInApp = appDir.resolve("glossary");
-                if (Files.isDirectory(glossaryInApp)) {
-                    return glossaryInApp;
+                Path installRoot = appDir.getParent();
+                if (installRoot != null) {
+                    // jpackage layout: <install>\app\*.jar, so editable files should live in <install>\glossary
+                    candidates.add(installRoot.resolve("glossary"));
                 }
+                candidates.add(appDir.resolve("glossary"));
             }
         } catch (URISyntaxException | RuntimeException ignored) {
             // fallback below
         }
 
-        Path cwdGlossary = Path.of(System.getProperty("user.dir", "."), "glossary");
-        if (Files.isDirectory(cwdGlossary)) {
-            return cwdGlossary;
+        candidates.add(Path.of(System.getProperty("user.dir", "."), "glossary"));
+        return new ArrayList<>(candidates);
+    }
+
+    private static Path firstExistingDirectory(List<Path> candidates) {
+        for (Path candidate : candidates) {
+            if (candidate != null && Files.isDirectory(candidate)) {
+                return candidate;
+            }
         }
         return null;
     }

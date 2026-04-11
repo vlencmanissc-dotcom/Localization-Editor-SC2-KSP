@@ -272,6 +272,7 @@
     -fx-font-size: 1.7em;
     -fx-font-weight: 900;
     -fx-padding: 0;
+    -fx-alignment: center;
 }
 
 .close-file-button:hover {

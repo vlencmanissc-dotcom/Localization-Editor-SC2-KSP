@@ -376,6 +376,7 @@ public class Main extends Application {
                                       String preferredMainLanguage) {
         fileLoading.set(true);
         try {
+            tableView.setPreferredMainSourceUi(preferredMainLanguage);
             File loadTarget = FileUtil.resolveLoadInput(file, preferredFile, preferredMainLanguage);
             if (loadTarget == null && isArchiveInput(file) && (preferredFile == null || preferredFile.isBlank())) {
                 AppLog.warn("[UI] Archive auto-open target not resolved, retrying auto-resolve.");
@@ -549,6 +550,11 @@ public class Main extends Application {
             }
             if (!ok) {
                 throw new IllegalStateException("[SAVE] failed or context not ready");
+            }
+            if (translateToAll) {
+                tableView.clearAllPendingSaveHeaders();
+            } else {
+                tableView.clearPendingSaveForTarget(languageDropdown.getValue());
             }
             AppLog.info("[SAVE] completed successfully");
             //    applyTranslateModeUI();
@@ -1985,6 +1991,7 @@ public class Main extends Application {
         }
         project.clear();
         tableView.clearLoadedData();
+        tableView.setPreferredMainSourceUi(null);
         sourceUi = null;
         translateToAll = false;
         chooseAllMode.set(false);

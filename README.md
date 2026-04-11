@@ -21,9 +21,10 @@ What it does:
 3. Open your `SC2Map` / `SC2Mod` / `mpq` archive or `.txt` localization file.
 
 ## Editable Glossaries After Install
-The app now copies editable glossary files to:
+The installer now places editable glossary files in the application folder:
 
-- `%LOCALAPPDATA%\Localization Editor SC2 KSP\glossary`
+- `glossary` next to `Localization Editor SC2 KSP.exe`
+- example: `C:\Program Files\Localization Editor SC2 KSP\glossary`
 
 You can edit these files after installation without rebuilding the app.
 
@@ -33,7 +34,8 @@ Default files placed there:
 - `Addition_Weapons_Detailed_KSP.txt`
 - `Addition_Abilities_Detailed_KSP.txt`
 
-On startup, the editor loads glossary files from that external folder first when they exist.
+On startup, the editor loads glossary files from that install-folder `glossary` first when they exist.
+For legacy installs, `%LOCALAPPDATA%\Localization Editor SC2 KSP\glossary` is still used as a fallback if present.
 
 ## 2.0.1 Notes
 - Installer version was bumped to `2.0.1` to avoid the Windows reinstall problem when `2.0.0` is already present.

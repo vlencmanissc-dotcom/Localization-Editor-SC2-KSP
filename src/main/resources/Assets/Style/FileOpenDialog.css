@@ -224,7 +224,8 @@
     -fx-text-fill: #a8f5da;
     -fx-padding: 0 8 0 8;
     -fx-alignment: center-left;
-    -fx-content-display: center;
+    -fx-content-display: text-only;
+    -fx-text-overrun: ellipsis;
 }
 
 .file-open-table .table-row-cell:filled:selected .table-cell {
@@ -314,10 +315,13 @@
 .file-open-filter .list-cell {
     -fx-text-fill: #baffea;
     -fx-padding: 2 8 2 8;
+    -fx-alignment: center-left;
+    -fx-content-display: text-only;
 }
 
 .file-open-filter .arrow-button {
     -fx-background-color: transparent;
+    -fx-padding: 0 10 0 10;
 }
 
 .file-open-filter .arrow {
@@ -338,6 +342,9 @@
     -fx-background-color: rgba(6, 18, 15, 0.98);
     -fx-text-fill: #a8f5da;
     -fx-padding: 4 10 4 10;
+    -fx-min-height: 32px;
+    -fx-pref-height: 32px;
+    -fx-alignment: center-left;
     -fx-border-color: transparent;
     -fx-border-width: 1;
     -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_normal_cropped_52.png");

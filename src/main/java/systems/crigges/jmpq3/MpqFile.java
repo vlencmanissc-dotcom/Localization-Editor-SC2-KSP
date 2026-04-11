@@ -15,11 +15,8 @@ import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.file.Files;
 import java.util.Arrays;
+
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import systems.crigges.jmpq3.BlockTable;
-import systems.crigges.jmpq3.JMpqException;
-import systems.crigges.jmpq3.JzLibHelper;
-import systems.crigges.jmpq3.MpqCrypto;
 
 public class MpqFile {
     public static final int COMPRESSED = 512;

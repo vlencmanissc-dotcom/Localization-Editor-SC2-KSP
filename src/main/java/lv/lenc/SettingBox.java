@@ -764,9 +764,9 @@ public class SettingBox {
             CustomBorder borderTable,
             CustomTableView tableView
     ) {
-        final double WIDTH  = sx(500);
-        final double PANEL_HEIGHT = sy(548);
-        final double HEIGHT = sy(574);
+        final double WIDTH  = sx(524);
+        final double PANEL_HEIGHT = sy(574);
+        final double HEIGHT = sy(602);
 
         String texturePath = UiAssets.textureRoot();
 
@@ -1007,7 +1007,7 @@ public class SettingBox {
         // -------------------------
         soundLabel = new GlowingLabel(localization.get("setting.box.audio"));
         tuneSettingLabel(soundLabel, 24);
-        VBox.setMargin(soundLabel, new Insets(0, 0, sy(10), 0));
+        VBox.setMargin(soundLabel, new Insets(0, 0, sy(6), 0));
 
         soundDescription = new GlowingLabel(localizedOrFallback(
                 localization,
@@ -1034,6 +1034,7 @@ public class SettingBox {
         );
         tuneSettingLabel(uiSoundVolumeLabel, 16);
         uiSoundVolumeLabel.setPrefWidth(sx(286));
+        uiSoundVolumeLabel.setWrapText(true);
         uiSoundVolumeLabel.setAlignment(Pos.CENTER_LEFT);
 
         CustomSlider uiSoundVolumeSlider = new CustomSlider(0, 100, UiSoundManager.currentVolume() * 100.0);
@@ -1055,6 +1056,7 @@ public class SettingBox {
         );
         tuneSettingLabel(musicVolumeLabel, 16);
         musicVolumeLabel.setPrefWidth(sx(286));
+        musicVolumeLabel.setWrapText(true);
         musicVolumeLabel.setAlignment(Pos.CENTER_LEFT);
 
         CustomSlider musicVolumeSlider = new CustomSlider(0, 100, UiSoundManager.currentMusicVolume() * 100.0);
@@ -1120,22 +1122,29 @@ public class SettingBox {
         soundScroll.setFitToWidth(true);
         soundScroll.setFitToHeight(false);
         soundScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        soundScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        soundScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
         soundScroll.setPannable(true);
-        soundScroll.setPrefViewportHeight(sy(306));
-        soundScroll.setMinViewportHeight(sy(306));
+        soundScroll.setPrefViewportHeight(sy(336));
+        soundScroll.setMinViewportHeight(sy(336));
         soundScroll.setMaxWidth(sx(292));
         soundScroll.getStyleClass().add("settings-api-services-scroll");
         soundScroll.setStyle("-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0;");
+        StackPane soundScrollFrame = new StackPane(soundScroll);
+        soundScrollFrame.getStyleClass().add("settings-audio-scroll-frame");
+        soundScrollFrame.setAlignment(Pos.CENTER);
+        soundScrollFrame.setPadding(new Insets(sy(4), sx(4), sy(4), sx(4)));
+        soundScrollFrame.setMinWidth(sx(292));
+        soundScrollFrame.setPrefWidth(sx(292));
+        soundScrollFrame.setMaxWidth(sx(292));
 
-        VBox saveAudioWrap = new VBox(sy(8), resetAudioSettingsButton, saveAudioSettingsButton);
+        VBox saveAudioWrap = new VBox(sy(7), resetAudioSettingsButton, saveAudioSettingsButton);
         saveAudioWrap.setAlignment(Pos.CENTER);
-        VBox.setMargin(saveAudioWrap, new Insets(sy(10), 0, 0, 0));
-        saveAudioWrap.setTranslateY(sy(6));
+        VBox.setMargin(saveAudioWrap, new Insets(sy(4), 0, 0, 0));
+        saveAudioWrap.setTranslateY(-sy(2));
 
-        VBox soundBox = new VBox(sy(8), soundLabel, soundScroll, saveAudioWrap);
+        VBox soundBox = new VBox(sy(6), soundLabel, soundScrollFrame, saveAudioWrap);
         soundBox.setAlignment(Pos.TOP_CENTER);
-        soundBox.setPadding(new Insets(sy(10), sx(10), sy(10), sx(10)));
+        soundBox.setPadding(new Insets(sy(8), sx(10), sy(8), sx(10)));
         Pane soundView = new StackPane(soundBox);
 
         // -------------------------

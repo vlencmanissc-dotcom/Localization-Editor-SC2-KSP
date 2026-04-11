@@ -66,6 +66,10 @@ public final class CustomCursorManager {
         return cursor(CursorKind.DRAGFRAME);
     }
 
+    public static Cursor horizontalResizeCursor() {
+        return cursor(CursorKind.EDGE_RIGHT);
+    }
+
     public static void applyHyperlinkCursor(Node node) {
         if (node != null) {
             node.setCursor(hyperlinkCursor());
@@ -105,6 +109,12 @@ public final class CustomCursorManager {
     public static void applyResizeCursor(Node node) {
         if (node != null) {
             node.setCursor(dragFrameCursor());
+        }
+    }
+
+    public static void applyHorizontalResizeCursor(Node node) {
+        if (node != null) {
+            node.setCursor(horizontalResizeCursor());
         }
     }
 
@@ -162,7 +172,15 @@ public final class CustomCursorManager {
                 current.setCursor(hyperlinkCursor());
             } else if (cursor == Cursor.MOVE) {
                 current.setCursor(gripOpenCursor());
+            } else if (cursor == Cursor.H_RESIZE
+                    || cursor == Cursor.E_RESIZE
+                    || cursor == Cursor.W_RESIZE) {
+                current.setCursor(horizontalResizeCursor());
             } else if (cursor == Cursor.SE_RESIZE) {
+                current.setCursor(dragFrameCursor());
+            } else if (cursor == Cursor.NE_RESIZE
+                    || cursor == Cursor.NW_RESIZE
+                    || cursor == Cursor.SW_RESIZE) {
                 current.setCursor(dragFrameCursor());
             }
             current = current.getParent();

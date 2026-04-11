@@ -24,6 +24,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.effect.GaussianBlur;
@@ -62,6 +63,7 @@ public final class KeyFilterWindow {
 
     private static final Map<String, TextArea> editors = new LinkedHashMap<>();
     private static final Map<String, TextFlow> editorPreviews = new LinkedHashMap<>();
+    private static final Map<String, Label> editorLangLabels = new LinkedHashMap<>();
     private static double editorValueHeight = -1.0;
     private static final List<String> EDIT_LANGS = List.of(
             "ruRU", "deDE", "enUS", "esMX", "esES", "frFR", "itIT", "plPL", "ptBR", "koKR", "zhCN", "zhTW"
@@ -280,6 +282,7 @@ public final class KeyFilterWindow {
     private static Pane buildPanel(StackPane appRoot, CustomTableView table, LocalizationManager localization, String initialKey) {
         editors.clear();
         editorPreviews.clear();
+        editorLangLabels.clear();
         fullscreen = false;
         editorFocused = false;
         selectedKey = initialKey;
@@ -328,8 +331,32 @@ public final class KeyFilterWindow {
         tree = new TreeView<>();
         tree.setShowRoot(false);
         tree.getStyleClass().add("key-filter-tree");
-        tree.setStyle("-fx-font-size: " + sf(14, 10.5) + "px;");
-        tree.setFixedCellSize(Math.max(UiScaleHelper.scaleY(44), 24));
+        tree.setCellFactory(view -> new TreeCell<>() {
+            @Override
+            protected void updateItem(NodeData item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.title);
+                if (empty || item == null) {
+                    setTranslateY(0.0);
+                    setStyle("");
+                    return;
+                }
+                double scale = UiScaleHelper.scale(1.0);
+                double padTop = scale >= 0.98
+                        ? Math.max(UiScaleHelper.scaleY(0.8), 0.6)
+                        : Math.max(UiScaleHelper.scaleY(0.45), 0.35);
+                double padBottom = scale >= 0.98
+                        ? Math.max(UiScaleHelper.scaleY(1.4), 1.0)
+                        : Math.max(UiScaleHelper.scaleY(0.95), 0.8);
+                double padX = scale >= 0.98
+                        ? Math.max(UiScaleHelper.scaleX(7.5), 6.0)
+                        : Math.max(UiScaleHelper.scaleX(5.0), 4.0);
+                double lift = scale >= 0.98 ? Math.max(UiScaleHelper.scaleY(0.7), 0.5) : 0.0;
+                setTranslateY(-lift);
+                setStyle("-fx-padding: " + padTop + "px " + padX + "px " + padBottom + "px " + padX + "px; -fx-text-overrun: ellipsis;");
+            }
+        });
+        applyTreeTypography(tree);
         TreeItem<NodeData> root = new TreeItem<>(new NodeData("All keys", ""));
         root.setExpanded(true);
         buildTree(root, table);
@@ -361,6 +388,7 @@ public final class KeyFilterWindow {
         for (String lang : EDIT_LANGS) {
             editorPane.getChildren().add(buildEditorBlock(lang));
         }
+        applyEditorTypography();
 
         ScrollPane editorScroll = new ScrollPane(editorPane);
         editorScroll.getStyleClass().add("key-filter-editors-scroll");
@@ -569,6 +597,7 @@ public final class KeyFilterWindow {
             if (appRoot.getScene() != null) {
                 UiScaleHelper.refreshFromScene(appRoot.getScene());
             }
+            applyTreeTypography(tree);
             if (fullscreen) {
                 double targetW = Math.max(minPopupW, appRoot.getWidth() - UiScaleHelper.scaleX(16));
                 double targetH = Math.max(minPopupH, appRoot.getHeight() - UiScaleHelper.scaleY(16));
@@ -579,6 +608,7 @@ public final class KeyFilterWindow {
             if (appRoot.getScene() != null) {
                 UiScaleHelper.refreshFromScene(appRoot.getScene());
             }
+            applyTreeTypography(tree);
             if (fullscreen) {
                 double targetW = Math.max(minPopupW, appRoot.getWidth() - UiScaleHelper.scaleX(16));
                 double targetH = Math.max(minPopupH, appRoot.getHeight() - UiScaleHelper.scaleY(16));
@@ -707,6 +737,7 @@ public final class KeyFilterWindow {
     private static Pane buildEditorBlock(String lang) {
         Label label = new Label(lang);
         label.getStyleClass().add("key-filter-edit-lang");
+        editorLangLabels.put(lang, label);
 
         TextFlow previewFlow = new TextFlow();
         previewFlow.getStyleClass().add("key-filter-preview-flow");
@@ -1199,12 +1230,66 @@ public final class KeyFilterWindow {
         Text node = new Text(chunk);
         node.setFill(javafx.scene.paint.Color.web(color));
         node.setUnderline(underline);
-        node.setStyle("-fx-font-family: \"Segoe UI\", \"Arial\", sans-serif; -fx-font-weight: bold; -fx-font-size: " + sf(16, 11) + "px;");
+        node.setStyle("-fx-font-family: \"Segoe UI\", \"Arial\", sans-serif; -fx-font-weight: bold; -fx-font-size: " + editorContentFontPx() + "px;");
         flow.getChildren().add(node);
     }
 
     private static double sf(double fullHdPx, double minPx) {
         return Math.max(UiScaleHelper.scaleY(fullHdPx), minPx);
+    }
+
+    private static double editorContentFontPx() {
+        double scale = UiScaleHelper.scale(1.0);
+        if (scale >= 0.98) {
+            return 16.0;
+        }
+        return Math.max(UiScaleHelper.scaleFont(11.4, 10.8), 10.8);
+    }
+
+    private static double editorLangFontPx() {
+        double scale = UiScaleHelper.scale(1.0);
+        if (scale >= 0.98) {
+            return 11.0;
+        }
+        return Math.max(UiScaleHelper.scaleFont(8.6, 9.6), 9.6);
+    }
+
+    private static void applyEditorTypography() {
+        double editorFont = editorContentFontPx();
+        double langFont = editorLangFontPx();
+        for (Map.Entry<String, TextArea> entry : editors.entrySet()) {
+            TextArea area = entry.getValue();
+            if (area != null) {
+                area.setStyle("-fx-font-size: " + editorFont + "px;");
+            }
+            TextFlow preview = editorPreviews.get(entry.getKey());
+            if (preview != null) {
+                preview.setStyle("-fx-font-size: " + editorFont + "px;");
+            }
+        }
+        for (Label label : editorLangLabels.values()) {
+            if (label != null) {
+                label.setStyle("-fx-font-size: " + langFont + "px; -fx-font-weight: bold;");
+            }
+        }
+    }
+
+    private static void applyTreeTypography(TreeView<NodeData> tree) {
+        if (tree == null) return;
+        double scale = UiScaleHelper.scale(1.0);
+        double treeFontSize = scale >= 0.98
+                ? Math.max(UiScaleHelper.scaleFont(12.0, 10.4), 10.8)
+                : Math.max(UiScaleHelper.scaleFont(10.9, 9.9), 9.9);
+        double indent = scale >= 0.98
+                ? Math.max(UiScaleHelper.scaleX(18), 16.0)
+                : Math.max(UiScaleHelper.scaleX(12), 10.0);
+        tree.setStyle("-fx-font-size: " + treeFontSize + "px; -fx-indent: " + indent + "px;");
+        double cellHeight = scale >= 0.98
+                ? Math.max(UiScaleHelper.scaleY(40), treeFontSize * 1.88)
+                : Math.max(UiScaleHelper.scaleY(37), treeFontSize * 1.82);
+        tree.setFixedCellSize(cellHeight);
+        tree.refresh();
+        applyEditorTypography();
     }
 
     private static void loadRowIntoEditors(LocalizationData row) {
@@ -1285,26 +1370,47 @@ public final class KeyFilterWindow {
     }
 
     private static void buildTree(TreeItem<NodeData> root, CustomTableView table) {
-        Map<String, TreeItem<NodeData>> byPath = new LinkedHashMap<>();
         for (String key : table.getAllKeysForFilter()) {
             String[] parts = key.split("/");
-            StringBuilder path = new StringBuilder();
             TreeItem<NodeData> parent = root;
+            StringBuilder actualPath = new StringBuilder();
+            String previousPart = null;
             for (String rawPart : parts) {
                 String part = rawPart.trim();
                 if (part.isEmpty()) continue;
-                if (path.length() > 0) path.append('/');
-                path.append(part);
-                String full = path.toString();
-                TreeItem<NodeData> node = byPath.get(full);
+                if (actualPath.length() > 0) actualPath.append('/');
+                actualPath.append(part);
+
+                boolean repeatedSegment = previousPart != null && previousPart.equalsIgnoreCase(part);
+                previousPart = part;
+                if (repeatedSegment) {
+                    continue;
+                }
+
+                String full = actualPath.toString();
+                TreeItem<NodeData> node = findChild(parent, part, full);
                 if (node == null) {
                     node = new TreeItem<>(new NodeData(part, full));
-                    byPath.put(full, node);
                     parent.getChildren().add(node);
                 }
                 parent = node;
             }
         }
+    }
+
+    private static TreeItem<NodeData> findChild(TreeItem<NodeData> parent, String title, String fullPath) {
+        if (parent == null) {
+            return null;
+        }
+        for (TreeItem<NodeData> child : parent.getChildren()) {
+            NodeData value = child.getValue();
+            if (value != null
+                    && Objects.equals(value.title, title)
+                    && Objects.equals(value.fullPath, fullPath)) {
+                return child;
+            }
+        }
+        return null;
     }
 
     private static void selectKeyInTree(String key) {

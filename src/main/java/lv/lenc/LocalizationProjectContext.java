@@ -92,6 +92,10 @@ public final class LocalizationProjectContext {
     }
 
     public boolean saveTarget(CustomTableView tableView, String targetUiLang) {
+        return saveTarget(tableView, targetUiLang, List.of(targetUiLang));
+    }
+
+    private boolean saveTarget(CustomTableView tableView, String targetUiLang, List<String> knownTargetUiLangs) {
         if (openedFile == null) return false;
         if (targetUiLang == null || targetUiLang.isBlank()) return false;
 
@@ -102,6 +106,7 @@ public final class LocalizationProjectContext {
                 sourceInput,
                 archiveRelativePath,
                 targetUiLang,
+                knownTargetUiLangs,
                 fileText
         );
     }
@@ -116,7 +121,7 @@ public final class LocalizationProjectContext {
 
         boolean ok = true;
         for (String ui : langs) {
-            ok &= saveTarget(tableView, ui);
+            ok &= saveTarget(tableView, ui, langs);
         }
         return ok;
     }

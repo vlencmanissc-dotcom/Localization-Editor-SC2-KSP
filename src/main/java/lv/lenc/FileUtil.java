@@ -379,7 +379,7 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
         }
         if (unionLangs.isEmpty()) unionLangs.addAll(KNOWN_UI_LANGS);
         List<String> defaultLanguages = mainLanguagesByFile.getOrDefault(defaultFile, new ArrayList<>(unionLangs));
-        String defaultMain = defaultLanguages.contains("enUS") ? "enUS" : defaultLanguages.get(0);
+        String defaultMain = defaultLanguages.get(0);
 
         return new OpenPlan(fileOptions, mainLanguagesByFile, defaultFile, defaultMain);
     }
@@ -1663,13 +1663,23 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
                                                String archiveRelativePath,
                                                String targetUiLang,
                                                String fileText) {
+        return saveToTargetLanguage(openedFile, projectRoot, sourceInput, archiveRelativePath, targetUiLang, List.of(targetUiLang), fileText);
+    }
+
+    public static boolean saveToTargetLanguage(File openedFile,
+                                               File projectRoot,
+                                               File sourceInput,
+                                               String archiveRelativePath,
+                                               String targetUiLang,
+                                               List<String> relatedUiLangs,
+                                               String fileText) {
         try {
             if (openedFile == null) return false;
             if (sourceInput != null && isArchiveLikeInput(sourceInput)) {
                 String relPath = archiveRelativePath != null && !archiveRelativePath.isBlank()
                         ? archiveRelativePath.replace('\\', '/')
                         : deriveLocalizedRelativePath(openedFile);
-                boolean savedToArchive = saveToArchiveTargetLanguage(sourceInput, relPath, targetUiLang, fileText);
+                boolean savedToArchive = saveToArchiveTargetLanguage(sourceInput, relPath, targetUiLang, relatedUiLangs, fileText);
                 if (!savedToArchive) {
                     return false;
                 }
@@ -1695,6 +1705,7 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
     private static boolean saveToArchiveTargetLanguage(File archiveFile,
                                                        String archiveRelativePath,
                                                        String targetUiLang,
+                                                       List<String> relatedUiLangs,
                                                        String fileText) throws IOException {
         if (archiveFile == null || archiveRelativePath == null || archiveRelativePath.isBlank()) {
             return false;
@@ -1732,19 +1743,33 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
                 // Avoid forcing JMpq read when StormLib is present: some valid archives
                 // may fail to open in JMpq but are fully handled by StormLib.
                 componentListTemp = buildUpdatedComponentListTempFile(null, archiveFile, tempRoot, normalizedLocale);
-                listfileTemp = buildUpdatedListfileTempFile(null, archiveFile, tempRoot, localizedEntry);
+                listfileTemp = buildUpdatedListfileTempFile(
+                        null,
+                        archiveFile,
+                        tempRoot,
+                        localizedEntry,
+                        buildRelatedLocalizedEntries(normalizedRelativePath, relatedUiLangs)
+                );
             } else {
                 try (MpqSession session = openMpqSession(archiveFile)) {
                     JMpqEditor editor = session.editor();
                     componentListTemp = buildUpdatedComponentListTempFile(editor, archiveFile, tempRoot, normalizedLocale);
-                    listfileTemp = buildUpdatedListfileTempFile(editor, archiveFile, tempRoot, localizedEntry);
+                    listfileTemp = buildUpdatedListfileTempFile(
+                            editor,
+                            archiveFile,
+                            tempRoot,
+                            localizedEntry,
+                            buildRelatedLocalizedEntries(normalizedRelativePath, relatedUiLangs)
+                    );
                 }
             }
 
             if (stormAvailable) {
                 LinkedHashMap<String, File> entries = new LinkedHashMap<>();
                 entries.put(localizedEntry, payloadPath.toFile());
-                entries.put(COMPONENT_LIST_FILE, componentListTemp);
+                if (componentListTemp != null && componentListTemp.isFile()) {
+                    entries.put(COMPONENT_LIST_FILE, componentListTemp);
+                }
                 if (listfileTemp != null && listfileTemp.isFile()) {
                     entries.put(LISTFILE_ENTRY, listfileTemp);
                 }
@@ -1755,7 +1780,9 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
                 try {
                     editor = new JMpqEditor(tempArchive.toFile());
                     upsertArchiveEntry(editor, localizedEntry, payloadPath.toFile());
-                    upsertArchiveEntry(editor, COMPONENT_LIST_FILE, componentListTemp);
+                    if (componentListTemp != null && componentListTemp.isFile()) {
+                        upsertArchiveEntry(editor, COMPONENT_LIST_FILE, componentListTemp);
+                    }
                     if (listfileTemp != null && listfileTemp.isFile()) {
                         upsertArchiveEntry(editor, LISTFILE_ENTRY, listfileTemp);
                     }
@@ -1829,10 +1856,12 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
         Path componentFile = tempRoot.resolve(COMPONENT_LIST_FILE);
         String content = "";
         boolean loaded = false;
+        boolean componentExistsInArchive = false;
 
         if (archiveFile != null && StormLibBridge.isAvailable()) {
             try {
-                if (StormLibBridge.hasFile(archiveFile, COMPONENT_LIST_FILE)) {
+                componentExistsInArchive = StormLibBridge.hasFile(archiveFile, COMPONENT_LIST_FILE);
+                if (componentExistsInArchive) {
                     StormLibBridge.extractEntry(archiveFile, COMPONENT_LIST_FILE, componentFile.toFile());
                     content = Files.readString(componentFile, StandardCharsets.UTF_8);
                     loaded = true;
@@ -1847,8 +1876,16 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
             if (existingEntry != null) {
                 editor.extractFile(existingEntry, componentFile.toFile());
                 content = Files.readString(componentFile, StandardCharsets.UTF_8);
+                loaded = true;
             }
         }
+
+        // Never overwrite an existing component list with synthetic content if we failed to read it.
+        if (!loaded && (componentExistsInArchive || (archiveFile != null && StormLibBridge.isAvailable()))) {
+            AppLog.warn("[SAVE] skip ComponentList update: unable to read existing ComponentList safely");
+            return null;
+        }
+
         String updated = ensureComponentListContentHasLocale(content, targetUiLang);
         writeUtf8Atomic(componentFile.toFile(), updated);
         return componentFile.toFile();
@@ -1857,15 +1894,23 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
     private static File buildUpdatedListfileTempFile(JMpqEditor editor,
                                                      File archiveFile,
                                                      Path tempRoot,
-                                                     String localizedEntry) throws Exception {
+                                                     String localizedEntry,
+                                                     List<String> relatedLocalizedEntries) throws Exception {
         Path listfile = tempRoot.resolve("__storm_listfile.txt");
         LinkedHashSet<String> entries = new LinkedHashSet<>();
         entries.addAll(safeArchiveFileNames(editor));
 
         boolean loadedFromStorm = false;
+        boolean loadedExistingListfile = false;
+        boolean listfileExistsInArchive = false;
         if (archiveFile != null && StormLibBridge.isAvailable()) {
             try {
-                entries.addAll(StormLibBridge.readListfileEntries(archiveFile));
+                listfileExistsInArchive = StormLibBridge.hasFile(archiveFile, LISTFILE_ENTRY);
+                List<String> stormEntries = StormLibBridge.readListfileEntries(archiveFile);
+                if (!stormEntries.isEmpty()) {
+                    entries.addAll(stormEntries);
+                    loadedExistingListfile = true;
+                }
                 loadedFromStorm = true;
             } catch (Exception ex) {
                 AppLog.warn("[SAVE] storm listfile extract failed: " + ex.getMessage());
@@ -1879,15 +1924,28 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
                     editor.extractFile(existingEntry, listfile.toFile());
                     String content = Files.readString(listfile, StandardCharsets.UTF_8);
                     entries.addAll(parseListfileEntries(content));
+                    loadedExistingListfile = true;
                 } catch (Exception ex) {
                     AppLog.warn("[SAVE] existing listfile extract failed: " + ex.getMessage());
                 }
             }
         }
 
+        // If we could not reconstruct a reliable base listfile, do not overwrite it
+        // with a tiny synthetic list that may break external SC2 archive tooling.
+        if (entries.isEmpty() && !loadedExistingListfile) {
+            AppLog.warn("[SAVE] skip listfile update: no reliable base entries (archive="
+                    + (archiveFile != null ? archiveFile.getAbsolutePath() : "n/a")
+                    + ", listfileExists=" + listfileExistsInArchive + ")");
+            return null;
+        }
+
         entries.add(LISTFILE_ENTRY);
         entries.add(COMPONENT_LIST_FILE);
         entries.add(localizedEntry);
+        if (relatedLocalizedEntries != null) {
+            entries.addAll(relatedLocalizedEntries);
+        }
 
         StringBuilder sb = new StringBuilder();
         for (String entry : entries) {
@@ -1896,6 +1954,22 @@ public static boolean loadSelectedFile2(File fileSelected, CustomTableView table
         }
         writeUtf8Atomic(listfile.toFile(), sb.toString());
         return listfile.toFile();
+    }
+
+    private static List<String> buildRelatedLocalizedEntries(String normalizedRelativePath, List<String> relatedUiLangs) {
+        if (normalizedRelativePath == null || normalizedRelativePath.isBlank() || relatedUiLangs == null || relatedUiLangs.isEmpty()) {
+            return List.of();
+        }
+
+        LinkedHashSet<String> entries = new LinkedHashSet<>();
+        for (String uiLang : relatedUiLangs) {
+            String normalizedLocale = normalizeLocale(uiLang);
+            if (normalizedLocale == null || normalizedLocale.isBlank() || !KNOWN_UI_LANGS.contains(normalizedLocale)) {
+                continue;
+            }
+            entries.add(normalizedLocale + ".SC2Data\\" + LOCALIZED_DATA + "\\" + normalizedRelativePath.replace('/', '\\'));
+        }
+        return new ArrayList<>(entries);
     }
 
     private static String ensureComponentListContentHasLocale(String content, String targetUiLang) {

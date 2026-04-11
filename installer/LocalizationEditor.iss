@@ -6,6 +6,10 @@
   #define MyAppVersion "2.0.1"
 #endif
 
+#ifndef MyDisplayVersion
+  #define MyDisplayVersion "2.0"
+#endif
+
 #ifndef MyAppExeDir
   #define MyAppExeDir "..\\target\\installer-app-image\\Localization Editor SC2 KSP"
 #endif
@@ -25,12 +29,12 @@
 [Setup]
 AppId={{A3E8A3DF-9D49-45B9-9149-C6B1E5299AC2}
 AppName={#MyAppName}
-AppVerName={#MyAppName} {#MyAppVersion}
-AppVersion={#MyAppVersion}
+AppVerName={#MyAppName} {#MyDisplayVersion}
+AppVersion={#MyDisplayVersion}
 AppPublisher={#MyAppPublisher}
-AppPublisherURL=https://github.com/vlencmanissc-dotcom/Localization-Editor-SC2-KSP
-AppSupportURL=https://github.com/vlencmanissc-dotcom/Localization-Editor-SC2-KSP/issues
-AppUpdatesURL=https://github.com/vlencmanissc-dotcom/Localization-Editor-SC2-KSP/releases
+AppPublisherURL=https://github.com/VoVanRusLvSC2/Localization-Editor-SC2-KSP
+AppSupportURL=https://github.com/VoVanRusLvSC2/Localization-Editor-SC2-KSP/issues
+AppUpdatesURL=https://github.com/VoVanRusLvSC2/Localization-Editor-SC2-KSP/releases
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
@@ -48,14 +52,16 @@ SetupIconFile=..\src\main\resources\Assets\Textures\Icon.ico
 WizardImageFile={#MyWizardLargeBmp}
 WizardSmallImageFile={#MyWizardSmallBmp}
 OutputDir={#MyOutputDir}
-OutputBaseFilename=Localization-Editor-SC2-KSP-{#MyAppVersion}-setup
+OutputBaseFilename=Localization-Editor-SC2-KSP-{#MyDisplayVersion}-setup
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\{#MyAppExeName}
 VersionInfoVersion={#MyAppVersion}
+VersionInfoTextVersion={#MyDisplayVersion}
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription=Localization Editor SC2 KSP Installer
 VersionInfoProductName={#MyAppName}
+VersionInfoProductTextVersion={#MyDisplayVersion}
 SetupLogging=yes
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
@@ -72,12 +78,15 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
+[Dirs]
+Name: "{app}\glossary"; Permissions: users-modify
+
 [Files]
-Source: "{#MyAppExeDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\src\main\resources\glossary\sc2_word_glossary_KSP.txt"; DestDir: "{localappdata}\Localization Editor SC2 KSP\glossary"; Flags: ignoreversion onlyifdoesntexist
-Source: "..\src\main\resources\glossary\Addition_UnitNames_Detailed_KSP.txt"; DestDir: "{localappdata}\Localization Editor SC2 KSP\glossary"; Flags: ignoreversion onlyifdoesntexist
-Source: "..\src\main\resources\glossary\Addition_Weapons_Detailed_KSP.txt"; DestDir: "{localappdata}\Localization Editor SC2 KSP\glossary"; Flags: ignoreversion onlyifdoesntexist
-Source: "..\src\main\resources\glossary\Addition_Abilities_Detailed_KSP.txt"; DestDir: "{localappdata}\Localization Editor SC2 KSP\glossary"; Flags: ignoreversion onlyifdoesntexist
+Source: "{#MyAppExeDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "glossary\*"
+Source: "..\src\main\resources\glossary\sc2_word_glossary_KSP.txt"; DestDir: "{app}\glossary"; Flags: ignoreversion onlyifdoesntexist
+Source: "..\src\main\resources\glossary\Addition_UnitNames_Detailed_KSP.txt"; DestDir: "{app}\glossary"; Flags: ignoreversion onlyifdoesntexist
+Source: "..\src\main\resources\glossary\Addition_Weapons_Detailed_KSP.txt"; DestDir: "{app}\glossary"; Flags: ignoreversion onlyifdoesntexist
+Source: "..\src\main\resources\glossary\Addition_Abilities_Detailed_KSP.txt"; DestDir: "{app}\glossary"; Flags: ignoreversion onlyifdoesntexist
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"

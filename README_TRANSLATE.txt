@@ -11,7 +11,8 @@ Important notes:
 - Prices, free tiers, and limits may change over time. Always double-check the official provider pages before paying.
 - Backend names in this file match the names shown in the application UI.
 - LibreTranslate in this app is local-only. Hosted or cloud LibreTranslate endpoints are not supported by the current in-app integration.
-- Editable glossary files are loaded from `%LOCALAPPDATA%\\Localization Editor SC2 KSP\\glossary` first when present.
+- Editable glossary files are loaded from the `glossary` folder next to `Localization Editor SC2 KSP.exe` first when present.
+- Legacy fallback is `%LOCALAPPDATA%\\Localization Editor SC2 KSP\\glossary`.
 
 ## Backends available in the app
 

@@ -334,7 +334,7 @@
 
 .key-filter-tree .tree-cell {
     -fx-background-color: rgba(0, 0, 0, 0.90);
-    -fx-text-fill: -app-neon-green;
+    -fx-text-fill: #80d2a2;
     -fx-font-weight: bold;
     -fx-font-size: 1em;
     -fx-padding: 4 8;
@@ -345,8 +345,13 @@
     -fx-border-image-repeat: stretch;
 }
 
+.key-filter-tree .tree-cell > .label {
+    -fx-padding: 0;
+    -fx-text-overrun: ellipsis;
+}
+
 .key-filter-tree .tree-cell:filled:selected {
-    -fx-text-fill: -app-warm-amber;
+    -fx-text-fill: #ffe7cb;
     -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
     -fx-border-image-slice: 16;
     -fx-border-image-width: 8;
@@ -359,7 +364,7 @@
 }
 
 .key-filter-tree .tree-cell:filled:selected:hover {
-    -fx-text-fill: -app-warm-amber;
+    -fx-text-fill: #ffe7cb;
     -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
     -fx-border-image-slice: 16;
     -fx-border-image-width: 8;

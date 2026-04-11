@@ -345,3 +345,12 @@
 .settings-api-services-scroll .corner {
     -fx-background-color: transparent;
 }
+
+.settings-audio-scroll-frame {
+    -fx-background-color: transparent;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 12 fill;
+    -fx-border-image-width: 6;
+    -fx-border-image-repeat: stretch;
+    -fx-border-image-insets: 0;
+}

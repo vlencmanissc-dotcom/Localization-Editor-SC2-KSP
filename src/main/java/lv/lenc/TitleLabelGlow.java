@@ -9,6 +9,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
@@ -21,6 +22,7 @@ public class TitleLabelGlow extends StackPane {
     private static final Color GLOW_COLOR = Color.rgb(0, 218, 205, 1.0); // turquoise
     private final Label label;
     private final ImageView glowImage;
+    private final ColorInput glowTint;
     private final String loc;
 
     public TitleLabelGlow(String text, LocalizationManager localizationManager) {
@@ -51,18 +53,27 @@ public class TitleLabelGlow extends StackPane {
         double baseGlowWidth = UiScaleHelper.scaleX(675);//525
         double baseGlowHeight = UiScaleHelper.scaleY(80);
 
-        ColorInput colorInput = new ColorInput(0, 0, baseGlowWidth, baseGlowHeight, GLOW_COLOR);
-        Blend colorize = new Blend(BlendMode.SRC_ATOP, null, colorInput);
+        glowTint = new ColorInput(0, 0, baseGlowWidth, baseGlowHeight, GLOW_COLOR);
+        Blend colorize = new Blend(BlendMode.SRC_ATOP, null, glowTint);
         glowImage.setEffect(colorize);
+
+        Rectangle glowClip = new Rectangle(baseGlowWidth, baseGlowHeight);
+        glowImage.setClip(glowClip);
 
         label.widthProperty().addListener((obs, oldVal, newVal) -> {
             double padding = loc.equals("en") ? UiScaleHelper.scaleX(28) : UiScaleHelper.scaleY(68);
-            glowImage.setFitWidth(newVal.doubleValue() + padding);
-            glowImage.setTranslateX(UiScaleHelper.scaleX(5));
+            double glowWidth = newVal.doubleValue() + padding;
+            glowImage.setFitWidth(glowWidth);
+            glowTint.setWidth(glowWidth);
+            glowClip.setWidth(glowWidth);
+            glowImage.setTranslateX(0);
         });
 
         label.heightProperty().addListener((obs, oldVal, newVal) -> {
-            glowImage.setFitHeight(newVal.doubleValue() - UiScaleHelper.scale(5));
+            double glowHeight = Math.max(newVal.doubleValue() - UiScaleHelper.scale(5), UiScaleHelper.scaleY(8));
+            glowImage.setFitHeight(glowHeight);
+            glowTint.setHeight(glowHeight);
+            glowClip.setHeight(glowHeight);
         });
 
         //

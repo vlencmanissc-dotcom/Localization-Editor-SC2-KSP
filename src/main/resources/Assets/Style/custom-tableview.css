@@ -49,10 +49,36 @@
 }
 .table-view .table-cell.col-key {
     -fx-text-fill: #e7b98a;
-    -fx-font-size: 1em;
 }
 .table-view .table-cell.col-n {
-    -fx-padding: 0.18em 0.22em;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+}
+.table-view .table-cell.col-n .count-label {
+    -fx-text-fill: #ffe8cf;
+    -fx-font-weight: 800;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(255, 126, 58, 0.58), 10, 0.38, 0, 0);
+}
+.table-view .column-header.header-selected-overlay {
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-effect: dropshadow(gaussian, rgba(95, 255, 214, 0.28), 10, 0.24, 0, 0);
+}
+.table-view .column-header.header-selected-overlay .label {
+    -fx-text-fill: #defff1;
+}
+.table-view .column-header.header-detected-source .label {
+    -fx-text-fill: #bff8ec;
+    -fx-effect: dropshadow(gaussian, rgba(84, 255, 208, 0.42), 9, 0.24, 0, 0);
+}
+.table-view .column-header.header-pending-save {
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+}
+.table-view .column-header.header-pending-save .label {
+    -fx-text-fill: #ffe6c8;
+    -fx-effect: dropshadow(gaussian, rgba(255, 137, 62, 0.72), 12, 0.38, 0, 0);
 }
 /*.table-view .table-cell.col-key .text {
     -fx-fill: #fff5e6;
@@ -60,10 +86,6 @@
     -fx-font-size: 14px;
     -fx-effect: dropshadow(gaussian, #cc5c28, 8, 0.15, 0, 0);
 } */
-.table-view .table-cell.col-n .text {
-    -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, #cc5c28, 10, 0.2, 0, 0);
-}
 /* ========== COLUMN HEADERS ========== */
 .table-view .column-header {
     -fx-background-color: transparent;
@@ -84,31 +106,45 @@
 
 /* Drag/reorder visuals */
 .table-view .column-drag-header {
-    -fx-background-color: transparent;
+    -fx-background-color: rgba(7, 34, 26, 0.92);
     -fx-border-color: transparent;
-    -fx-border-image-source: none;
-    -fx-effect: null;
-    -fx-opacity: 0;
+    -fx-border-image-source: url("../Textures/ui_nova_archives_listitem_selected.png");
+    -fx-border-image-slice: 12 fill;
+    -fx-border-image-width: 6;
+    -fx-border-image-repeat: stretch;
+    -fx-effect: dropshadow(gaussian, rgba(100, 255, 210, 0.55), 14, 0.40, 0, 0);
+    -fx-opacity: 0.96;
 }
 .table-view .column-drag-header .label {
-    -fx-text-fill: transparent;
+    -fx-text-fill: #d6ffe9;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(86, 255, 203, 0.45), 10, 0.35, 0, 0);
 }
 .table-view .column-overlay {
-    -fx-background-color: transparent;
-    -fx-background-image: none;
-    -fx-border-color: transparent;
-    -fx-effect: null;
-    -fx-opacity: 0;
+    -fx-background-color: rgba(35, 255, 176, 0.18);
+    -fx-background-insets: 0;
+    -fx-border-color: rgba(104, 255, 214, 0.90);
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(80, 255, 207, 0.36), 12, 0.28, 0, 0);
+    -fx-opacity: 0.95;
 }
 .table-view .column-resize-line {
-    -fx-background-color: transparent;
-    -fx-effect: null;
-    -fx-opacity: 0;
+    -fx-background-color:
+        linear-gradient(to bottom, rgba(180, 255, 236, 0.98), rgba(80, 255, 207, 0.98));
+    -fx-pref-width: 5px;
+    -fx-min-width: 5px;
+    -fx-max-width: 5px;
+    -fx-border-color: rgba(210, 255, 244, 0.96);
+    -fx-border-width: 0 1 0 1;
+    -fx-effect: dropshadow(gaussian, rgba(100, 255, 214, 0.86), 16, 0.45, 0, 0);
+    -fx-opacity: 1;
 }
 
 .table-view .column-header .label {
-    -fx-text-fill: white;
+    -fx-text-fill: #eefdf7;
+    -fx-font-weight: 700;
     -fx-background-color: transparent;
+    -fx-effect: dropshadow(gaussian, rgba(96, 255, 214, 0.20), 7, 0.16, 0, 0);
 }
 
 .column-header-background {
@@ -147,6 +183,10 @@
     -fx-effect: dropshadow(gaussian, rgba(24, 100, 65, 1), 6, 0.6, 0, 0),
                 dropshadow(gaussian, rgba(14, 60, 39, 0.8), 12, 0.4, 0, 0),
                 dropshadow(gaussian, rgba(7, 30, 20, 0.6), 18, 0.2, 0, 0);
+}
+
+.scroll-bar:vertical .thumb {
+    -fx-min-height: 3.1em;
 }
 
 /* Thumb on hover */
