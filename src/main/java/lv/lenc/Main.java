@@ -1,8 +1,11 @@
 package lv.lenc;
 
+import java.awt.Desktop;
 import java.io.File;
+import java.net.URI;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -100,6 +103,7 @@ public class Main extends Application {
     private final BooleanProperty fileLoading = new SimpleBooleanProperty(false);
     private final AtomicInteger ltWarmupGeneration = new AtomicInteger();
     private volatile Thread ltWarmupThread;
+    private volatile boolean updateCheckInProgress = false;
 
     private static final class FileOpenDialogResult {
         final String fileOption;
@@ -156,6 +160,9 @@ public class Main extends Application {
         
         buildScene(primaryStage, tableView);
         UiSoundManager.ensureBackgroundMusicPlayback();
+        if (SettingsManager.loadUpdateCheckOnStartup()) {
+            Platform.runLater(() -> checkForUpdates(false));
+        }
 
         //    applyInitialDisabledState();
         glossaryService.loadGlossariesAsyncFromResources();
@@ -824,6 +831,114 @@ public class Main extends Application {
         }
 
         return localization.get("translating.error.hint.generic");
+    }
+
+    public void checkForUpdates(boolean userInitiated) {
+        if (updateCheckInProgress) {
+            if (userInitiated) {
+                AppLog.info("[Update] check already in progress");
+            }
+            return;
+        }
+        updateCheckInProgress = true;
+
+        Thread worker = new Thread(() -> {
+            try {
+                Optional<UpdateChecker.UpdateInfo> infoOpt = UpdateChecker.checkLatest();
+                Platform.runLater(() -> {
+                    try {
+                        if (infoOpt.isEmpty()) {
+                            if (userInitiated) {
+                                InAppUpdateDialog.showInfo(
+                                        root,
+                                        txt("update.warning.title", "Errors"),
+                                        txt("update.check.failed", "Could not check updates right now."),
+                                        txt("update.warning.yes", "OK")
+                                );
+                            }
+                            return;
+                        }
+
+                        UpdateChecker.UpdateInfo info = infoOpt.get();
+                        if (info.hasUpdate) {
+                            showUpdateAvailableDialog(info);
+                        } else if (userInitiated) {
+                            InAppUpdateDialog.showInfo(
+                                    root,
+                                    txt("update.available.title", "Update available"),
+                                    txt("update.latest.message",
+                                            "You already have the latest version (" + info.currentVersion + ")."),
+                                    txt("update.warning.yes", "OK")
+                            );
+                        }
+                    } finally {
+                        updateCheckInProgress = false;
+                    }
+                });
+            } catch (Exception ex) {
+                AppLog.warn("[Update] unexpected check failure: " + ex.getMessage());
+                Platform.runLater(() -> {
+                    updateCheckInProgress = false;
+                    if (userInitiated) {
+                        InAppUpdateDialog.showInfo(
+                                root,
+                                txt("update.warning.title", "Errors"),
+                                txt("update.check.failed", "Could not check updates right now."),
+                                txt("update.warning.yes", "OK")
+                        );
+                    }
+                });
+            }
+        }, "le-update-check");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void showUpdateAvailableDialog(UpdateChecker.UpdateInfo info) {
+        if (info == null) {
+            return;
+        }
+        String baseMessage = txt("update.available.message", "New version is available");
+        String detailsPattern = txt("update.available.details", "Latest: %s\nCurrent: %s");
+        String details;
+        try {
+            details = String.format(Locale.ROOT, detailsPattern, info.latestVersion, info.currentVersion);
+        } catch (Exception ignored) {
+            details = "Latest: " + info.latestVersion + "\nCurrent: " + info.currentVersion;
+        }
+        InAppUpdateDialog.showChoice(
+                root,
+                txt("update.available.header", "A new version is available"),
+                baseMessage + "\n\n" + details,
+                txt("update.available.open", "Open release"),
+                txt("update.available.later", "Later"),
+                open -> {
+                    if (open) {
+                        openReleasePage(info.releaseUrl);
+                    }
+                }
+        );
+    }
+
+    private void openReleasePage(String url) {
+        if (url == null || url.isBlank()) {
+            return;
+        }
+        try {
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(new URI(url));
+            }
+        } catch (Exception ex) {
+            AppLog.warn("[Update] failed to open release page: " + ex.getMessage());
+        }
+    }
+
+    private String txt(String key, String fallback) {
+        String value = localization != null ? localization.get(key) : null;
+        if (value == null || value.isBlank() || key.equals(value)) {
+            return fallback;
+        }
+        return value;
     }
 
     private static String summarizePerfFailure(Throwable error) {

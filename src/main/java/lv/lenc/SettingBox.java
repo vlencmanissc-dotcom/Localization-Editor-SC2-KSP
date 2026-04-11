@@ -164,6 +164,7 @@ public class SettingBox {
     private static CustomAlternativeButton discordURL;
     private static CustomAlternativeButton supportAuthorButton;
     private static CustomAlternativeButton clearCacheButton;
+    private static CustomAlternativeButton checkUpdatesButton;
 
     private static CustomLanguageButton[] menuButtons;
     private static final List<LanguageOption> LANGUAGE_OPTIONS = List.of(
@@ -186,6 +187,7 @@ public class SettingBox {
     private static LabeledCheckRow backgroundLightCheckBox;
     private static LabeledCheckRow translationCachePersistRow;
     private static LabeledCheckRow useGpuDockerRow;
+    private static LabeledCheckRow updateCheckOnStartupRow;
     private static LabeledCheckRow uiSoundsEnabledRow;
     private static LabeledCheckRow musicEnabledRow;
     private static LabeledCheckRow baseGlossaryRow;
@@ -764,9 +766,11 @@ public class SettingBox {
             CustomBorder borderTable,
             CustomTableView tableView
     ) {
-        final double WIDTH  = sx(524);
+        final double WIDTH  = sx(500);
         final double PANEL_HEIGHT = sy(574);
         final double HEIGHT = sy(602);
+        final double RIGHT_PANEL_WIDTH = sx(316);
+        final double RIGHT_VIEW_WIDTH = sx(306);
 
         String texturePath = UiAssets.textureRoot();
 
@@ -982,7 +986,7 @@ public class SettingBox {
         HBox defaultSaveRow = new HBox(sx(8), uiDEFAUTBUTTON, saveButton);
         defaultSaveRow.setAlignment(Pos.CENTER);
         VBox.setMargin(defaultSaveRow, new Insets(sy(2), 0, 0, 0));
-        defaultSaveRow.setTranslateY(-sy(20));
+        defaultSaveRow.setTranslateY(-sy(34));
 
         Region uiBottomSpacer = new Region();
         VBox.setVgrow(uiBottomSpacer, Priority.ALWAYS);
@@ -1173,6 +1177,15 @@ public class SettingBox {
             SettingsManager.saveUseGpuDocker(newVal);
         });
 
+        updateCheckOnStartupRow = new LabeledCheckRow(
+                localizedOrFallback(localization, "setting.box.other.checkUpdatesOnStartup", "Check updates on startup"),
+                SettingsManager.loadUpdateCheckOnStartup()
+        );
+        tuneSettingCheckRow(updateCheckOnStartupRow);
+        updateCheckOnStartupRow.getCheckBox().selectedProperty().addListener((obs, oldVal, newVal) ->
+                SettingsManager.saveUpdateCheckOnStartup(newVal)
+        );
+
         clearCacheButton = new CustomAlternativeButton(
                 localization.get("setting.box.other.clearCache"),
                 0.6, 0.8, sv(250.0), sv(62.0), sv(10.6)
@@ -1180,10 +1193,23 @@ public class SettingBox {
         freezeSettingButtonScale(clearCacheButton);
         clearCacheButton.setOnAction(e -> TranslationService.clearTranslationCache());
 
+        checkUpdatesButton = new CustomAlternativeButton(
+                localizedOrFallback(localization, "setting.box.other.checkUpdates", "Check updates now"),
+                0.6, 0.8, sv(250.0), sv(54.0), sv(10.4)
+        );
+        freezeSettingButtonScale(checkUpdatesButton);
+        checkUpdatesButton.setOnAction(e -> {
+            if (main != null) {
+                main.checkForUpdates(true);
+            }
+        });
+
         translationCachePersistRow.setMaxWidth(sx(286));
         useGpuDockerRow.setMaxWidth(sx(286));
+        updateCheckOnStartupRow.setMaxWidth(sx(286));
         translationCachePersistRow.setAlignment(Pos.CENTER_LEFT);
         useGpuDockerRow.setAlignment(Pos.CENTER_LEFT);
+        updateCheckOnStartupRow.setAlignment(Pos.CENTER_LEFT);
         double apiHintIconSize = sy(48); // 3x bigger than previous 16px icon
         double apiHintTooltipFont = sy(12);
 
@@ -1350,7 +1376,9 @@ public class SettingBox {
         HBox clearCacheWrap = new HBox(clearCacheButton);
         clearCacheWrap.setAlignment(Pos.CENTER);
         VBox.setMargin(clearCacheWrap, new Insets(sy(14), 0, sy(6), 0));
-
+        HBox checkUpdatesWrap = new HBox(checkUpdatesButton);
+        checkUpdatesWrap.setAlignment(Pos.CENTER);
+        VBox.setMargin(checkUpdatesWrap, new Insets(sy(2), 0, sy(2), 0));
         controlsLabel = new GlowingLabel(localization.get("setting.box.controls"));
         tuneSettingLabel(controlsLabel, 17);
         VBox.setMargin(controlsLabel, new Insets(0, 0, sy(10), 0));
@@ -1360,6 +1388,8 @@ public class SettingBox {
                 controlsLabel,
                 translationCachePersistRow,
                 useGpuDockerRow,
+                updateCheckOnStartupRow,
+                checkUpdatesWrap,
                 clearCacheWrap
         );
         controlsBox.setAlignment(Pos.TOP_CENTER);
@@ -1524,7 +1554,7 @@ public class SettingBox {
         otherDescrption.setWrapText(true);
         otherDescrption.setTextAlignment(TextAlignment.CENTER);
         otherDescrption.setAlignment(Pos.CENTER);
-        otherDescrption.setPrefWidth(sx(250));
+        otherDescrption.setPrefWidth(sx(286));
         otherDescrption.setMinHeight(sy(96));
 
         discordURL = new CustomAlternativeButton(
@@ -1547,8 +1577,8 @@ public class SettingBox {
         otherCardBody.setPadding(new Insets(sy(14), sx(10), sy(14), sx(10)));
 
         StackPane otherCard = new StackPane(otherCardBody);
-        otherCard.setPrefWidth(sx(292));
-        otherCard.setMaxWidth(sx(292));
+        otherCard.setPrefWidth(sx(328));
+        otherCard.setMaxWidth(sx(328));
         otherCard.setPrefHeight(sy(236));
         otherCard.setMaxHeight(sy(236));
         otherCard.setStyle(
@@ -1570,7 +1600,7 @@ public class SettingBox {
         supportAuthorTitle.setWrapText(true);
         supportAuthorTitle.setTextAlignment(TextAlignment.CENTER);
         supportAuthorTitle.setAlignment(Pos.CENTER);
-        supportAuthorTitle.setPrefWidth(sx(250));
+        supportAuthorTitle.setPrefWidth(sx(286));
 
         supportAuthorDescription = new GlowingLabel(localizedOrFallback(
                 localization,
@@ -1581,7 +1611,7 @@ public class SettingBox {
         supportAuthorDescription.setWrapText(true);
         supportAuthorDescription.setTextAlignment(TextAlignment.CENTER);
         supportAuthorDescription.setAlignment(Pos.CENTER);
-        supportAuthorDescription.setPrefWidth(sx(250));
+        supportAuthorDescription.setPrefWidth(sx(286));
 
         supportAuthorButton = new CustomAlternativeButton(
                 localizedOrFallback(localization, "setting.box.other.support.button", "Поддержать на Boosty"),
@@ -1607,8 +1637,8 @@ public class SettingBox {
         supportCardBody.setPadding(new Insets(sy(12), sx(10), sy(12), sx(10)));
 
         StackPane supportCard = new StackPane(supportCardBody);
-        supportCard.setPrefWidth(sx(292));
-        supportCard.setMaxWidth(sx(292));
+        supportCard.setPrefWidth(sx(328));
+        supportCard.setMaxWidth(sx(328));
         supportCard.setPrefHeight(sy(208));
         supportCard.setMaxHeight(sy(208));
         supportCard.setStyle(
@@ -1645,9 +1675,9 @@ public class SettingBox {
         otherView.setVisible(false);
 
         StackPane rightPanel = new StackPane(languageView, uiView, soundView, dictionariesView, controlsView, apiView, otherView);
-        rightPanel.setMinSize(sx(316), PANEL_HEIGHT);
-        rightPanel.setMaxSize(sx(316), PANEL_HEIGHT);
-        rightPanel.setPrefSize(sx(316), PANEL_HEIGHT);
+        rightPanel.setMinSize(RIGHT_PANEL_WIDTH, PANEL_HEIGHT);
+        rightPanel.setMaxSize(RIGHT_PANEL_WIDTH, PANEL_HEIGHT);
+        rightPanel.setPrefSize(RIGHT_PANEL_WIDTH, PANEL_HEIGHT);
         rightPanel.setBorder(new Border(highlightBorder));
         rightPanel.setAlignment(Pos.TOP_CENTER);
         rightPanel.setPadding(new Insets(sy(10), sx(10), sy(10), sx(10)));
@@ -1663,13 +1693,13 @@ public class SettingBox {
                 localization.get("setting.box.other"),
         };
 
-        languageView.setMinSize(sx(306), PANEL_HEIGHT);
-        uiView.setMinSize(sx(306), PANEL_HEIGHT);
-        soundView.setMinSize(sx(306), PANEL_HEIGHT);
-        dictionariesView.setMinSize(sx(306), PANEL_HEIGHT);
-        controlsView.setMinSize(sx(306), PANEL_HEIGHT);
-        apiView.setMinSize(sx(306), PANEL_HEIGHT);
-        otherView.setMinSize(sx(306), PANEL_HEIGHT);
+        languageView.setMinSize(RIGHT_VIEW_WIDTH, PANEL_HEIGHT);
+        uiView.setMinSize(RIGHT_VIEW_WIDTH, PANEL_HEIGHT);
+        soundView.setMinSize(RIGHT_VIEW_WIDTH, PANEL_HEIGHT);
+        dictionariesView.setMinSize(RIGHT_VIEW_WIDTH, PANEL_HEIGHT);
+        controlsView.setMinSize(RIGHT_VIEW_WIDTH, PANEL_HEIGHT);
+        apiView.setMinSize(RIGHT_VIEW_WIDTH, PANEL_HEIGHT);
+        otherView.setMinSize(RIGHT_VIEW_WIDTH, PANEL_HEIGHT);
 
         menuButtons = new CustomLanguageButton[7];
 
@@ -1727,7 +1757,7 @@ public class SettingBox {
         contentLayout.setAlignment(Pos.TOP_LEFT);
         contentLayout.setPadding(new Insets(
                 sy(16),
-                sx(6),
+                sx(0),
                 sy(2),
                 sx(8)
         ));
@@ -1835,6 +1865,9 @@ public class SettingBox {
         if (backgroundLightCheckBox != null) backgroundLightCheckBox.setLabel(localization.get("setting.box.ui.backgroundBlur"));
         if (translationCachePersistRow != null) translationCachePersistRow.setLabel(localization.get("setting.box.other.translationCachePersist"));
         if (useGpuDockerRow != null) useGpuDockerRow.setLabel(localization.get("setting.box.other.useGpuDocker"));
+        if (updateCheckOnStartupRow != null) updateCheckOnStartupRow.setLabel(
+                localizedOrFallback(localization, "setting.box.other.checkUpdatesOnStartup", "Check updates on startup")
+        );
         if (googleApiKeyLabel != null) googleApiKeyLabel.setText(buildGoogleApiKeyLabel(localization));
         if (googleApiKeyField != null) googleApiKeyField.setPromptText(localization.get("setting.box.other.googleApiKeyPrompt"));
         if (googleApiKeyHintIcon != null) googleApiKeyHintIcon.setHintText(buildGoogleApiKeyHint(localization));
@@ -1852,6 +1885,9 @@ public class SettingBox {
         if (deepLApiKeyField != null) deepLApiKeyField.setPromptText(localization.get("setting.box.other.deeplApiKeyPrompt"));
         if (deepLApiKeyHintIcon != null) deepLApiKeyHintIcon.setHintText(localization.get("setting.box.other.deeplApiKeyHint"));
         if (clearCacheButton != null) clearCacheButton.setText(localization.get("setting.box.other.clearCache"));
+        if (checkUpdatesButton != null) checkUpdatesButton.setText(
+                localizedOrFallback(localization, "setting.box.other.checkUpdates", "Check updates now")
+        );
 
         if (menuButtons != null) {
             String[] keys = {

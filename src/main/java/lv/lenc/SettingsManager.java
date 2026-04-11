@@ -44,6 +44,8 @@ public class SettingsManager {
 
     public static final String USE_GPU_DOCKER_KEY = "use.gpu.docker";
     public static final boolean DEFAULT_USE_GPU_DOCKER = false;
+    public static final String UPDATE_CHECK_ON_STARTUP_KEY = "update.check.on.startup";
+    public static final boolean DEFAULT_UPDATE_CHECK_ON_STARTUP = true;
     public static final String GOOGLE_TRANSLATE_API_KEY_KEY = "google.translate.api.key";
     public static final String CLOUDFLARE_ACCOUNT_ID_KEY = "cloudflare.account.id";
     public static final String CLOUDFLARE_API_TOKEN_KEY = "cloudflare.api.token";
@@ -123,6 +125,14 @@ public class SettingsManager {
 
     public static void saveUseGpuDocker(boolean enabled) {
         saveProperty(USE_GPU_DOCKER_KEY, Boolean.toString(enabled));
+    }
+
+    public static boolean loadUpdateCheckOnStartup() {
+        return loadCheckboxState(UPDATE_CHECK_ON_STARTUP_KEY, DEFAULT_UPDATE_CHECK_ON_STARTUP);
+    }
+
+    public static void saveUpdateCheckOnStartup(boolean enabled) {
+        saveProperty(UPDATE_CHECK_ON_STARTUP_KEY, Boolean.toString(enabled));
     }
 
     public static String loadTranslationBackendName() {

@@ -3,9 +3,9 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>lv.lenc</groupId>
     <artifactId>Localization_Editor_SC2_KSP</artifactId>
-    <version>2.0.1</version>
+    <version>2.1</version>
     <properties>
-        <display.version>2.0</display.version>
+        <display.version>2.1</display.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
 
